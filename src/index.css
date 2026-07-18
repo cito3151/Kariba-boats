@@ -1,0 +1,66 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap');
+
+@theme {
+  --color-lake-50: #eef7fb;
+  --color-lake-100: #d6ecf4;
+  --color-lake-200: #b0dae9;
+  --color-lake-300: #7dc0d8;
+  --color-lake-400: #46a0c0;
+  --color-lake-500: #2683a3;
+  --color-lake-600: #1c6786;
+  --color-lake-700: #19536c;
+  --color-lake-800: #19455a;
+  --color-lake-900: #193a4d;
+  --color-lake-950: #0d2532;
+
+  --color-sunset-50: #fff6ed;
+  --color-sunset-100: #ffe9d3;
+  --color-sunset-200: #ffcea5;
+  --color-sunset-300: #ffab6d;
+  --color-sunset-400: #ff7f33;
+  --color-sunset-500: #fd5d0c;
+  --color-sunset-600: #ee4302;
+  --color-sunset-700: #c53004;
+  --color-sunset-800: #9c280b;
+  --color-sunset-900: #7e240c;
+
+  --font-sans: 'Inter', 'Segoe UI', system-ui, Roboto, sans-serif;
+  --font-display: 'Fraunces', 'Segoe UI', system-ui, serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-lake-50);
+  color: var(--color-lake-950);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-lake-200);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
