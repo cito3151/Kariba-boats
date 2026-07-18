@@ -12,6 +12,7 @@
 
 - Supabase project ref: `sbrsptgpnjljnongklus` (Kariba Boats, eu-central-1). Never target `ckkpucbphqendxtrnqcz`, that is AgriSense.
 - Every migration is applied with `mcp__supabase__apply_migration`, never `execute_sql`. Migrations are named `snake_case`, verbs first, e.g. `create_profiles_and_role_security`.
+- **Every migration is also saved locally before it is applied**, to `supabase/migrations/<NN>_<name>.sql` where `<NN>` is a zero-padded sequence starting at `01`. The local file and the applied migration must contain identical SQL. This keeps the schema in version control and gives every migration task a reviewable diff. Never use `git commit --allow-empty`.
 - **No em dashes** anywhere: not in UI copy, comments, commit messages, or SQL. Use commas, colons, or the word "to" for ranges.
 - All images must remain real Lake Kariba photographs or the labelled SVG illustrations already in `src/components/illustrations/`. Never introduce generic stock photography.
 - Every function that reads `profiles` from inside an RLS policy must be `SECURITY DEFINER STABLE` with `set search_path = public, pg_temp`, otherwise policies recurse.
@@ -255,7 +256,7 @@ Expected: `trigger_fn_exists` true, four roles listed. The behavioural test runs
 - [ ] **Step 3: Commit**
 
 ```bash
-git -c user.email=paulkwanisi12@gmail.com -c user.name=paulo commit --allow-empty -m "Add profiles table with three-layer role escalation defence"
+git add -A && git -c user.email=paulkwanisi12@gmail.com -c user.name=paulo commit -m "Add profiles table with three-layer role escalation defence"
 ```
 
 ---
@@ -437,7 +438,7 @@ If any row differs, the generated column expression is wrong. Fix before continu
 - [ ] **Step 3: Commit**
 
 ```bash
-git -c user.email=paulkwanisi12@gmail.com -c user.name=paulo commit --allow-empty -m "Add boats table with generated maintenance state and owner guard trigger"
+git add -A && git -c user.email=paulkwanisi12@gmail.com -c user.name=paulo commit -m "Add boats table with generated maintenance state and owner guard trigger"
 ```
 
 ---
@@ -554,7 +555,7 @@ Expected: three rows, `INSERT`, `DELETE`, `SELECT`.
 - [ ] **Step 4: Commit**
 
 ```bash
-git -c user.email=paulkwanisi12@gmail.com -c user.name=paulo commit --allow-empty -m "Add boat_images table, storage bucket, and path-ownership policies"
+git add -A && git -c user.email=paulkwanisi12@gmail.com -c user.name=paulo commit -m "Add boat_images table, storage bucket, and path-ownership policies"
 ```
 
 ---
@@ -740,7 +741,7 @@ Expected: two rows, `prosecdef` true for both. The behavioural cycle test runs i
 - [ ] **Step 4: Commit**
 
 ```bash
-git -c user.email=paulkwanisi12@gmail.com -c user.name=paulo commit --allow-empty -m "Add operating hours ledger, maintenance records, and notification RPCs"
+git add -A && git -c user.email=paulkwanisi12@gmail.com -c user.name=paulo commit -m "Add operating hours ledger, maintenance records, and notification RPCs"
 ```
 
 ---
@@ -901,7 +902,7 @@ Expected: one row, `contype` = `x` (exclusion). The live double-booking test run
 - [ ] **Step 3: Commit**
 
 ```bash
-git -c user.email=paulkwanisi12@gmail.com -c user.name=paulo commit --allow-empty -m "Add hotels, bookings with GiST overlap constraint, and authentic reviews"
+git add -A && git -c user.email=paulkwanisi12@gmail.com -c user.name=paulo commit -m "Add hotels, bookings with GiST overlap constraint, and authentic reviews"
 ```
 
 ---
@@ -1138,7 +1139,7 @@ Expected: `true, true, false, false`.
 - [ ] **Step 3: Commit**
 
 ```bash
-git -c user.email=paulkwanisi12@gmail.com -c user.name=paulo commit --allow-empty -m "Add admin approval workflow, pending changes diff, and guarded soft delete"
+git add -A && git -c user.email=paulkwanisi12@gmail.com -c user.name=paulo commit -m "Add admin approval workflow, pending changes diff, and guarded soft delete"
 ```
 
 ---
