@@ -5,8 +5,10 @@ import ProtectedRoute from './components/ProtectedRoute';
 import TouristHome from './pages/TouristHome';
 import BoatDetail from './pages/BoatDetail';
 import HotelDashboard from './pages/HotelDashboard';
-import OperatorDashboard from './pages/OperatorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import OwnerDashboard from './pages/owner/OwnerDashboard';
+import BoatFormPage from './pages/owner/BoatFormPage';
+import MaintenancePage from './pages/owner/MaintenancePage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
@@ -32,10 +34,34 @@ function App() {
           }
         />
         <Route
-          path="/operator"
+          path="/owner"
           element={
-            <ProtectedRoute allow={['operator', 'admin']}>
-              <OperatorDashboard />
+            <ProtectedRoute allow={['owner', 'admin']}>
+              <OwnerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/boats/new"
+          element={
+            <ProtectedRoute allow={['owner', 'admin']}>
+              <BoatFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/boats/:id/edit"
+          element={
+            <ProtectedRoute allow={['owner', 'admin']}>
+              <BoatFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/maintenance"
+          element={
+            <ProtectedRoute allow={['owner', 'admin']}>
+              <MaintenancePage />
             </ProtectedRoute>
           }
         />

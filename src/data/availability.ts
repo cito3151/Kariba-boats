@@ -1,4 +1,19 @@
-import type { Boat, Booking } from './types';
+// Minimal shapes the calendar maths needs, decoupled from any data source.
+export interface CalendarBoat {
+  id: string;
+  priceUnit: 'hour' | 'day' | 'weekend';
+}
+export interface Booking {
+  id: string;
+  boatId: string;
+  status: string;
+  date: string;
+  days: number;
+  startTime?: string | null;
+  durationHours?: number | null;
+  touristName?: string;
+}
+type Boat = CalendarBoat;
 
 // Statuses that block the calendar. 'requested' blocks too (pessimistic hold)
 // so two tourists cannot race for the same slot while an operator decides.

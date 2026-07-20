@@ -7,7 +7,7 @@ import { useAuth } from '../data/AuthContext';
 const allNavItems = [
   { to: '/', label: 'Browse Boats', icon: Anchor, end: true },
   { to: '/hotel', label: 'Hotel Portal', icon: Building2 },
-  { to: '/operator', label: 'Operator Portal', icon: ClipboardCheck },
+  { to: '/owner', label: 'Owner Portal', icon: ClipboardCheck },
   { to: '/admin', label: 'Admin', icon: ShieldCheck },
 ];
 
@@ -20,7 +20,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     if (!currentUser) return true;
     if (currentUser.role === 'admin') return true;
     if (item.to === '/hotel') return currentUser.role === 'hotel';
-    if (item.to === '/operator') return currentUser.role === 'operator';
+    if (item.to === '/owner') return currentUser.role === 'owner';
     if (item.to === '/admin') return false;
     return true;
   });

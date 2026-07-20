@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AlertCircle, Info } from 'lucide-react';
@@ -8,29 +8,39 @@ import { useAuth } from '../data/AuthContext';
 
 const roleHome: Record<string, string> = {
   tourist: '/',
+  owner: '/owner',
   hotel: '/hotel',
-  operator: '/operator',
   admin: '/admin',
 };
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, currentUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const from = (location.state as { from?: string } | null)?.from;
 
-  const submit = (e: React.FormEvent) => {
+  // The profile role is not known until the session resolves, so navigate here
+  // once currentUser arrives (unless we already have an explicit "from" target).
+  useEffect(() => {
+    if (currentUser && !from) navigate(roleHome[currentUser.role] ?? '/', { replace: true });
+  }, [currentUser, from, navigate]);
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setBusy(true);
     try {
-      const user = login(email, password);
-      navigate(from || roleHome[user.role] || '/', { replace: true });
+      await login(email, password);
+      if (from) navigate(from, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -78,9 +88,10 @@ export default function Login() {
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 transition-colors"
+            disabled={busy}
+            className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 transition-colors disabled:opacity-60"
           >
-            Log in
+            {busy ? 'Logging in' : 'Log in'}
           </button>
         </form>
 
@@ -91,7 +102,7 @@ export default function Login() {
           <ul className="mt-1.5 space-y-1">
             <li>Tourist: tourist@kariba.com / tourist123</li>
             <li>Hotel: caribbea@kariba.com / hotel123</li>
-            <li>Operator: tigerfish@kariba.com / operator123</li>
+            <li>Owner: tigerfish@kariba.com / operator123</li>
             <li>Admin: admin@kariba.com / admin123</li>
           </ul>
         </div>
