@@ -10,8 +10,8 @@ type Role = 'tourist' | 'owner' | 'hotel' | 'admin';
 
 const PORTALS: { key: Role; label: string; home: string; icon: typeof Anchor }[] = [
   { key: 'tourist', label: 'Tourist', home: '/', icon: Anchor },
-  { key: 'owner', label: 'Owner', home: '/owner', icon: ClipboardCheck },
-  { key: 'hotel', label: 'Hotel', home: '/hotel', icon: Building2 },
+  { key: 'owner', label: 'Boat owner', home: '/owner', icon: ClipboardCheck },
+  { key: 'hotel', label: 'Hotel or Lodge', home: '/hotel', icon: Building2 },
   { key: 'admin', label: 'Admin', home: '/admin', icon: ShieldCheck },
 ];
 
