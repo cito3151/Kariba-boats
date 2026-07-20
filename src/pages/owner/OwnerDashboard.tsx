@@ -6,6 +6,7 @@ import PageTransition from '../../components/PageTransition';
 import DashboardBanner from '../../components/DashboardBanner';
 import BoatImage from '../../components/BoatImage';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
+import StatTile from '../../components/StatTile';
 import { useAuth } from '../../data/AuthContext';
 import { useAsync } from '../../hooks/useAsync';
 import { photos } from '../../data/photos';
@@ -38,19 +39,13 @@ function CoverImage({ boat }: { boat: OwnerBoat }) {
   return <BoatImage src={src} alt={boat.name} className="h-full w-full" showBadge={false} />;
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="min-w-0 overflow-hidden rounded-xl border border-lake-100 bg-white p-4">
-      <p className="text-2xl font-bold tabular-nums text-lake-950">{value}</p>
-      <p className="truncate text-xs text-lake-500">{label}</p>
-    </div>
-  );
-}
+type BoatFilter = 'all' | 'live' | 'pending' | 'attention';
 
 export default function OwnerDashboard() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const ownerId = currentUser?.id ?? '';
+  const [filter, setFilter] = useState<BoatFilter>('all');
 
   const { data: boatList, loading, error, reload } = useAsync(
     () => boats.listOwnerBoats(ownerId), [ownerId],
@@ -97,6 +92,12 @@ export default function OwnerDashboard() {
     pending: list.filter((b) => b.status === 'pending').length,
     attention: list.filter((b) => b.maintenanceStatus === 'due' || b.maintenanceStatus === 'overdue').length,
   };
+  const visible = list.filter((b) => {
+    if (filter === 'live') return b.status === 'approved' && b.isActive;
+    if (filter === 'pending') return b.status === 'pending';
+    if (filter === 'attention') return b.maintenanceStatus === 'due' || b.maintenanceStatus === 'overdue';
+    return true;
+  });
 
   return (
     <PageTransition>
@@ -123,13 +124,15 @@ export default function OwnerDashboard() {
           ))}
         </AnimatePresence>
 
-        <div className="mt-5 flex items-center justify-between gap-3">
-          <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard label="Total boats" value={stats.total} />
-            <StatCard label="Live for tourists" value={stats.live} />
-            <StatCard label="Awaiting review" value={stats.pending} />
-            <StatCard label="Need maintenance" value={stats.attention} />
-          </div>
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatTile label="Total boats" value={stats.total}
+            active={filter === 'all'} onClick={() => setFilter('all')} />
+          <StatTile label="Live for tourists" value={stats.live}
+            active={filter === 'live'} onClick={() => setFilter(filter === 'live' ? 'all' : 'live')} />
+          <StatTile label="Awaiting review" value={stats.pending}
+            active={filter === 'pending'} onClick={() => setFilter(filter === 'pending' ? 'all' : 'pending')} />
+          <StatTile label="Need maintenance" value={stats.attention}
+            active={filter === 'attention'} onClick={() => setFilter(filter === 'attention' ? 'all' : 'attention')} />
         </div>
 
         <div className="mt-6 flex items-center justify-between">
@@ -170,9 +173,21 @@ export default function OwnerDashboard() {
             />
           )}
 
-          {!loading && !error && list.length > 0 && (
+          {!loading && !error && list.length > 0 && filter !== 'all' && (
+            <p className="mb-3 text-sm text-lake-500">
+              Showing {visible.length} {filter === 'live' ? 'live' : filter === 'pending' ? 'awaiting review' : 'needing maintenance'} boat{visible.length !== 1 ? 's' : ''}.
+              <button onClick={() => setFilter('all')} className="ml-2 font-semibold text-lake-700 hover:text-lake-900">Show all</button>
+            </p>
+          )}
+          {!loading && !error && list.length > 0 && visible.length === 0 && (
+            <p className="rounded-xl border border-dashed border-lake-200 py-10 text-center text-sm text-lake-500">
+              No boats match this filter.
+            </p>
+          )}
+
+          {!loading && !error && visible.length > 0 && (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {list.map((boat) => {
+              {visible.map((boat) => {
                 const maintChip = MAINT_CHIP[boat.maintenanceStatus];
                 return (
                   <div key={boat.id} className="overflow-hidden rounded-2xl border border-lake-100 bg-white">
