@@ -8,6 +8,7 @@ import HotelDashboard from './pages/HotelDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import OwnerDashboard from './pages/owner/OwnerDashboard';
 import BoatFormPage from './pages/owner/BoatFormPage';
+import MaintenancePage from './pages/owner/MaintenancePage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
@@ -53,6 +54,14 @@ function App() {
           element={
             <ProtectedRoute allow={['owner', 'admin']}>
               <BoatFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/maintenance"
+          element={
+            <ProtectedRoute allow={['owner', 'admin']}>
+              <MaintenancePage />
             </ProtectedRoute>
           }
         />
