@@ -1,25 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AlertCircle, Anchor, Building2, ClipboardCheck } from 'lucide-react';
+import { AlertCircle, Anchor, Building2, ClipboardCheck, MailCheck } from 'lucide-react';
 import AuthCard from '../components/AuthCard';
 import PageTransition from '../components/PageTransition';
 import { useAuth, type Role } from '../data/AuthContext';
 
 const roleHome: Record<string, string> = {
   tourist: '/',
+  owner: '/owner',
   hotel: '/hotel',
-  operator: '/operator',
+  admin: '/admin',
 };
 
 const roleOptions: { value: Role; label: string; icon: typeof Anchor }[] = [
   { value: 'tourist', label: 'Tourist', icon: Anchor },
   { value: 'hotel', label: 'Hotel or lodge', icon: Building2 },
-  { value: 'operator', label: 'Boat operator', icon: ClipboardCheck },
+  { value: 'owner', label: 'Boat owner', icon: ClipboardCheck },
 ];
 
 export default function Signup() {
-  const { signup } = useAuth();
+  const { signup, currentUser } = useAuth();
   const navigate = useNavigate();
 
   const [role, setRole] = useState<Role>('tourist');
@@ -28,12 +29,18 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [hotelName, setHotelName] = useState('');
-  const [hotelLocation, setHotelLocation] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [confirmSent, setConfirmSent] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  // When email confirmation is off, signUp returns a live session; redirect once
+  // the profile resolves to the right home.
+  useEffect(() => {
+    if (currentUser) navigate(roleHome[currentUser.role] ?? '/', { replace: true });
+  }, [currentUser, navigate]);
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -46,22 +53,61 @@ export default function Signup() {
       return;
     }
 
+    setBusy(true);
     try {
-      const user = signup({
-        name,
+      const result = await signup({
         email,
         password,
+        fullName: name,
         role,
         phone: phone || undefined,
-        hotelName: hotelName || undefined,
-        hotelLocation: hotelLocation || undefined,
         businessName: businessName || undefined,
       });
-      navigate(roleHome[user.role] || '/', { replace: true });
+      if (result.needsConfirmation) {
+        setConfirmSent(true);
+      } else {
+        navigate('/', { replace: true });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      setBusy(false);
     }
   };
+
+  if (confirmSent) {
+    return (
+      <PageTransition>
+        <AuthCard title="Check your email" subtitle="One more step to activate your account">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', bounce: 0.5, delay: 0.1 }}
+              className="mx-auto flex h-12 w-12 items-center justify-center"
+            >
+              <MailCheck size={44} className="text-emerald-500" />
+            </motion.div>
+            <p className="mt-3 text-sm text-lake-600">
+              We sent a confirmation link to{' '}
+              <span className="font-medium text-lake-900">{email}</span>. Click it to activate your
+              account, then log in.
+            </p>
+            <Link
+              to="/login"
+              className="mt-4 inline-block w-full rounded-lg bg-lake-700 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 transition-colors"
+            >
+              Go to login
+            </Link>
+          </motion.div>
+        </AuthCard>
+      </PageTransition>
+    );
+  }
 
   return (
     <PageTransition>
@@ -108,31 +154,7 @@ export default function Signup() {
             />
           </div>
 
-          {role === 'hotel' && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-lake-500">Hotel or lodge name</label>
-                <input
-                  required
-                  value={hotelName}
-                  onChange={(e) => setHotelName(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
-                  placeholder="e.g. Lake Kariba Lodge"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-lake-500">Location</label>
-                <input
-                  value={hotelLocation}
-                  onChange={(e) => setHotelLocation(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
-                  placeholder="Kariba Town"
-                />
-              </div>
-            </div>
-          )}
-
-          {role === 'operator' && (
+          {(role === 'owner' || role === 'hotel') && (
             <div>
               <label className="text-xs font-medium text-lake-500">Business name</label>
               <input
@@ -140,18 +162,18 @@ export default function Signup() {
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
-                placeholder="e.g. Zambezi Houseboats"
+                placeholder={role === 'hotel' ? 'e.g. Lake Kariba Lodge' : 'e.g. Zambezi Houseboats'}
               />
             </div>
           )}
 
-          {(role === 'operator' || role === 'tourist') && (
+          {(role === 'owner' || role === 'tourist') && (
             <div>
               <label className="text-xs font-medium text-lake-500">
-                Phone / WhatsApp {role === 'operator' ? '' : '(optional)'}
+                Phone / WhatsApp {role === 'owner' ? '' : '(optional)'}
               </label>
               <input
-                required={role === 'operator'}
+                required={role === 'owner'}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
@@ -185,11 +207,11 @@ export default function Signup() {
             </div>
           </div>
 
-          {(role === 'hotel' || role === 'operator') && (
+          {(role === 'hotel' || role === 'owner') && (
             <p className="text-xs text-lake-500">
-              New {role === 'hotel' ? 'hotel' : 'operator'} accounts are reviewed by the Kariba Lake
-              Access team before your listing goes live. You can explore your portal right away while
-              verification is pending.
+              New {role === 'hotel' ? 'hotel' : 'owner'} accounts and their boat listings are reviewed
+              by the Kariba Lake Access team before they go live. You can set everything up in your
+              portal right away while verification is pending.
             </p>
           )}
 
@@ -205,9 +227,10 @@ export default function Signup() {
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 transition-colors"
+            disabled={busy}
+            className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 transition-colors disabled:opacity-60"
           >
-            Create account
+            {busy ? 'Creating account' : 'Create account'}
           </button>
         </form>
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Mail } from 'lucide-react';
 import AuthCard from '../components/AuthCard';
@@ -8,14 +8,19 @@ import { useAuth } from '../data/AuthContext';
 
 export default function ForgotPassword() {
   const { requestPasswordReset } = useAuth();
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    requestPasswordReset(email);
-    setSent(true);
+    setBusy(true);
+    try {
+      await requestPasswordReset(email);
+    } finally {
+      setBusy(false);
+      setSent(true);
+    }
   };
 
   return (
@@ -36,9 +41,10 @@ export default function ForgotPassword() {
             </div>
             <button
               type="submit"
-              className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 transition-colors"
+              disabled={busy}
+              className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 transition-colors disabled:opacity-60"
             >
-              Send reset link
+              {busy ? 'Sending' : 'Send reset link'}
             </button>
           </form>
         ) : (
@@ -63,17 +69,10 @@ export default function ForgotPassword() {
             <div className="mt-5 rounded-lg bg-lake-50 p-3 text-xs text-lake-600 text-left flex items-start gap-2">
               <Mail size={14} className="mt-0.5 shrink-0 text-lake-500" />
               <span>
-                This is a demo environment with no real email delivery. Use the button below to continue
-                to the reset screen as if you had clicked the emailed link.
+                Open the link in that email to choose a new password. It brings you back here to the
+                reset screen, already signed in from the link.
               </span>
             </div>
-
-            <button
-              onClick={() => navigate(`/reset-password?email=${encodeURIComponent(email)}`)}
-              className="mt-4 w-full rounded-lg bg-lake-700 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 transition-colors"
-            >
-              Continue to reset password
-            </button>
           </motion.div>
         )}
 

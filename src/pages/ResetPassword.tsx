@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import AuthCard from '../components/AuthCard';
@@ -9,16 +9,14 @@ import { useAuth } from '../data/AuthContext';
 export default function ResetPassword() {
   const { resetPassword } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const emailFromLink = searchParams.get('email') || '';
 
-  const [email, setEmail] = useState(emailFromLink);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -31,8 +29,17 @@ export default function ResetPassword() {
       return;
     }
 
-    resetPassword(email, password);
-    setDone(true);
+    setBusy(true);
+    try {
+      // Supabase authenticates the user from the recovery link in the URL, so no
+      // email is needed here, only the new password.
+      await resetPassword(password);
+      setDone(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not reset your password. The link may have expired.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -40,17 +47,6 @@ export default function ResetPassword() {
       <AuthCard title="Set a new password" subtitle="Choose a new password for your account">
         {!done ? (
           <form onSubmit={submit} className="space-y-3">
-            <div>
-              <label className="text-xs font-medium text-lake-500">Email</label>
-              <input
-                required
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
-                placeholder="you@example.com"
-              />
-            </div>
             <div>
               <label className="text-xs font-medium text-lake-500">New password</label>
               <input
@@ -86,9 +82,10 @@ export default function ResetPassword() {
 
             <button
               type="submit"
-              className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 transition-colors"
+              disabled={busy}
+              className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 transition-colors disabled:opacity-60"
             >
-              Set new password
+              {busy ? 'Saving' : 'Set new password'}
             </button>
           </form>
         ) : (
