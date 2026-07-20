@@ -759,6 +759,88 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_set_verification: {
+        Args: { p_trust_score: number; p_user_id: string; p_verified: boolean }
+        Returns: {
+          business_name: string | null
+          created_at: string
+          full_name: string
+          hotel_id: string | null
+          id: string
+          is_verified: boolean
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          trust_score: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      cancel_booking: {
+        Args: { p_booking_id: string }
+        Returns: {
+          boat_id: string
+          created_at: string
+          days: number
+          deposit_amount: number
+          duration_hours: number | null
+          experience_type: string
+          group_size: number
+          guest_name: string
+          guest_phone: string
+          hotel_id: string | null
+          id: string
+          notes: string | null
+          period: unknown
+          price_total: number
+          start_date: string
+          start_time: string | null
+          status: Database["public"]["Enums"]["booking_status"]
+          tourist_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      owner_set_booking_status: {
+        Args: {
+          p_booking_id: string
+          p_status: Database["public"]["Enums"]["booking_status"]
+        }
+        Returns: {
+          boat_id: string
+          created_at: string
+          days: number
+          deposit_amount: number
+          duration_hours: number | null
+          experience_type: string
+          group_size: number
+          guest_name: string
+          guest_phone: string
+          hotel_id: string | null
+          id: string
+          notes: string | null
+          period: unknown
+          price_total: number
+          start_date: string
+          start_time: string | null
+          status: Database["public"]["Enums"]["booking_status"]
+          tourist_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       complete_maintenance: {
         Args: {
           p_boat_id: string

@@ -1,11 +1,12 @@
 import { type ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Anchor, Building2, ClipboardCheck, ShieldCheck, LogOut } from 'lucide-react';
+import { Anchor, Building2, ClipboardCheck, ShieldCheck, LogOut, Ticket } from 'lucide-react';
 import { useAuth } from '../data/AuthContext';
 
 const allNavItems = [
   { to: '/', label: 'Browse Boats', icon: Anchor, end: true },
+  { to: '/trips', label: 'My Trips', icon: Ticket },
   { to: '/hotel', label: 'Hotel Portal', icon: Building2 },
   { to: '/owner', label: 'Owner Portal', icon: ClipboardCheck },
   { to: '/admin', label: 'Admin', icon: ShieldCheck },
@@ -17,6 +18,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   const navItems = allNavItems.filter((item) => {
     if (item.to === '/') return true;
+    if (item.to === '/trips') return !!currentUser;
     if (!currentUser) return true;
     if (currentUser.role === 'admin') return true;
     if (item.to === '/hotel') return currentUser.role === 'hotel';
