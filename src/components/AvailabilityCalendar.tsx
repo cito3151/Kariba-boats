@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, CalendarDays, Clock } from 'lucide-react';
-import type { Boat, Booking } from '../data/types';
 import {
   activeBookingsForBoat,
   bookingCoversDate,
@@ -11,6 +10,8 @@ import {
   timeToMinutes,
   toISODate,
   type DayStatus,
+  type CalendarBoat,
+  type Booking,
 } from '../data/availability';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -26,7 +27,7 @@ const statusStyles: Record<DayStatus, string> = {
 };
 
 interface Props {
-  boat: Boat;
+  boat: CalendarBoat;
   bookings: Booking[]; // full booking list; filtered internally
   showGuestNames?: boolean; // true on operator/admin views only
 }
