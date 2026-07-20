@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Anchor, Plus, Pencil, Gauge, Trash2, EyeOff, Eye, X, Bell } from 'lucide-react';
+import { Anchor, Plus, Pencil, Gauge, Trash2, EyeOff, Eye, X, Bell, CalendarDays } from 'lucide-react';
 import PageTransition from '../../components/PageTransition';
 import DashboardBanner from '../../components/DashboardBanner';
 import BoatImage from '../../components/BoatImage';
@@ -135,6 +135,10 @@ export default function OwnerDashboard() {
         <div className="mt-6 flex items-center justify-between">
           <h2 className="font-display text-xl font-medium text-lake-950">Your boats</h2>
           <div className="flex items-center gap-2">
+            <Link to="/owner/bookings"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-medium text-lake-700 hover:bg-lake-50">
+              <CalendarDays size={15} /> Bookings
+            </Link>
             <Link to="/owner/maintenance"
               className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-medium text-lake-700 hover:bg-lake-50">
               <Gauge size={15} /> Maintenance

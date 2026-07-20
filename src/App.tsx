@@ -9,6 +9,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import OwnerDashboard from './pages/owner/OwnerDashboard';
 import BoatFormPage from './pages/owner/BoatFormPage';
 import MaintenancePage from './pages/owner/MaintenancePage';
+import OwnerBookingsPage from './pages/owner/OwnerBookingsPage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
@@ -62,6 +63,14 @@ function App() {
           element={
             <ProtectedRoute allow={['owner', 'admin']}>
               <MaintenancePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/bookings"
+          element={
+            <ProtectedRoute allow={['owner', 'admin']}>
+              <OwnerBookingsPage />
             </ProtectedRoute>
           }
         />
