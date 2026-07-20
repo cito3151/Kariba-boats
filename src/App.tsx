@@ -3,6 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import TouristHome from './pages/TouristHome';
+import TouristTripsPage from './pages/TouristTripsPage';
 import BoatDetail from './pages/BoatDetail';
 import HotelDashboard from './pages/HotelDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -26,6 +27,14 @@ function App() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<TouristHome />} />
         <Route path="/boats/:id" element={<BoatDetail />} />
+        <Route
+          path="/trips"
+          element={
+            <ProtectedRoute allow={['tourist', 'hotel', 'owner', 'admin']}>
+              <TouristTripsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/hotel"
           element={
