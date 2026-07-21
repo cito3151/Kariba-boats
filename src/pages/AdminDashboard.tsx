@@ -1,22 +1,24 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck } from 'lucide-react';
+import { ShieldCheck, Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import DashboardBanner from '../components/DashboardBanner';
 import StatTile from '../components/StatTile';
 import ApprovalQueue from '../components/admin/ApprovalQueue';
 import AdminBookings from '../components/admin/AdminBookings';
 import UserVerification from '../components/admin/UserVerification';
+import RoleManagement from '../components/admin/RoleManagement';
 import { BOAT_TYPE_LABELS } from '../components/BoatCard';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
+import { useAuth } from '../data/AuthContext';
 import { useAsync } from '../hooks/useAsync';
 import { photos } from '../data/photos';
 import * as boats from '../services/boats.service';
 import { listAllBookings } from '../services/bookings.service';
-import { listOwnersAndHotels } from '../services/users.service';
+import { listOwnersAndHotels, listAllUsers } from '../services/users.service';
 import type { OwnerBoat, BoatStatus } from '../services/boats.service';
 
-type View = 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users';
+type View = 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users' | 'roles';
 
 const STATUS_CHIP: Record<BoatStatus, string> = {
   draft: 'bg-gray-100 text-gray-600',
@@ -62,9 +64,14 @@ function BoatList({ boats: list }: { boats: OwnerBoat[] }) {
 }
 
 export default function AdminDashboard() {
+  const { currentUser } = useAuth();
   const { data: boatData, loading, error, reload } = useAsync(() => boats.listBoatsForAdmin(), []);
   const { data: bookingData } = useAsync(listAllBookings, []);
   const { data: userData } = useAsync(listOwnersAndHotels, []);
+  const isSuper = currentUser?.isSuperAdmin ?? false;
+  const { data: allUsers } = useAsync(
+    () => (isSuper ? listAllUsers() : Promise.resolve([])), [isSuper],
+  );
   const [view, setView] = useState<View>('queue');
 
   const list = boatData ?? [];
@@ -81,6 +88,9 @@ export default function AdminDashboard() {
     { key: 'bookings', label: 'Active bookings', value: activeBookings, icon: CalendarCheck },
     { key: 'users', label: 'Unverified owners/hotels', value: unverified, icon: UserCheck },
   ];
+  if (isSuper) {
+    tiles.push({ key: 'roles', label: 'Admins & roles', value: (allUsers ?? []).filter((u) => u.role === 'admin').length, icon: UserCog });
+  }
 
   return (
     <PageTransition>
@@ -98,6 +108,7 @@ export default function AdminDashboard() {
           {view === 'queue' && <ApprovalQueue />}
           {view === 'bookings' && (<><h2 className="mb-3 font-semibold text-lake-950">All bookings</h2><AdminBookings /></>)}
           {view === 'users' && (<><h2 className="mb-3 font-semibold text-lake-950">Owner and hotel verification</h2><UserVerification /></>)}
+          {view === 'roles' && isSuper && (<><h2 className="mb-3 font-semibold text-lake-950">Admins and roles</h2><RoleManagement /></>)}
           {(view === 'all' || view === 'live' || view === 'attention') && (
             <>
               <h2 className="mb-3 font-semibold text-lake-950">

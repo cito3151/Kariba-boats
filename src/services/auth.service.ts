@@ -8,7 +8,7 @@ export interface AppUser {
   phone: string | null; businessName: string | null;
   hotelId: string | null;
   verificationStatus: VerificationStatus; verificationNote: string | null;
-  isVerified: boolean;
+  isVerified: boolean; isSuperAdmin: boolean;
 }
 
 export interface SignupInput {
@@ -66,7 +66,7 @@ export async function updatePassword(newPassword: string) {
 export async function fetchProfile(userId: string, email: string): Promise<AppUser | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, role, full_name, phone, business_name, hotel_id, verification_status, verification_note')
+    .select('id, role, full_name, phone, business_name, hotel_id, verification_status, verification_note, is_super_admin')
     .eq('id', userId)
     .single();
   if (error || !data) return null;
@@ -76,5 +76,6 @@ export async function fetchProfile(userId: string, email: string): Promise<AppUs
     verificationStatus: data.verification_status as VerificationStatus,
     verificationNote: data.verification_note,
     isVerified: data.verification_status === 'verified',
+    isSuperAdmin: data.is_super_admin,
   };
 }
