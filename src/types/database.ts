@@ -535,6 +535,7 @@ export type Database = {
           full_name: string
           hotel_id: string | null
           id: string
+          is_super_admin: boolean
           phone: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -550,6 +551,7 @@ export type Database = {
           full_name?: string
           hotel_id?: string | null
           id: string
+          is_super_admin?: boolean
           phone?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -565,6 +567,7 @@ export type Database = {
           full_name?: string
           hotel_id?: string | null
           id?: string
+          is_super_admin?: boolean
           phone?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -818,6 +821,47 @@ export type Database = {
           full_name: string
           hotel_id: string | null
           id: string
+          phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          trust_score: number
+          updated_at: string
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["verification_status"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_list_users: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          email: string
+          full_name: string
+          role: Database["public"]["Enums"]["user_role"]
+          is_super_admin: boolean
+          verification_status: Database["public"]["Enums"]["verification_status"]
+          created_at: string
+        }[]
+      }
+      admin_set_role: {
+        Args: {
+          p_user_id: string
+          p_role: Database["public"]["Enums"]["user_role"]
+          p_is_super_admin?: boolean
+        }
+        Returns: {
+          business_name: string | null
+          created_at: string
+          full_name: string
+          hotel_id: string | null
+          id: string
+          is_super_admin: boolean
           phone: string | null
           reviewed_at: string | null
           reviewed_by: string | null

@@ -32,6 +32,29 @@ export async function reviewAccount(
   if (error) throw new Error(humanizeError(error.message));
 }
 
+export interface ManagedUser {
+  id: string; email: string; fullName: string;
+  role: 'tourist' | 'owner' | 'hotel' | 'admin';
+  isSuperAdmin: boolean; verificationStatus: VerificationStatus;
+}
+
+export async function listAllUsers(): Promise<ManagedUser[]> {
+  const { data, error } = await supabase.rpc('admin_list_users');
+  if (error) throw new Error(humanizeError(error.message));
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  return (data ?? []).map((r: any) => ({
+    id: r.id, email: r.email, fullName: r.full_name, role: r.role,
+    isSuperAdmin: r.is_super_admin, verificationStatus: r.verification_status as VerificationStatus,
+  }));
+}
+
+export async function setUserRole(userId: string, role: ManagedUser['role'], isSuperAdmin: boolean) {
+  const { error } = await supabase.rpc('admin_set_role', {
+    p_user_id: userId, p_role: role, p_is_super_admin: isSuperAdmin,
+  });
+  if (error) throw new Error(humanizeError(error.message));
+}
+
 export async function verifyHotel(
   userId: string, input: { hotelName: string; location: string; commission?: number; trustScore?: number },
 ) {
