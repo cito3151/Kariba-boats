@@ -18,9 +18,10 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   const navItems = allNavItems.filter((item) => {
     if (item.to === '/') return true;
+    // Admin is oversight only: Browse Boats and the Admin panel, nothing else.
+    if (currentUser?.role === 'admin') return item.to === '/admin';
     if (item.to === '/trips') return !!currentUser;
     if (!currentUser) return true;
-    if (currentUser.role === 'admin') return true;
     if (item.to === '/hotel') return currentUser.role === 'hotel';
     if (item.to === '/owner') return currentUser.role === 'owner';
     if (item.to === '/admin') return false;
