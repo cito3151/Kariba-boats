@@ -46,7 +46,7 @@ function App() {
         <Route
           path="/owner"
           element={
-            <ProtectedRoute allow={['owner', 'admin']}>
+            <ProtectedRoute allow={['owner']}>
               <OwnerDashboard />
             </ProtectedRoute>
           }
@@ -54,7 +54,7 @@ function App() {
         <Route
           path="/owner/boats/new"
           element={
-            <ProtectedRoute allow={['owner', 'admin']}>
+            <ProtectedRoute allow={['owner']}>
               <BoatFormPage />
             </ProtectedRoute>
           }
@@ -62,7 +62,7 @@ function App() {
         <Route
           path="/owner/boats/:id/edit"
           element={
-            <ProtectedRoute allow={['owner', 'admin']}>
+            <ProtectedRoute allow={['owner']}>
               <BoatFormPage />
             </ProtectedRoute>
           }
@@ -70,7 +70,7 @@ function App() {
         <Route
           path="/owner/maintenance"
           element={
-            <ProtectedRoute allow={['owner', 'admin']}>
+            <ProtectedRoute allow={['owner']}>
               <MaintenancePage />
             </ProtectedRoute>
           }
@@ -78,7 +78,7 @@ function App() {
         <Route
           path="/owner/bookings"
           element={
-            <ProtectedRoute allow={['owner', 'admin']}>
+            <ProtectedRoute allow={['owner']}>
               <OwnerBookingsPage />
             </ProtectedRoute>
           }
