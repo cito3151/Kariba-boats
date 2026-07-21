@@ -8,6 +8,7 @@ import DashboardBanner from '../components/DashboardBanner';
 import BoatImage from '../components/BoatImage';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import { priceView } from '../components/BoatCard';
+import VerificationBanner from '../components/VerificationBanner';
 import { useAuth } from '../data/AuthContext';
 import { useAsync } from '../hooks/useAsync';
 import { photos } from '../data/photos';
@@ -51,6 +52,8 @@ export default function HotelDashboard() {
           title={currentUser?.businessName || 'Book a boat for your guest'}
           icon={Building2}
         />
+
+        <div className="mt-4"><VerificationBanner /></div>
 
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="rounded-2xl border border-lake-100 bg-white p-4 shadow-sm">
@@ -106,8 +109,8 @@ export default function HotelDashboard() {
                     )}
                     <button
                       onClick={() => setBookingBoat(boat)}
-                      disabled={!hotelId}
-                      title={hotelId ? '' : 'Your hotel is not linked yet'}
+                      disabled={!hotelId || currentUser?.verificationStatus !== 'verified'}
+                      title={hotelId && currentUser?.verificationStatus === 'verified' ? '' : 'Your hotel account must be verified and linked before you can book for guests'}
                       className="shrink-0 rounded-lg bg-lake-700 px-3 py-2 text-xs font-semibold text-white hover:bg-lake-800 transition-colors disabled:opacity-50"
                     >
                       Book for guest

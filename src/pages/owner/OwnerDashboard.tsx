@@ -7,6 +7,7 @@ import DashboardBanner from '../../components/DashboardBanner';
 import BoatImage from '../../components/BoatImage';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
 import StatTile from '../../components/StatTile';
+import VerificationBanner from '../../components/VerificationBanner';
 import { useAuth } from '../../data/AuthContext';
 import { useAsync } from '../../hooks/useAsync';
 import { photos } from '../../data/photos';
@@ -108,6 +109,8 @@ export default function OwnerDashboard() {
           title={currentUser?.businessName || currentUser?.name || 'Your boats'}
           icon={Anchor}
         />
+
+        <div className="mt-4"><VerificationBanner /></div>
 
         <AnimatePresence>
           {unread.map((n) => (
