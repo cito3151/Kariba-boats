@@ -535,11 +535,14 @@ export type Database = {
           full_name: string
           hotel_id: string | null
           id: string
-          is_verified: boolean
           phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           role: Database["public"]["Enums"]["user_role"]
           trust_score: number
           updated_at: string
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["verification_status"]
         }
         Insert: {
           business_name?: string | null
@@ -547,11 +550,14 @@ export type Database = {
           full_name?: string
           hotel_id?: string | null
           id: string
-          is_verified?: boolean
           phone?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           trust_score?: number
           updated_at?: string
+          verification_note?: string | null
+          verification_status?: Database["public"]["Enums"]["verification_status"]
         }
         Update: {
           business_name?: string | null
@@ -559,11 +565,14 @@ export type Database = {
           full_name?: string
           hotel_id?: string | null
           id?: string
-          is_verified?: boolean
           phone?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           trust_score?: number
           updated_at?: string
+          verification_note?: string | null
+          verification_status?: Database["public"]["Enums"]["verification_status"]
         }
         Relationships: [
           {
@@ -571,6 +580,13 @@ export type Database = {
             columns: ["hotel_id"]
             isOneToOne: false
             referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -759,19 +775,57 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      admin_set_verification: {
-        Args: { p_trust_score: number; p_user_id: string; p_verified: boolean }
+      admin_review_account: {
+        Args: {
+          p_note?: string
+          p_status: Database["public"]["Enums"]["verification_status"]
+          p_trust_score?: number
+          p_user_id: string
+        }
         Returns: {
           business_name: string | null
           created_at: string
           full_name: string
           hotel_id: string | null
           id: string
-          is_verified: boolean
           phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           role: Database["public"]["Enums"]["user_role"]
           trust_score: number
           updated_at: string
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["verification_status"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_verify_hotel: {
+        Args: {
+          p_commission?: number
+          p_hotel_name: string
+          p_location: string
+          p_trust_score?: number
+          p_user_id: string
+        }
+        Returns: {
+          business_name: string | null
+          created_at: string
+          full_name: string
+          hotel_id: string | null
+          id: string
+          phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          trust_score: number
+          updated_at: string
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["verification_status"]
         }
         SetofOptions: {
           from: "*"
@@ -1081,6 +1135,7 @@ export type Database = {
         | "cancelled"
       fuel_policy_kind: "included" | "excluded" | "prepaid" | "full_to_full"
       user_role: "tourist" | "owner" | "hotel" | "admin"
+      verification_status: "pending" | "verified" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1220,6 +1275,7 @@ export const Constants = {
       ],
       fuel_policy_kind: ["included", "excluded", "prepaid", "full_to_full"],
       user_role: ["tourist", "owner", "hotel", "admin"],
+      verification_status: ["pending", "verified", "rejected"],
     },
   },
 } as const

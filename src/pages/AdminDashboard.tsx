@@ -71,7 +71,7 @@ export default function AdminDashboard() {
   const activeBookings = (bookingData ?? []).filter(
     (b) => b.status === 'requested' || b.status === 'confirmed' || b.status === 'deposit_paid',
   ).length;
-  const unverified = (userData ?? []).filter((u) => !u.isVerified).length;
+  const unverified = (userData ?? []).filter((u) => u.verificationStatus === 'pending').length;
 
   const tiles: { key: View; label: string; value: number; icon: typeof Anchor }[] = [
     { key: 'all', label: 'Total boats', value: list.length, icon: Anchor },

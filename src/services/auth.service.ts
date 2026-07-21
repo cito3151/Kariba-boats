@@ -1,11 +1,14 @@
 import { supabase } from '../lib/supabase';
 
 export type Role = 'tourist' | 'owner' | 'hotel' | 'admin';
+export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 
 export interface AppUser {
   id: string; email: string; name: string; role: Role;
   phone: string | null; businessName: string | null;
-  hotelId: string | null; isVerified: boolean;
+  hotelId: string | null;
+  verificationStatus: VerificationStatus; verificationNote: string | null;
+  isVerified: boolean;
 }
 
 export interface SignupInput {
@@ -63,13 +66,15 @@ export async function updatePassword(newPassword: string) {
 export async function fetchProfile(userId: string, email: string): Promise<AppUser | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, role, full_name, phone, business_name, hotel_id, is_verified')
+    .select('id, role, full_name, phone, business_name, hotel_id, verification_status, verification_note')
     .eq('id', userId)
     .single();
   if (error || !data) return null;
   return {
     id: data.id, email, name: data.full_name, role: data.role as Role,
-    phone: data.phone, businessName: data.business_name,
-    hotelId: data.hotel_id, isVerified: data.is_verified,
+    phone: data.phone, businessName: data.business_name, hotelId: data.hotel_id,
+    verificationStatus: data.verification_status as VerificationStatus,
+    verificationNote: data.verification_note,
+    isVerified: data.verification_status === 'verified',
   };
 }

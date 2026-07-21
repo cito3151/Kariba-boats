@@ -5,6 +5,7 @@ import PageTransition from '../../components/PageTransition';
 import BoatForm from '../../components/owner/BoatForm';
 import ImageUploader from '../../components/owner/ImageUploader';
 import { LoadingState, ErrorState } from '../../components/StateViews';
+import VerificationBanner from '../../components/VerificationBanner';
 import { useAuth } from '../../data/AuthContext';
 import { useAsync } from '../../hooks/useAsync';
 import * as boats from '../../services/boats.service';
@@ -83,7 +84,8 @@ export default function BoatFormPage() {
     }
   };
 
-  const canSubmit = boat && (boat.status === 'draft' || boat.status === 'rejected');
+  const accountVerified = currentUser.verificationStatus === 'verified';
+  const canSubmit = boat && (boat.status === 'draft' || boat.status === 'rejected') && accountVerified;
 
   return (
     <PageTransition>
@@ -101,7 +103,9 @@ export default function BoatFormPage() {
             : 'Start with the details. You will add photos on the next step.'}
         </p>
 
-        <div className="mt-6 rounded-2xl border border-lake-100 bg-white p-5 sm:p-6">
+        <div className="mt-4"><VerificationBanner /></div>
+
+        <div className="mt-2 rounded-2xl border border-lake-100 bg-white p-5 sm:p-6">
           {editing && loading && <LoadingState label="Loading boat" />}
           {editing && error && <ErrorState message={error} onRetry={reload} />}
           {editing && !loading && !boat && (
@@ -165,6 +169,12 @@ export default function BoatFormPage() {
                     <p className="mt-2 text-xs text-lake-500">Add at least one photo to enable this.</p>
                   )}
                 </div>
+              )}
+              {(boat.status === 'draft' || boat.status === 'rejected') && !accountVerified && (
+                <p className="text-sm text-lake-600">
+                  You can add photos and edit details now. Submitting for review unlocks once an
+                  administrator verifies your owner account.
+                </p>
               )}
             </div>
           </>
