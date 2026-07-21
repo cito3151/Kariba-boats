@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { humanizeError } from './errors';
 
 export interface BoatImage {
   id: string; boatId: string; storagePath: string;
@@ -19,7 +20,7 @@ export async function listBoatImages(boatId: string): Promise<BoatImage[]> {
     .select('id, boat_id, storage_path, sort_order, is_primary, moderation_status')
     .eq('boat_id', boatId)
     .order('sort_order');
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
   return (data ?? []).map((r) => ({
     id: r.id, boatId: r.boat_id, storagePath: r.storage_path,
     sortOrder: r.sort_order, isPrimary: r.is_primary, moderationStatus: r.moderation_status,
@@ -59,7 +60,7 @@ export async function uploadBoatImages(
     if (error) {
       // Never orphan a storage object when the row insert fails.
       await supabase.storage.from(BUCKET).remove([path]);
-      throw new Error(error.message);
+      throw new Error(humanizeError(error.message));
     }
     uploaded.push({
       id: data.id, boatId: data.boat_id, storagePath: data.storage_path,
@@ -72,12 +73,12 @@ export async function uploadBoatImages(
 
 export async function deleteBoatImage(image: BoatImage): Promise<void> {
   const { error } = await supabase.from('boat_images').delete().eq('id', image.id);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
   await supabase.storage.from(BUCKET).remove([image.storagePath]);
 }
 
 export async function setPrimaryImage(boatId: string, imageId: string): Promise<void> {
   await supabase.from('boat_images').update({ is_primary: false }).eq('boat_id', boatId);
   const { error } = await supabase.from('boat_images').update({ is_primary: true }).eq('id', imageId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
 }

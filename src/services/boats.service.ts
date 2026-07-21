@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import type { Json } from '../types/database';
+import { humanizeError } from './errors';
 
 export type BoatKind = 'houseboat' | 'speedboat' | 'fishing' | 'cruiser' | 'pontoon';
 export type BoatStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'suspended';
@@ -50,7 +51,7 @@ export async function listOwnerBoats(ownerId: string): Promise<OwnerBoat[]> {
   const { data, error } = await supabase.from('boats').select(OWNER_COLS)
     .eq('owner_id', ownerId).eq('is_deleted', false)
     .order('created_at', { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
   return (data ?? []).map(toOwnerBoat);
 }
 
@@ -72,7 +73,7 @@ export async function createBoat(ownerId: string, input: BoatInput): Promise<Own
     accumulated_hours: input.accumulatedHours,
     last_maintenance_hours: input.lastMaintenanceHours,
   }).select(OWNER_COLS).single();
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
   return toOwnerBoat(data);
 }
 
@@ -80,24 +81,24 @@ export async function proposeChanges(id: string, changes: Record<string, unknown
   const { error } = await supabase.rpc('propose_boat_changes', {
     p_boat_id: id, p_changes: changes as Json,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
 }
 
 export async function submitForReview(id: string): Promise<void> {
   const { error } = await supabase.rpc('submit_boat_for_review', { p_boat_id: id });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
 }
 
 export async function softDeleteBoat(id: string): Promise<void> {
   const { error } = await supabase.rpc('soft_delete_boat', { p_boat_id: id });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
 }
 
 export async function setActive(id: string, isActive: boolean): Promise<void> {
   const { error } = await supabase.rpc('propose_boat_changes', {
     p_boat_id: id, p_changes: { is_active: isActive },
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
 }
 
 /* Tourist side */
@@ -124,7 +125,7 @@ function toPublicBoat(r: any): PublicBoat {
 export async function listPublicBoats(): Promise<PublicBoat[]> {
   const { data, error } = await supabase.from('public_boats').select('*')
     .order('created_at', { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
   return (data ?? []).map(toPublicBoat);
 }
 
@@ -139,7 +140,7 @@ export async function listBoatsForAdmin(status?: BoatStatus): Promise<OwnerBoat[
   let q = supabase.from('boats').select(OWNER_COLS).eq('is_deleted', false);
   if (status) q = q.eq('status', status);
   const { data, error } = await q.order('created_at', { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
   return (data ?? []).map(toOwnerBoat);
 }
 
@@ -147,12 +148,12 @@ export async function reviewBoat(id: string, action: 'approve' | 'reject' | 'sus
   const { error } = await supabase.rpc('admin_review_boat', {
     p_boat_id: id, p_action: action, p_reason: reason ?? undefined,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
 }
 
 export async function reviewChanges(id: string, approve: boolean, reason?: string) {
   const { error } = await supabase.rpc('admin_review_changes', {
     p_boat_id: id, p_approve: approve, p_reason: reason ?? undefined,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
 }

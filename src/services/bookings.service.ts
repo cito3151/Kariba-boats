@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { humanizeError } from './errors';
 
 export type BookingStatus =
   | 'requested' | 'confirmed' | 'deposit_paid' | 'completed' | 'declined' | 'cancelled';
@@ -48,28 +49,28 @@ export async function createBooking(input: BookingInput, touristId: string | nul
     if (error.code === '23P01') {
       throw new Error('That slot was just booked by someone else. Pick another time.');
     }
-    throw new Error(error.message);
+    throw new Error(humanizeError(error.message));
   }
   return { id: data.id, depositAmount: Number(data.deposit_amount) };
 }
 
 export async function listBookingsForBoat(boatId: string): Promise<BookingRow[]> {
   const { data, error } = await supabase.from('bookings').select(BOOKING_SELECT).eq('boat_id', boatId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
   return (data ?? []).map(toBookingRow);
 }
 
 export async function listBookingsForHotel(hotelId: string): Promise<BookingRow[]> {
   const { data, error } = await supabase.from('bookings').select(BOOKING_SELECT)
     .eq('hotel_id', hotelId).order('start_date', { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
   return (data ?? []).map(toBookingRow);
 }
 
 export async function listMyBookings(touristId: string): Promise<BookingRow[]> {
   const { data, error } = await supabase.from('bookings').select(BOOKING_SELECT)
     .eq('tourist_id', touristId).order('start_date', { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
   return (data ?? []).map(toBookingRow);
 }
 
@@ -83,14 +84,14 @@ export async function listBookingsForOwner(ownerId: string): Promise<BookingRow[
   if (ids.length === 0) return [];
   const { data, error } = await supabase.from('bookings').select(BOOKING_SELECT)
     .in('boat_id', ids).order('start_date', { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
   return (data ?? []).map(toBookingRow);
 }
 
 export async function listAllBookings(): Promise<BookingRow[]> {
   const { data, error } = await supabase.from('bookings').select(BOOKING_SELECT)
     .order('start_date', { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
   return (data ?? []).map(toBookingRow);
 }
 
@@ -98,10 +99,10 @@ export async function listAllBookings(): Promise<BookingRow[]> {
 // legal transition graph. Direct table updates are revoked.
 export async function setOwnerBookingStatus(id: string, status: BookingStatus) {
   const { error } = await supabase.rpc('owner_set_booking_status', { p_booking_id: id, p_status: status });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
 }
 
 export async function cancelBooking(id: string) {
   const { error } = await supabase.rpc('cancel_booking', { p_booking_id: id });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(humanizeError(error.message));
 }
