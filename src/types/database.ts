@@ -1100,16 +1100,16 @@ export type Database = {
           p_boat_id: string
           p_days: number
           p_deposit_amount: number
-          p_duration_hours: number
+          p_duration_hours?: number
           p_experience_type: string
           p_group_size: number
           p_guest_name: string
           p_guest_phone: string
-          p_hotel_id: string
-          p_notes: string
+          p_hotel_id?: string
+          p_notes?: string
           p_price_total: number
           p_start_date: string
-          p_start_time: string
+          p_start_time?: string
           p_waiver_accepted: boolean
           p_waiver_version: number
         }
