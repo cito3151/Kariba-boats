@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Anchor, Plus, Pencil, Gauge, Trash2, EyeOff, Eye, X, Bell, CalendarDays } from 'lucide-react';
+import { Anchor, Plus, Pencil, Gauge, Trash2, EyeOff, Eye, X, Bell, CalendarDays, Clock } from 'lucide-react';
 import PageTransition from '../../components/PageTransition';
 import DashboardBanner from '../../components/DashboardBanner';
 import BoatImage from '../../components/BoatImage';
@@ -128,13 +128,13 @@ export default function OwnerDashboard() {
         </AnimatePresence>
 
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatTile label="Total boats" value={stats.total}
+          <StatTile index={0} icon={Anchor} label="Total boats" value={stats.total}
             active={filter === 'all'} onClick={() => setFilter('all')} />
-          <StatTile label="Live for tourists" value={stats.live}
+          <StatTile index={1} icon={Eye} label="Live for tourists" value={stats.live}
             active={filter === 'live'} onClick={() => setFilter(filter === 'live' ? 'all' : 'live')} />
-          <StatTile label="Awaiting review" value={stats.pending}
+          <StatTile index={2} icon={Clock} label="Awaiting review" value={stats.pending}
             active={filter === 'pending'} onClick={() => setFilter(filter === 'pending' ? 'all' : 'pending')} />
-          <StatTile label="Need maintenance" value={stats.attention}
+          <StatTile index={3} icon={Gauge} label="Need maintenance" value={stats.attention}
             active={filter === 'attention'} onClick={() => setFilter(filter === 'attention' ? 'all' : 'attention')} />
         </div>
 
