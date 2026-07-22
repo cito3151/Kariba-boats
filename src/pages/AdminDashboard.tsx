@@ -92,7 +92,7 @@ export default function AdminDashboard() {
     { key: 'audit', label: 'Activity log', value: 0, icon: ScrollText },
   ];
   if (isSuper) {
-    tiles.push({ key: 'roles', label: 'Admins & roles', value: (allUsers ?? []).filter((u) => u.role === 'admin').length, icon: UserCog });
+    tiles.push({ key: 'roles', label: 'Admins and roles', value: (allUsers ?? []).filter((u) => u.role === 'admin').length, icon: UserCog });
     tiles.push({ key: 'legal', label: 'Legal documents', value: 0, icon: FileText });
   }
 
@@ -102,8 +102,8 @@ export default function AdminDashboard() {
         <DashboardBanner image={photos.wildlife1} eyebrow="Admin panel" title="Platform oversight" icon={ShieldCheck} />
 
         <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {tiles.map((t) => (
-            <StatTile key={t.key} label={t.label} value={t.value} icon={t.icon}
+          {tiles.map((t, i) => (
+            <StatTile key={t.key} index={i} label={t.label} value={t.value} icon={t.icon}
               active={view === t.key} onClick={() => setView(t.key)} />
           ))}
         </div>

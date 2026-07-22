@@ -112,7 +112,7 @@ export default function BoatDetail() {
 
             {boat.facilities.length > 0 && (
               <Reveal className="mt-6">
-                <h3 className="font-display text-lg font-medium text-lake-950">Facilities & amenities</h3>
+                <h3 className="font-display text-lg font-medium text-lake-950">Facilities and amenities</h3>
                 <ul className="mt-2 grid grid-cols-2 gap-2 text-sm text-lake-700">
                   {boat.facilities.map((a) => (
                     <li key={a} className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-lake-400" /> {a}</li>
