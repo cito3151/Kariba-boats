@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText } from 'lucide-react';
+import { ShieldCheck, Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText, FileText } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import DashboardBanner from '../components/DashboardBanner';
 import StatTile from '../components/StatTile';
@@ -9,6 +9,7 @@ import AdminBookings from '../components/admin/AdminBookings';
 import UserVerification from '../components/admin/UserVerification';
 import RoleManagement from '../components/admin/RoleManagement';
 import AuditLog from '../components/admin/AuditLog';
+import LegalDocuments from '../components/admin/LegalDocuments';
 import { BOAT_TYPE_LABELS } from '../components/BoatCard';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import { useAuth } from '../data/AuthContext';
@@ -19,7 +20,7 @@ import { listAllBookings } from '../services/bookings.service';
 import { listOwnersAndHotels, listAllUsers } from '../services/users.service';
 import type { OwnerBoat, BoatStatus } from '../services/boats.service';
 
-type View = 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users' | 'roles' | 'audit';
+type View = 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users' | 'roles' | 'audit' | 'legal';
 
 const STATUS_CHIP: Record<BoatStatus, string> = {
   draft: 'bg-gray-100 text-gray-600',
@@ -92,6 +93,7 @@ export default function AdminDashboard() {
   ];
   if (isSuper) {
     tiles.push({ key: 'roles', label: 'Admins & roles', value: (allUsers ?? []).filter((u) => u.role === 'admin').length, icon: UserCog });
+    tiles.push({ key: 'legal', label: 'Legal documents', value: 0, icon: FileText });
   }
 
   return (
@@ -112,6 +114,7 @@ export default function AdminDashboard() {
           {view === 'users' && (<><h2 className="mb-3 font-semibold text-lake-950">Owner and hotel verification</h2><UserVerification /></>)}
           {view === 'roles' && isSuper && (<><h2 className="mb-3 font-semibold text-lake-950">Admins and roles</h2><RoleManagement /></>)}
           {view === 'audit' && (<><h2 className="mb-3 font-semibold text-lake-950">Activity log</h2><AuditLog /></>)}
+          {view === 'legal' && isSuper && (<><h2 className="mb-3 font-semibold text-lake-950">Legal documents</h2><LegalDocuments /></>)}
           {(view === 'all' || view === 'live' || view === 'attention') && (
             <>
               <h2 className="mb-3 font-semibold text-lake-950">
