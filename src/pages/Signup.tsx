@@ -5,6 +5,9 @@ import { AlertCircle, Anchor, Building2, ClipboardCheck, MailCheck } from 'lucid
 import AuthCard from '../components/AuthCard';
 import PageTransition from '../components/PageTransition';
 import { useAuth, type Role } from '../data/AuthContext';
+import { useCurrentDocuments } from '../components/legal/useCurrentDocuments';
+import DocumentModal from '../components/legal/DocumentModal';
+import { recordConsent, type LegalDocType } from '../services/legal.service';
 
 const roleHome: Record<string, string> = {
   tourist: '/',
@@ -33,6 +36,12 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmSent, setConfirmSent] = useState(false);
+  const { get: getDoc } = useCurrentDocuments();
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptOperator, setAcceptOperator] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [viewDoc, setViewDoc] = useState<LegalDocType | null>(null);
+  const needsOperator = role === 'owner' || role === 'hotel';
 
   // When email confirmation is off, signUp returns a live session; redirect once
   // the profile resolves to the right home.
@@ -52,6 +61,14 @@ export default function Signup() {
       setError('Password must be at least 6 characters.');
       return;
     }
+    if (!acceptTerms) {
+      setError('Please accept the Terms of Service and Privacy Policy to continue.');
+      return;
+    }
+    if (needsOperator && !acceptOperator) {
+      setError('Please accept the Operator Agreement to continue.');
+      return;
+    }
 
     setBusy(true);
     try {
@@ -66,6 +83,16 @@ export default function Signup() {
       if (result.needsConfirmation) {
         setConfirmSent(true);
       } else {
+        const docTypes: { t: LegalDocType; accepted: boolean }[] = [
+          { t: 'terms', accepted: true },
+          { t: 'privacy', accepted: true },
+        ];
+        if (needsOperator) docTypes.push({ t: 'operator_agreement', accepted: true });
+        docTypes.push({ t: 'marketing', accepted: marketingOptIn });
+        for (const d of docTypes) {
+          const doc = getDoc(d.t);
+          if (doc) await recordConsent({ docType: d.t, version: doc.version, context: 'signup', accepted: d.accepted });
+        }
         navigate('/', { replace: true });
       }
     } catch (err) {
@@ -215,6 +242,34 @@ export default function Signup() {
             </p>
           )}
 
+          <div className="space-y-2 pt-1">
+            <label className="flex items-start gap-2 text-xs text-lake-600">
+              <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)}
+                className="mt-0.5" />
+              <span>
+                I accept the{' '}
+                <button type="button" className="font-semibold text-lake-700 underline" onClick={() => setViewDoc('terms')}>Terms of Service</button>
+                {' '}and{' '}
+                <button type="button" className="font-semibold text-lake-700 underline" onClick={() => setViewDoc('privacy')}>Privacy Policy</button>.
+              </span>
+            </label>
+            {needsOperator && (
+              <label className="flex items-start gap-2 text-xs text-lake-600">
+                <input type="checkbox" checked={acceptOperator} onChange={(e) => setAcceptOperator(e.target.checked)}
+                  className="mt-0.5" />
+                <span>
+                  I accept the{' '}
+                  <button type="button" className="font-semibold text-lake-700 underline" onClick={() => setViewDoc('operator_agreement')}>Operator Agreement</button>.
+                </span>
+              </label>
+            )}
+            <label className="flex items-start gap-2 text-xs text-lake-500">
+              <input type="checkbox" checked={marketingOptIn} onChange={(e) => setMarketingOptIn(e.target.checked)}
+                className="mt-0.5" />
+              <span>Send me occasional updates and offers (optional).</span>
+            </label>
+          </div>
+
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -6 }}
@@ -243,6 +298,7 @@ export default function Signup() {
         <p className="mt-2 text-center text-xs text-lake-400">
           Admin accounts are provisioned internally and are not available through this form.
         </p>
+        {viewDoc && <DocumentModal docType={viewDoc} onClose={() => setViewDoc(null)} />}
       </AuthCard>
     </PageTransition>
   );
