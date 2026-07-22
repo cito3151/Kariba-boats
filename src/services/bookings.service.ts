@@ -9,6 +9,7 @@ export interface BookingInput {
   days: number; startTime: string | null; durationHours: number | null;
   groupSize: number; experienceType: string; priceTotal: number; depositAmount: number;
   hotelId?: string | null; notes?: string;
+  waiverVersion: number; waiverAccepted: boolean;
 }
 
 export interface BookingRow {
@@ -34,24 +35,20 @@ function toBookingRow(r: any): BookingRow {
 }
 
 export async function createBooking(input: BookingInput, touristId: string | null) {
-  const { data, error } = await supabase.from('bookings').insert({
-    boat_id: input.boatId, tourist_id: touristId, hotel_id: input.hotelId ?? null,
-    guest_name: input.guestName, guest_phone: input.guestPhone,
-    start_date: input.startDate, days: input.days,
-    start_time: input.startTime, duration_hours: input.durationHours,
-    group_size: input.groupSize, experience_type: input.experienceType,
-    price_total: input.priceTotal, deposit_amount: input.depositAmount,
-    notes: input.notes ?? null,
-  }).select('id, deposit_amount').single();
-
-  if (error) {
-    // 23P01 is exclusion_violation: the slot was taken between render and submit.
-    if (error.code === '23P01') {
-      throw new Error('That slot was just booked by someone else. Pick another time.');
-    }
-    throw new Error(humanizeError(error.message));
-  }
-  return { id: data.id, depositAmount: Number(data.deposit_amount) };
+  void touristId; // tourist_id is derived server-side in create_booking
+  const { data, error } = await supabase.rpc('create_booking', {
+    p_boat_id: input.boatId, p_guest_name: input.guestName, p_guest_phone: input.guestPhone,
+    p_hotel_id: input.hotelId ?? undefined,
+    p_start_date: input.startDate, p_days: input.days,
+    p_start_time: input.startTime ?? undefined, p_duration_hours: input.durationHours ?? undefined,
+    p_group_size: input.groupSize, p_experience_type: input.experienceType,
+    p_price_total: input.priceTotal, p_deposit_amount: input.depositAmount,
+    p_notes: input.notes ?? undefined,
+    p_waiver_version: input.waiverVersion, p_waiver_accepted: input.waiverAccepted,
+  }).single();
+  if (error) throw new Error(humanizeError(error.message));
+  const row = data as { id: string; deposit_amount: number };
+  return { id: row.id, depositAmount: Number(row.deposit_amount) };
 }
 
 export async function listBookingsForBoat(boatId: string): Promise<BookingRow[]> {

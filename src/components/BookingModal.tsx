@@ -5,6 +5,8 @@ import type { PublicBoat } from '../services/boats.service';
 import { priceView } from './BoatCard';
 import { createBooking } from '../services/bookings.service';
 import { DAY_END, DAY_START, minutesToTime, toISODate } from '../data/availability';
+import { useCurrentDocuments } from './legal/useCurrentDocuments';
+import DocumentModal from './legal/DocumentModal';
 
 const START_TIMES = Array.from({ length: DAY_END - DAY_START - 1 }, (_, i) =>
   minutesToTime((DAY_START + i) * 60),
@@ -51,6 +53,9 @@ export default function BookingModal({
   const [error, setError] = useState('');
   const [depositAmount, setDepositAmount] = useState(0);
   const [bookingId, setBookingId] = useState('');
+  const { get: getDoc } = useCurrentDocuments();
+  const [waiverAccepted, setWaiverAccepted] = useState(false);
+  const [showWaiver, setShowWaiver] = useState(false);
 
   const priceTotal = isHourly ? amount * durationHours : amount * tripDays;
   const deposit = Math.round(priceTotal * 0.2);
@@ -58,6 +63,11 @@ export default function BookingModal({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!waiverAccepted) {
+      setError('Please accept the booking waiver to continue.');
+      return;
+    }
+    const waiverDoc = getDoc('booking_waiver');
     setStep('submitting');
     try {
       const result = await createBooking(
@@ -75,6 +85,8 @@ export default function BookingModal({
           priceTotal,
           depositAmount: deposit,
           notes,
+          waiverVersion: waiverDoc?.version ?? 1,
+          waiverAccepted: true,
         },
         touristId,
       );
@@ -208,6 +220,16 @@ export default function BookingModal({
                   </motion.div>
                 )}
 
+                <label className="flex items-start gap-2 text-xs text-lake-600">
+                  <input type="checkbox" checked={waiverAccepted}
+                    onChange={(e) => setWaiverAccepted(e.target.checked)} className="mt-0.5" />
+                  <span>
+                    I accept the{' '}
+                    <button type="button" className="font-semibold text-lake-700 underline"
+                      onClick={() => setShowWaiver(true)}>booking liability waiver</button>.
+                  </span>
+                </label>
+
                 <button type="submit"
                   className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 transition-colors">
                   Send request to {boat.operatorName || 'the operator'}
@@ -249,6 +271,7 @@ export default function BookingModal({
           </AnimatePresence>
         </motion.div>
       </motion.div>
+      {showWaiver && <DocumentModal docType="booking_waiver" onClose={() => setShowWaiver(false)} />}
     </AnimatePresence>
   );
 }
