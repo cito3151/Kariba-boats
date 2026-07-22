@@ -2,6 +2,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import ConsentGate from './components/legal/ConsentGate';
 import TouristHome from './pages/TouristHome';
 import TouristTripsPage from './pages/TouristTripsPage';
 import BoatDetail from './pages/BoatDetail';
@@ -99,9 +100,13 @@ function App() {
     </AnimatePresence>
   );
 
-  if (isAuthRoute) return routes;
+  if (isAuthRoute) return <ConsentGate>{routes}</ConsentGate>;
 
-  return <Layout>{routes}</Layout>;
+  return (
+    <ConsentGate>
+      <Layout>{routes}</Layout>
+    </ConsentGate>
+  );
 }
 
 export default App;

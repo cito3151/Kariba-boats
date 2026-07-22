@@ -5,7 +5,7 @@ import { useAsync } from '../../hooks/useAsync';
 import { listAudit } from '../../services/audit.service';
 import type { AuditEntry } from '../../services/audit.service';
 
-const ENTITY_TYPES = ['boats', 'bookings', 'profiles', 'boat_images', 'reviews', 'hotels'];
+const ENTITY_TYPES = ['boats', 'bookings', 'profiles', 'boat_images', 'reviews', 'hotels', 'consent_records', 'legal_documents'];
 const ACTIONS = ['insert', 'update', 'delete'];
 
 const ACTION_CHIP: Record<AuditEntry['action'], string> = {

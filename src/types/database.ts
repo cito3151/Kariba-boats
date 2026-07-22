@@ -482,6 +482,50 @@ export type Database = {
           },
         ]
       }
+      consent_records: {
+        Row: {
+          accepted: boolean
+          accepted_at: string
+          booking_id: string | null
+          context: Database["public"]["Enums"]["consent_context"]
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          document_id: string
+          id: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          accepted?: boolean
+          accepted_at?: string
+          booking_id?: string | null
+          context: Database["public"]["Enums"]["consent_context"]
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          document_id: string
+          id?: string
+          user_id: string
+          version: number
+        }
+        Update: {
+          accepted?: boolean
+          accepted_at?: string
+          booking_id?: string | null
+          context?: Database["public"]["Enums"]["consent_context"]
+          doc_type?: Database["public"]["Enums"]["legal_doc_type"]
+          document_id?: string
+          id?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consent_records_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "legal_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hotels: {
         Row: {
           commission_rate: number
@@ -506,6 +550,48 @@ export type Database = {
           is_verified?: boolean
           location?: string
           name?: string
+        }
+        Relationships: []
+      }
+      legal_documents: {
+        Row: {
+          applies_to_roles: string[] | null
+          body: string
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          effective_at: string
+          id: string
+          is_current: boolean
+          is_required: boolean
+          published_at: string
+          published_by: string | null
+          title: string
+          version: number
+        }
+        Insert: {
+          applies_to_roles?: string[] | null
+          body: string
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          effective_at?: string
+          id?: string
+          is_current?: boolean
+          is_required?: boolean
+          published_at?: string
+          published_by?: string | null
+          title: string
+          version: number
+        }
+        Update: {
+          applies_to_roles?: string[] | null
+          body?: string
+          doc_type?: Database["public"]["Enums"]["legal_doc_type"]
+          effective_at?: string
+          id?: string
+          is_current?: boolean
+          is_required?: boolean
+          published_at?: string
+          published_by?: string | null
+          title?: string
+          version?: number
         }
         Relationships: []
       }
@@ -730,6 +816,64 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_audit: {
+        Args: { p_action?: string; p_entity_type?: string; p_limit?: number }
+        Returns: {
+          action: string
+          actor_email: string
+          actor_id: string
+          actor_name: string
+          actor_role: string
+          changed: Json
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          label: string
+        }[]
+      }
+      admin_list_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_super_admin: boolean
+          role: Database["public"]["Enums"]["user_role"]
+          verification_status: Database["public"]["Enums"]["verification_status"]
+        }[]
+      }
+      admin_review_account: {
+        Args: {
+          p_note?: string
+          p_status: Database["public"]["Enums"]["verification_status"]
+          p_trust_score?: number
+          p_user_id: string
+        }
+        Returns: {
+          business_name: string | null
+          created_at: string
+          full_name: string
+          hotel_id: string | null
+          id: string
+          is_super_admin: boolean
+          phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          trust_score: number
+          updated_at: string
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["verification_status"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_review_boat: {
         Args: { p_action: string; p_boat_id: string; p_reason?: string }
         Returns: {
@@ -814,11 +958,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      admin_review_account: {
+      admin_set_role: {
         Args: {
-          p_note?: string
-          p_status: Database["public"]["Enums"]["verification_status"]
-          p_trust_score?: number
+          p_is_super_admin?: boolean
+          p_role: Database["public"]["Enums"]["user_role"]
           p_user_id: string
         }
         Returns: {
@@ -827,6 +970,7 @@ export type Database = {
           full_name: string
           hotel_id: string | null
           id: string
+          is_super_admin: boolean
           phone: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -857,62 +1001,6 @@ export type Database = {
           full_name: string
           hotel_id: string | null
           id: string
-          phone: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          role: Database["public"]["Enums"]["user_role"]
-          trust_score: number
-          updated_at: string
-          verification_note: string | null
-          verification_status: Database["public"]["Enums"]["verification_status"]
-        }
-        SetofOptions: {
-          from: "*"
-          to: "profiles"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
-      admin_list_audit: {
-        Args: { p_entity_type?: string; p_action?: string; p_limit?: number }
-        Returns: {
-          id: string
-          created_at: string
-          actor_id: string | null
-          actor_email: string | null
-          actor_name: string | null
-          actor_role: string | null
-          action: string
-          entity_type: string
-          entity_id: string | null
-          label: string | null
-          changed: Json | null
-        }[]
-      }
-      admin_list_users: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          id: string
-          email: string
-          full_name: string
-          role: Database["public"]["Enums"]["user_role"]
-          is_super_admin: boolean
-          verification_status: Database["public"]["Enums"]["verification_status"]
-          created_at: string
-        }[]
-      }
-      admin_set_role: {
-        Args: {
-          p_user_id: string
-          p_role: Database["public"]["Enums"]["user_role"]
-          p_is_super_admin?: boolean
-        }
-        Returns: {
-          business_name: string | null
-          created_at: string
-          full_name: string
-          hotel_id: string | null
-          id: string
           is_super_admin: boolean
           phone: string | null
           reviewed_at: string | null
@@ -932,38 +1020,6 @@ export type Database = {
       }
       cancel_booking: {
         Args: { p_booking_id: string }
-        Returns: {
-          boat_id: string
-          created_at: string
-          days: number
-          deposit_amount: number
-          duration_hours: number | null
-          experience_type: string
-          group_size: number
-          guest_name: string
-          guest_phone: string
-          hotel_id: string | null
-          id: string
-          notes: string | null
-          period: unknown
-          price_total: number
-          start_date: string
-          start_time: string | null
-          status: Database["public"]["Enums"]["booking_status"]
-          tourist_id: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "bookings"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
-      owner_set_booking_status: {
-        Args: {
-          p_booking_id: string
-          p_status: Database["public"]["Enums"]["booking_status"]
-        }
         Returns: {
           boat_id: string
           created_at: string
@@ -1039,12 +1095,40 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_booking: {
+        Args: {
+          p_boat_id: string
+          p_days: number
+          p_deposit_amount: number
+          p_duration_hours?: number
+          p_experience_type: string
+          p_group_size: number
+          p_guest_name: string
+          p_guest_phone: string
+          p_hotel_id?: string
+          p_notes?: string
+          p_price_total: number
+          p_start_date: string
+          p_start_time?: string
+          p_waiver_accepted: boolean
+          p_waiver_version: number
+        }
+        Returns: {
+          deposit_amount: number
+          id: string
+        }[]
+      }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      has_outstanding_required_consent: {
+        Args: { p_user?: string }
+        Returns: boolean
+      }
       is_admin: { Args: never; Returns: boolean }
       is_sensitive_change: { Args: { p_changes: Json }; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
       log_operating_hours: {
         Args: {
           p_boat_id: string
@@ -1092,6 +1176,47 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      outstanding_consents: {
+        Args: { p_user?: string }
+        Returns: {
+          body: string
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          title: string
+          version: number
+        }[]
+      }
+      owner_set_booking_status: {
+        Args: {
+          p_booking_id: string
+          p_status: Database["public"]["Enums"]["booking_status"]
+        }
+        Returns: {
+          boat_id: string
+          created_at: string
+          days: number
+          deposit_amount: number
+          duration_hours: number | null
+          experience_type: string
+          group_size: number
+          guest_name: string
+          guest_phone: string
+          hotel_id: string | null
+          id: string
+          notes: string | null
+          period: unknown
+          price_total: number
+          start_date: string
+          start_time: string | null
+          status: Database["public"]["Enums"]["booking_status"]
+          tourist_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       propose_boat_changes: {
         Args: { p_boat_id: string; p_changes: Json }
         Returns: {
@@ -1130,6 +1255,60 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "boats"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      publish_legal_document: {
+        Args: {
+          p_applies_to_roles?: string[]
+          p_body: string
+          p_doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          p_is_required: boolean
+          p_title: string
+        }
+        Returns: {
+          applies_to_roles: string[] | null
+          body: string
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          effective_at: string
+          id: string
+          is_current: boolean
+          is_required: boolean
+          published_at: string
+          published_by: string | null
+          title: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "legal_documents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_consent: {
+        Args: {
+          p_accepted?: boolean
+          p_booking_id?: string
+          p_context: Database["public"]["Enums"]["consent_context"]
+          p_doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          p_version: number
+        }
+        Returns: {
+          accepted: boolean
+          accepted_at: string
+          booking_id: string | null
+          context: Database["public"]["Enums"]["consent_context"]
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          document_id: string
+          id: string
+          user_id: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "consent_records"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1229,7 +1408,14 @@ export type Database = {
         | "completed"
         | "declined"
         | "cancelled"
+      consent_context: "signup" | "re_consent" | "booking"
       fuel_policy_kind: "included" | "excluded" | "prepaid" | "full_to_full"
+      legal_doc_type:
+        | "terms"
+        | "privacy"
+        | "operator_agreement"
+        | "booking_waiver"
+        | "marketing"
       user_role: "tourist" | "owner" | "hotel" | "admin"
       verification_status: "pending" | "verified" | "rejected"
     }
@@ -1369,7 +1555,15 @@ export const Constants = {
         "declined",
         "cancelled",
       ],
+      consent_context: ["signup", "re_consent", "booking"],
       fuel_policy_kind: ["included", "excluded", "prepaid", "full_to_full"],
+      legal_doc_type: [
+        "terms",
+        "privacy",
+        "operator_agreement",
+        "booking_waiver",
+        "marketing",
+      ],
       user_role: ["tourist", "owner", "hotel", "admin"],
       verification_status: ["pending", "verified", "rejected"],
     },
