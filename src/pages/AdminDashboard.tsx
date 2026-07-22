@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText, FileText } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
@@ -12,6 +13,7 @@ import AuditLog from '../components/admin/AuditLog';
 import LegalDocuments from '../components/admin/LegalDocuments';
 import { BOAT_TYPE_LABELS } from '../components/BoatCard';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
+import { staggerContainer, staggerItem } from '../components/motion';
 import { useAuth } from '../data/AuthContext';
 import { useAsync } from '../hooks/useAsync';
 import { photos } from '../data/photos';
@@ -33,9 +35,10 @@ const STATUS_CHIP: Record<BoatStatus, string> = {
 function BoatList({ boats: list }: { boats: OwnerBoat[] }) {
   if (list.length === 0) return <EmptyState title="No boats here" hint="Nothing matches this filter yet." />;
   return (
-    <div className="space-y-3">
+    <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
       {list.map((b) => (
-        <div key={b.id} className="rounded-2xl border border-lake-100 bg-white p-4">
+        <motion.div variants={staggerItem} key={b.id}
+          className="rounded-2xl border border-lake-100 bg-white p-4 transition-shadow hover:shadow-md">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
               <h3 className="font-semibold text-lake-950">{b.name}</h3>
@@ -59,9 +62,9 @@ function BoatList({ boats: list }: { boats: OwnerBoat[] }) {
               View public listing
             </Link>
           )}
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }
 
