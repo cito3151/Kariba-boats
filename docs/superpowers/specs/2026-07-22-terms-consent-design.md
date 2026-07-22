@@ -46,11 +46,21 @@ One row per document version.
 | version | int | monotonic per doc_type |
 | title | text | |
 | body | text | markdown |
-| is_required | bool | terms/privacy/operator_agreement/booking_waiver = true; marketing = false |
+| is_required | bool | account-gate flag: terms/privacy/operator_agreement = true; booking_waiver/marketing = false |
+| applies_to_roles | text[] null | null = all roles; operator_agreement = `{owner,hotel}`. Scopes which roles the account gate applies to |
 | is_current | bool | exactly one true per doc_type |
 | effective_at | timestamptz | |
 | published_at | timestamptz | |
 | published_by | uuid | profiles.id of the super-admin |
+
+**Two distinct notions of "required":**
+- `is_required = true` means the document is an **account-level gate**: the user must
+  have accepted the current version (for their role) to pass the re-consent gate and
+  perform gated actions. Applies to Terms, Privacy, and (for owner/hotel only, via
+  `applies_to_roles`) the Operator agreement.
+- The **booking waiver** is required *per booking*, enforced at booking time by
+  `create_booking`, not as an account gate. It carries `is_required = false` so it
+  never blocks login. Marketing is never required.
 
 - Partial unique index enforces at most one `is_current = true` per `doc_type`.
 - Unique `(doc_type, version)`.
@@ -85,8 +95,9 @@ Append-only acceptance ledger.
   Validates the version is the current one for that doc_type, inserts one
   `consent_records` row for `auth.uid()`. Only writer to the table.
 - `outstanding_consents(p_user uuid default auth.uid())` returns the set of
-  required, current documents the user has not accepted at the current version
-  (doc_type, version, title). Drives the signup and re-consent surfaces.
+  required, current documents applicable to the user's role that they have not
+  accepted at the current version (doc_type, version, title, body). Excludes the
+  booking waiver and marketing. Drives the signup and re-consent surfaces.
 - `has_outstanding_required_consent(p_user uuid default auth.uid())` boolean helper
   used by the write guards.
 - `publish_legal_document(p_doc_type, p_title, p_body, p_is_required)`
