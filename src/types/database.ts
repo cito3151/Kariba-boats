@@ -66,6 +66,42 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_role: string | null
+          changed: Json | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          label: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_role?: string | null
+          changed?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          label?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_role?: string | null
+          changed?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          label?: string | null
+        }
+        Relationships: []
+      }
       boat_images: {
         Row: {
           boat_id: string
@@ -836,6 +872,22 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      admin_list_audit: {
+        Args: { p_entity_type?: string; p_action?: string; p_limit?: number }
+        Returns: {
+          id: string
+          created_at: string
+          actor_id: string | null
+          actor_email: string | null
+          actor_name: string | null
+          actor_role: string | null
+          action: string
+          entity_type: string
+          entity_id: string | null
+          label: string | null
+          changed: Json | null
+        }[]
       }
       admin_list_users: {
         Args: Record<PropertyKey, never>
