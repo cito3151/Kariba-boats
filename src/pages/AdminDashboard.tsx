@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog } from 'lucide-react';
+import { ShieldCheck, Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import DashboardBanner from '../components/DashboardBanner';
 import StatTile from '../components/StatTile';
@@ -8,6 +8,7 @@ import ApprovalQueue from '../components/admin/ApprovalQueue';
 import AdminBookings from '../components/admin/AdminBookings';
 import UserVerification from '../components/admin/UserVerification';
 import RoleManagement from '../components/admin/RoleManagement';
+import AuditLog from '../components/admin/AuditLog';
 import { BOAT_TYPE_LABELS } from '../components/BoatCard';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import { useAuth } from '../data/AuthContext';
@@ -18,7 +19,7 @@ import { listAllBookings } from '../services/bookings.service';
 import { listOwnersAndHotels, listAllUsers } from '../services/users.service';
 import type { OwnerBoat, BoatStatus } from '../services/boats.service';
 
-type View = 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users' | 'roles';
+type View = 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users' | 'roles' | 'audit';
 
 const STATUS_CHIP: Record<BoatStatus, string> = {
   draft: 'bg-gray-100 text-gray-600',
@@ -87,6 +88,7 @@ export default function AdminDashboard() {
     { key: 'attention', label: 'Maintenance attention', value: list.filter((b) => b.maintenanceStatus === 'due' || b.maintenanceStatus === 'overdue').length, icon: Wrench },
     { key: 'bookings', label: 'Active bookings', value: activeBookings, icon: CalendarCheck },
     { key: 'users', label: 'Unverified owners/hotels', value: unverified, icon: UserCheck },
+    { key: 'audit', label: 'Activity log', value: 0, icon: ScrollText },
   ];
   if (isSuper) {
     tiles.push({ key: 'roles', label: 'Admins & roles', value: (allUsers ?? []).filter((u) => u.role === 'admin').length, icon: UserCog });
@@ -109,6 +111,7 @@ export default function AdminDashboard() {
           {view === 'bookings' && (<><h2 className="mb-3 font-semibold text-lake-950">All bookings</h2><AdminBookings /></>)}
           {view === 'users' && (<><h2 className="mb-3 font-semibold text-lake-950">Owner and hotel verification</h2><UserVerification /></>)}
           {view === 'roles' && isSuper && (<><h2 className="mb-3 font-semibold text-lake-950">Admins and roles</h2><RoleManagement /></>)}
+          {view === 'audit' && (<><h2 className="mb-3 font-semibold text-lake-950">Activity log</h2><AuditLog /></>)}
           {(view === 'all' || view === 'live' || view === 'attention') && (
             <>
               <h2 className="mb-3 font-semibold text-lake-950">
