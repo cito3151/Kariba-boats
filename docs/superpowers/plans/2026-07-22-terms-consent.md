@@ -930,15 +930,15 @@ export async function createBooking(input: BookingInput, touristId: string | nul
   void touristId; // tourist_id is derived server-side in create_booking
   const { data, error } = await supabase.rpc('create_booking', {
     p_boat_id: input.boatId, p_guest_name: input.guestName, p_guest_phone: input.guestPhone,
-    p_hotel_id: input.hotelId ?? null,
+    p_hotel_id: input.hotelId ?? undefined,
     p_start_date: input.startDate, p_days: input.days,
-    p_start_time: input.startTime ?? null, p_duration_hours: input.durationHours ?? null,
+    p_start_time: input.startTime ?? undefined, p_duration_hours: input.durationHours ?? undefined,
     p_group_size: input.groupSize, p_experience_type: input.experienceType,
     p_price_total: input.priceTotal, p_deposit_amount: input.depositAmount,
-    p_notes: input.notes ?? null,
-    // NOTE: use ?? null (not ?? undefined) for these: create_booking has no SQL
-    // defaults on these params, and undefined-valued keys are stripped from the
-    // RPC JSON body, causing PGRST202 (function not resolved) for null hotel/time.
+    p_notes: input.notes ?? undefined,
+    // NOTE (as shipped): migration 20 gives p_hotel_id/p_start_time/p_duration_hours/
+    // p_notes SQL `default null`, so the generated types mark them optional and passing
+    // undefined (key omitted) resolves via the default. See Task 6 follow-up / migration 20.
     p_waiver_version: input.waiverVersion, p_waiver_accepted: input.waiverAccepted,
   }).single();
   if (error) throw new Error(humanizeError(error.message));

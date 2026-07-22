@@ -6,6 +6,9 @@ export function humanizeError(message: string | undefined, fallback = 'Something
   if (!message) return fallback;
   const m = message.toLowerCase();
 
+  if (m.includes('consent required')) {
+    return 'Please review and accept our latest terms to continue.';
+  }
   if (m.includes('row-level security') || m.includes('permission denied') || m.includes('not allowed')) {
     return 'You do not have permission to do that with this account.';
   }
