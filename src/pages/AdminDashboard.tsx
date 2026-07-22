@@ -92,7 +92,7 @@ export default function AdminDashboard() {
     { key: 'audit', label: 'Activity log', value: 0, icon: ScrollText },
   ];
   if (isSuper) {
-    tiles.push({ key: 'roles', label: 'Admins & roles', value: (allUsers ?? []).filter((u) => u.role === 'admin').length, icon: UserCog });
+    tiles.push({ key: 'roles', label: 'Admins and roles', value: (allUsers ?? []).filter((u) => u.role === 'admin').length, icon: UserCog });
     tiles.push({ key: 'legal', label: 'Legal documents', value: 0, icon: FileText });
   }
 
