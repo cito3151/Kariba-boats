@@ -67,6 +67,9 @@ export default function TouristTripsPage() {
                   <p className="text-xs text-lake-500">
                     {b.boatLocation} · {tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · ${b.priceTotal}
                   </p>
+                  {b.captainName && (
+                    <p className="mt-0.5 text-xs text-lake-600">Captain: <span className="font-medium text-lake-900">{b.captainName}</span> · {b.captainPhone}</p>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <StatusBadge status={b.status} />

@@ -396,6 +396,8 @@ export type Database = {
       bookings: {
         Row: {
           boat_id: string
+          captain_name: string | null
+          captain_phone: string | null
           created_at: string
           days: number
           deposit_amount: number
@@ -416,6 +418,8 @@ export type Database = {
         }
         Insert: {
           boat_id: string
+          captain_name?: string | null
+          captain_phone?: string | null
           created_at?: string
           days?: number
           deposit_amount: number
@@ -436,6 +440,8 @@ export type Database = {
         }
         Update: {
           boat_id?: string
+          captain_name?: string | null
+          captain_phone?: string | null
           created_at?: string
           days?: number
           deposit_amount?: number
@@ -479,6 +485,38 @@ export type Database = {
           {
             foreignKeyName: "bookings_tourist_id_fkey"
             columns: ["tourist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      captains: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          phone: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          phone: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "captains_owner_id_fkey"
+            columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1086,10 +1124,43 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      assign_captain: {
+        Args: { p_booking_id: string; p_captain_id: string }
+        Returns: {
+          boat_id: string
+          captain_name: string | null
+          captain_phone: string | null
+          created_at: string
+          days: number
+          deposit_amount: number
+          duration_hours: number | null
+          experience_type: string
+          group_size: number
+          guest_name: string
+          guest_phone: string
+          hotel_id: string | null
+          id: string
+          notes: string | null
+          period: unknown
+          price_total: number
+          start_date: string
+          start_time: string | null
+          status: Database["public"]["Enums"]["booking_status"]
+          tourist_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       cancel_booking: {
         Args: { p_booking_id: string }
         Returns: {
           boat_id: string
+          captain_name: string | null
+          captain_phone: string | null
           created_at: string
           days: number
           deposit_amount: number
@@ -1262,6 +1333,8 @@ export type Database = {
         }
         Returns: {
           boat_id: string
+          captain_name: string | null
+          captain_phone: string | null
           created_at: string
           days: number
           deposit_amount: number
