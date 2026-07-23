@@ -8,7 +8,7 @@ export type MaintenanceStatus = 'ok' | 'approaching' | 'due' | 'overdue';
 
 export interface BoatInput {
   name: string; boatType: BoatKind; capacity: number; description: string; location: string;
-  pricePerHour: number | null; pricePerDay: number | null;
+  pricePerHour: number | null; pricePerDay: number | null; depositPercent: number;
   facilities: string[]; safetyEquipment: string[]; crewIncluded: boolean;
   fuelPolicy: 'included' | 'excluded' | 'prepaid' | 'full_to_full';
   registrationNumber: string; maintenanceIntervalHours: number;
@@ -22,7 +22,7 @@ export interface OwnerBoat extends BoatInput {
 }
 
 const OWNER_COLS = `id, owner_id, name, boat_type, capacity, description, location,
-  price_per_hour, price_per_day, facilities, safety_equipment, crew_included, fuel_policy,
+  price_per_hour, price_per_day, deposit_percent, facilities, safety_equipment, crew_included, fuel_policy,
   registration_number, maintenance_interval_hours, accumulated_hours, last_maintenance_hours,
   next_maintenance_hours, hours_remaining, maintenance_status,
   status, is_active, rejection_reason, pending_changes`;
@@ -33,6 +33,7 @@ function toOwnerBoat(r: any): OwnerBoat {
     id: r.id, ownerId: r.owner_id, name: r.name, boatType: r.boat_type,
     capacity: r.capacity, description: r.description ?? '', location: r.location,
     pricePerHour: r.price_per_hour, pricePerDay: r.price_per_day,
+    depositPercent: r.deposit_percent != null ? Number(r.deposit_percent) : 20,
     facilities: r.facilities ?? [], safetyEquipment: r.safety_equipment ?? [],
     crewIncluded: r.crew_included, fuelPolicy: r.fuel_policy,
     registrationNumber: r.registration_number ?? '',
@@ -66,6 +67,7 @@ export async function createBoat(ownerId: string, input: BoatInput): Promise<Own
     owner_id: ownerId, name: input.name, boat_type: input.boatType,
     capacity: input.capacity, description: input.description, location: input.location,
     price_per_hour: input.pricePerHour, price_per_day: input.pricePerDay,
+    deposit_percent: input.depositPercent,
     facilities: input.facilities, safety_equipment: input.safetyEquipment,
     crew_included: input.crewIncluded, fuel_policy: input.fuelPolicy,
     registration_number: input.registrationNumber,
@@ -105,6 +107,7 @@ export async function setActive(id: string, isActive: boolean): Promise<void> {
 export interface PublicBoat {
   id: string; ownerId: string; name: string; boatType: BoatKind; capacity: number;
   description: string; location: string; pricePerHour: number | null; pricePerDay: number | null;
+  depositPercent: number;
   facilities: string[]; safetyEquipment: string[]; crewIncluded: boolean;
   registrationNumber: string; operatorName: string; operatorPhone: string | null;
   operatorVerified: boolean; operatorTrustScore: number;
@@ -115,6 +118,7 @@ function toPublicBoat(r: any): PublicBoat {
     id: r.id, ownerId: r.owner_id, name: r.name, boatType: r.boat_type, capacity: r.capacity,
     description: r.description ?? '', location: r.location,
     pricePerHour: r.price_per_hour, pricePerDay: r.price_per_day,
+    depositPercent: r.deposit_percent != null ? Number(r.deposit_percent) : 20,
     facilities: r.facilities ?? [], safetyEquipment: r.safety_equipment ?? [],
     crewIncluded: r.crew_included, registrationNumber: r.registration_number ?? '',
     operatorName: r.operator_name ?? '', operatorPhone: r.operator_phone,

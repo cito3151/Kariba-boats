@@ -17,6 +17,7 @@ function toInput(b: OwnerBoat): BoatInput {
   return {
     name: b.name, boatType: b.boatType, capacity: b.capacity, description: b.description,
     location: b.location, pricePerHour: b.pricePerHour, pricePerDay: b.pricePerDay,
+    depositPercent: b.depositPercent,
     facilities: b.facilities, safetyEquipment: b.safetyEquipment, crewIncluded: b.crewIncluded,
     fuelPolicy: b.fuelPolicy, registrationNumber: b.registrationNumber,
     maintenanceIntervalHours: b.maintenanceIntervalHours, accumulatedHours: b.accumulatedHours,
@@ -29,6 +30,7 @@ function toChanges(input: BoatInput): Record<string, unknown> {
     name: input.name, boat_type: input.boatType, capacity: input.capacity,
     description: input.description, location: input.location,
     price_per_hour: input.pricePerHour, price_per_day: input.pricePerDay,
+    deposit_percent: input.depositPercent,
     facilities: input.facilities, safety_equipment: input.safetyEquipment,
     crew_included: input.crewIncluded, fuel_policy: input.fuelPolicy,
     registration_number: input.registrationNumber,
