@@ -1,14 +1,51 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Check, X, Wallet, CheckCircle2, Ban } from 'lucide-react';
+import { ArrowLeft, Check, X, Wallet, CheckCircle2, Ban, UserCheck } from 'lucide-react';
 import PageTransition from '../../components/PageTransition';
 import StatusBadge from '../../components/StatusBadge';
+import CaptainManager from '../../components/owner/CaptainManager';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
 import { useAuth } from '../../data/AuthContext';
 import { useAsync } from '../../hooks/useAsync';
 import * as bookingsSvc from '../../services/bookings.service';
+import * as captainsSvc from '../../services/captains.service';
+import type { Captain } from '../../services/captains.service';
 import type { BookingRow, BookingStatus } from '../../services/bookings.service';
+
+const ASSIGNABLE = new Set<BookingStatus>(['confirmed', 'deposit_paid', 'completed']);
+
+function AssignCaptain({ booking, captains, onAssigned }: {
+  booking: BookingRow; captains: Captain[]; onAssigned: (id: string, fn: () => Promise<void>) => void;
+}) {
+  const [captainId, setCaptainId] = useState('');
+  if (!ASSIGNABLE.has(booking.status)) return null;
+  return (
+    <div className="mt-3 border-t border-lake-100 pt-3">
+      {booking.captainName ? (
+        <p className="flex items-center gap-1.5 text-xs text-lake-600">
+          <UserCheck size={13} className="text-emerald-500" /> Captain: <span className="font-medium text-lake-900">{booking.captainName}</span> · {booking.captainPhone}
+        </p>
+      ) : (
+        <p className="text-xs text-lake-500">No captain assigned yet.</p>
+      )}
+      {captains.length > 0 && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <select value={captainId} onChange={(e) => setCaptainId(e.target.value)}
+            className="rounded-lg border border-lake-100 bg-lake-50 px-3 py-1.5 text-xs outline-none focus:border-lake-400">
+            <option value="">Choose a captain</option>
+            {captains.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <button disabled={!captainId}
+            onClick={() => onAssigned(booking.id, () => captainsSvc.assignCaptain(booking.id, captainId))}
+            className="rounded-lg bg-lake-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
+            {booking.captainName ? 'Reassign' : 'Assign captain'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const ORDER: Record<BookingStatus, number> = {
   requested: 0, confirmed: 1, deposit_paid: 2, completed: 3, declined: 4, cancelled: 5,
@@ -23,6 +60,8 @@ export default function OwnerBookingsPage() {
   const { currentUser } = useAuth();
   const ownerId = currentUser?.id ?? '';
   const { data, loading, error, reload } = useAsync(() => bookingsSvc.listBookingsForOwner(ownerId), [ownerId]);
+  const { data: captainsData, reload: reloadCaptains } = useAsync(() => captainsSvc.listMyCaptains(ownerId), [ownerId]);
+  const captains = captainsData ?? [];
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
 
@@ -49,6 +88,10 @@ export default function OwnerBookingsPage() {
         {actionError && (
           <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</p>
         )}
+
+        <div className="mt-5">
+          <CaptainManager ownerId={ownerId} captains={captains} onChanged={reloadCaptains} />
+        </div>
 
         <div className="mt-5 space-y-3">
           {loading && <LoadingState label="Loading bookings" />}
@@ -107,6 +150,8 @@ export default function OwnerBookingsPage() {
                     </>
                   )}
                 </div>
+
+                <AssignCaptain booking={b} captains={captains} onAssigned={run} />
               </motion.div>
             ))}
           </AnimatePresence>

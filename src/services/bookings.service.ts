@@ -17,10 +17,11 @@ export interface BookingRow {
   startTime: string | null; durationHours: number | null; status: BookingStatus;
   priceTotal: number; depositAmount: number; groupSize: number; hotelId: string | null;
   createdAt: string; boatName: string; boatLocation: string;
+  captainName: string | null; captainPhone: string | null;
 }
 
 const BOOKING_SELECT =
-  'id, boat_id, guest_name, start_date, days, start_time, duration_hours, status, price_total, deposit_amount, group_size, hotel_id, created_at, boats(name, location)';
+  'id, boat_id, guest_name, start_date, days, start_time, duration_hours, status, price_total, deposit_amount, group_size, hotel_id, captain_name, captain_phone, created_at, boats(name, location)';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function toBookingRow(r: any): BookingRow {
@@ -31,6 +32,7 @@ function toBookingRow(r: any): BookingRow {
     status: r.status, priceTotal: Number(r.price_total), depositAmount: Number(r.deposit_amount),
     groupSize: r.group_size, hotelId: r.hotel_id, createdAt: r.created_at,
     boatName: r.boats?.name ?? 'Boat', boatLocation: r.boats?.location ?? '',
+    captainName: r.captain_name ?? null, captainPhone: r.captain_phone ?? null,
   };
 }
 
