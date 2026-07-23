@@ -6,8 +6,10 @@ import StatusBadge from '../components/StatusBadge';
 import BookingModal from '../components/BookingModal';
 import DashboardBanner from '../components/DashboardBanner';
 import BoatImage from '../components/BoatImage';
+import StatTile from '../components/StatTile';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import { priceView } from '../components/BoatCard';
+import { staggerContainer, staggerItem } from '../components/motion';
 import VerificationBanner from '../components/VerificationBanner';
 import { useAuth } from '../data/AuthContext';
 import { useAsync } from '../hooks/useAsync';
@@ -56,21 +58,9 @@ export default function HotelDashboard() {
         <div className="mt-4"><VerificationBanner /></div>
 
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rounded-2xl border border-lake-100 bg-white p-4 shadow-sm">
-            <Users size={18} className="text-amber-600" />
-            <p className="mt-2 text-2xl font-bold tabular-nums text-lake-950">{pendingCount}</p>
-            <p className="text-xs text-lake-500">Pending guest requests</p>
-          </div>
-          <div className="rounded-2xl border border-lake-100 bg-white p-4 shadow-sm">
-            <Building2 size={18} className="text-lake-600" />
-            <p className="mt-2 text-2xl font-bold tabular-nums text-lake-950">{(hotelBookings ?? []).length}</p>
-            <p className="text-xs text-lake-500">Referred bookings</p>
-          </div>
-          <div className="rounded-2xl border border-lake-100 bg-white p-4 shadow-sm">
-            <ShieldCheck size={18} className="text-emerald-600" />
-            <p className="mt-2 text-2xl font-bold tabular-nums text-lake-950">{(boatList ?? []).length}</p>
-            <p className="text-xs text-lake-500">Boats available to book</p>
-          </div>
+          <StatTile index={0} icon={Users} label="Pending guest requests" value={pendingCount} />
+          <StatTile index={1} icon={Building2} label="Referred bookings" value={(hotelBookings ?? []).length} />
+          <StatTile index={2} icon={ShieldCheck} label="Boats available to book" value={(boatList ?? []).length} />
         </div>
 
         <div className="mt-8">
@@ -85,14 +75,15 @@ export default function HotelDashboard() {
           {loading && <LoadingState label="Loading boats" />}
           {error && <ErrorState message={error} onRetry={reload} />}
           {!loading && !error && (
-            <div className="mt-4 divide-y divide-lake-100 rounded-2xl border border-lake-100 bg-white overflow-hidden">
+            <motion.div variants={staggerContainer} initial="hidden" animate="show"
+              className="mt-4 divide-y divide-lake-100 rounded-2xl border border-lake-100 bg-white overflow-hidden">
               {filteredBoats.length === 0 && (
                 <div className="p-6"><EmptyState title="No boats found" hint="No approved boats match your search yet." /></div>
               )}
               {filteredBoats.map((boat) => {
                 const price = priceView(boat);
                 return (
-                  <div key={boat.id} className="flex items-center gap-4 p-3 sm:p-4">
+                  <motion.div variants={staggerItem} key={boat.id} className="flex items-center gap-4 p-3 sm:p-4 transition-colors hover:bg-lake-50">
                     <BoatImage src={`illustration:${boat.boatType}`} className="h-14 w-20 rounded-lg shrink-0" showBadge={false} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -115,10 +106,10 @@ export default function HotelDashboard() {
                     >
                       Book for guest
                     </button>
-                  </div>
+                  </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
           )}
         </div>
 

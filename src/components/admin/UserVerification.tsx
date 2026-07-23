@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { ShieldCheck, ShieldAlert, Clock, X } from 'lucide-react';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
+import { staggerContainer, staggerItem } from '../motion';
 import { useAsync } from '../../hooks/useAsync';
 import * as usersSvc from '../../services/users.service';
 import type { AppUserRow, VerificationStatus } from '../../services/users.service';
@@ -42,7 +44,7 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
   const chip = STATUS_CHIP[user.verificationStatus];
 
   return (
-    <div className="rounded-xl border border-lake-100 bg-white p-3">
+    <motion.div variants={staggerItem} className="rounded-xl border border-lake-100 bg-white p-3 transition-shadow hover:shadow-md">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="font-medium text-lake-950">{user.businessName || user.fullName}</p>
@@ -129,7 +131,7 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -149,13 +151,17 @@ export default function UserVerification() {
         {pending.length === 0 ? (
           <EmptyState title="Nothing pending" hint="New owner and hotel signups appear here for review." />
         ) : (
-          <div className="space-y-3">{pending.map((u) => <AccountRow key={u.id} user={u} onDone={reload} />)}</div>
+          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
+            {pending.map((u) => <AccountRow key={u.id} user={u} onDone={reload} />)}
+          </motion.div>
         )}
       </section>
       {others.length > 0 && (
         <section>
           <h3 className="mb-2 text-sm font-semibold text-lake-800">Reviewed accounts</h3>
-          <div className="space-y-3">{others.map((u) => <AccountRow key={u.id} user={u} onDone={reload} />)}</div>
+          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
+            {others.map((u) => <AccountRow key={u.id} user={u} onDone={reload} />)}
+          </motion.div>
         </section>
       )}
     </div>
