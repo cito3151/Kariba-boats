@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText, FileText } from 'lucide-react';
+import { ShieldCheck, Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText, FileText, LifeBuoy } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import DashboardBanner from '../components/DashboardBanner';
 import StatTile from '../components/StatTile';
@@ -11,6 +11,7 @@ import UserVerification from '../components/admin/UserVerification';
 import RoleManagement from '../components/admin/RoleManagement';
 import AuditLog from '../components/admin/AuditLog';
 import LegalDocuments from '../components/admin/LegalDocuments';
+import EmergencyContactsAdmin from '../components/admin/EmergencyContactsAdmin';
 import { BOAT_TYPE_LABELS } from '../components/BoatCard';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import { staggerContainer, staggerItem } from '../components/motion';
@@ -22,7 +23,7 @@ import { listAllBookings } from '../services/bookings.service';
 import { listOwnersAndHotels, listAllUsers } from '../services/users.service';
 import type { OwnerBoat, BoatStatus } from '../services/boats.service';
 
-type View = 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users' | 'roles' | 'audit' | 'legal';
+type View = 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users' | 'roles' | 'audit' | 'legal' | 'emergency';
 
 const STATUS_CHIP: Record<BoatStatus, string> = {
   draft: 'bg-gray-100 text-gray-600',
@@ -93,6 +94,7 @@ export default function AdminDashboard() {
     { key: 'bookings', label: 'Active bookings', value: activeBookings, icon: CalendarCheck },
     { key: 'users', label: 'Unverified owners/hotels', value: unverified, icon: UserCheck },
     { key: 'audit', label: 'Activity log', value: 0, icon: ScrollText },
+    { key: 'emergency', label: 'Emergency contacts', value: 0, icon: LifeBuoy },
   ];
   if (isSuper) {
     tiles.push({ key: 'roles', label: 'Admins and roles', value: (allUsers ?? []).filter((u) => u.role === 'admin').length, icon: UserCog });
@@ -118,6 +120,7 @@ export default function AdminDashboard() {
           {view === 'roles' && isSuper && (<><h2 className="mb-3 font-semibold text-lake-950">Admins and roles</h2><RoleManagement /></>)}
           {view === 'audit' && (<><h2 className="mb-3 font-semibold text-lake-950">Activity log</h2><AuditLog /></>)}
           {view === 'legal' && isSuper && (<><h2 className="mb-3 font-semibold text-lake-950">Legal documents</h2><LegalDocuments /></>)}
+          {view === 'emergency' && (<><h2 className="mb-3 font-semibold text-lake-950">Emergency contacts</h2><EmergencyContactsAdmin /></>)}
           {(view === 'all' || view === 'live' || view === 'attention') && (
             <>
               <h2 className="mb-3 font-semibold text-lake-950">
