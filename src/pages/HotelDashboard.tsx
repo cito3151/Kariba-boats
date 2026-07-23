@@ -11,6 +11,7 @@ import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import { priceView } from '../components/BoatCard';
 import { staggerContainer, staggerItem } from '../components/motion';
 import VerificationBanner from '../components/VerificationBanner';
+import DocumentUploader from '../components/verification/DocumentUploader';
 import { useAuth } from '../data/AuthContext';
 import { useAsync } from '../hooks/useAsync';
 import { photos } from '../data/photos';
@@ -56,6 +57,10 @@ export default function HotelDashboard() {
         />
 
         <div className="mt-4"><VerificationBanner /></div>
+
+        {currentUser?.verificationStatus !== 'verified' && (
+          <div className="mt-4"><DocumentUploader /></div>
+        )}
 
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatTile index={0} icon={Users} label="Pending guest requests" value={pendingCount} />
