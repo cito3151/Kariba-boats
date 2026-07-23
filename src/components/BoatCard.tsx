@@ -22,13 +22,22 @@ export function priceView(boat: PublicBoat): { amount: number; unit: 'hour' | 'd
   return null;
 }
 
+// Every rate the owner set, in display order (hourly then daily). Used to show
+// hourly and/or daily pricing depending on what the boat offers.
+export function priceLabels(boat: Pick<PublicBoat, 'pricePerHour' | 'pricePerDay'>): { amount: number; unit: 'hour' | 'day'; short: string }[] {
+  const out: { amount: number; unit: 'hour' | 'day'; short: string }[] = [];
+  if (boat.pricePerHour != null) out.push({ amount: boat.pricePerHour, unit: 'hour', short: 'hr' });
+  if (boat.pricePerDay != null) out.push({ amount: boat.pricePerDay, unit: 'day', short: 'day' });
+  return out;
+}
+
 export default function BoatCard({ boat }: { boat: PublicBoat }) {
   const { data } = useAsync(() => imagesSvc.listBoatImages(boat.id), [boat.id]);
   const sorted = [...(data ?? [])].sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
   const images = sorted.length
     ? sorted.map((i) => imagesSvc.publicImageUrl(i.storagePath))
     : [`illustration:${boat.boatType}`];
-  const price = priceView(boat);
+  const rates = priceLabels(boat);
 
   return (
     <motion.div
@@ -53,10 +62,13 @@ export default function BoatCard({ boat }: { boat: PublicBoat }) {
               </span>
             )}
           </div>
-          {price && (
-            <div className="absolute bottom-2 right-2 z-10 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white">
-              ${price.amount}
-              <span className="opacity-75">/{price.unit}</span>
+          {rates.length > 0 && (
+            <div className="absolute bottom-2 right-2 z-10 flex gap-1.5">
+              {rates.map((r) => (
+                <span key={r.unit} className="rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white">
+                  ${r.amount}<span className="opacity-75">/{r.short}</span>
+                </span>
+              ))}
             </div>
           )}
         </div>

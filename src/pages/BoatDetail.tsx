@@ -9,7 +9,7 @@ import Reveal from '../components/Reveal';
 import AutoCarousel from '../components/AutoCarousel';
 import AvailabilityCalendar from '../components/AvailabilityCalendar';
 import { LoadingState, ErrorState } from '../components/StateViews';
-import { BOAT_TYPE_LABELS, priceView } from '../components/BoatCard';
+import { BOAT_TYPE_LABELS, priceView, priceLabels } from '../components/BoatCard';
 import { useAuth } from '../data/AuthContext';
 import { useAsync } from '../hooks/useAsync';
 import * as boats from '../services/boats.service';
@@ -36,6 +36,7 @@ export default function BoatDetail() {
   if (!boat) return <PageTransition><div className="mx-auto max-w-6xl px-4 py-10"><ErrorState message="This boat is not available." /></div></PageTransition>;
 
   const price = priceView(boat);
+  const rates = priceLabels(boat);
   const sorted = [...(imageRows ?? [])].sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
   const galleryImages = sorted.length
     ? sorted.map((i) => imagesSvc.publicImageUrl(i.storagePath))
@@ -177,16 +178,24 @@ export default function BoatDetail() {
           <div>
             <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
               className="sticky top-24 rounded-2xl border border-lake-100 p-5 shadow-sm bg-white">
-              <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-bold text-lake-950">{price ? `$${price.amount}` : 'On request'}</span>
-                {price && <span className="text-sm text-lake-500">/ {price.unit}</span>}
-              </div>
+              {rates.length > 0 ? (
+                <div className="space-y-1">
+                  {rates.map((r) => (
+                    <div key={r.unit} className="flex items-baseline justify-between">
+                      <span className="text-2xl font-bold text-lake-950">${r.amount}</span>
+                      <span className="text-sm text-lake-500">per {r.unit}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-2xl font-bold text-lake-950">On request</span>
+              )}
 
               <button onClick={handleBookClick}
                 className="mt-4 w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 transition-colors">
                 Request to book
               </button>
-              <p className="mt-2 text-center text-[11px] text-lake-400">20% deposit to confirm · balance paid on the day</p>
+              <p className="mt-2 text-center text-[11px] text-lake-400">{boat.depositPercent}% deposit to confirm · balance paid on the day</p>
               {!currentUser && (
                 <p className="mt-2 text-center text-[11px] text-lake-400">
                   You will need to log in or create a free account to send a booking request.

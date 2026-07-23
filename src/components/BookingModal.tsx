@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import type { PublicBoat } from '../services/boats.service';
-import { priceView } from './BoatCard';
 import { createBooking } from '../services/bookings.service';
 import { DAY_END, DAY_START, minutesToTime, toISODate } from '../data/availability';
 import { useCurrentDocuments } from './legal/useCurrentDocuments';
@@ -36,17 +35,16 @@ type Step = 'form' | 'submitting' | 'success';
 export default function BookingModal({
   boat, touristId, hotelId = null, initialName = '', initialPhone = '', onClose,
 }: Props) {
-  const price = priceView(boat);
-  const isHourly = price?.unit === 'hour';
-  const amount = price?.amount ?? 0;
+  const hasHourly = boat.pricePerHour != null;
+  const hasDaily = boat.pricePerDay != null;
 
   const [step, setStep] = useState<Step>('form');
   const [guestName, setGuestName] = useState(initialName);
   const [guestPhone, setGuestPhone] = useState(initialPhone);
   const [date, setDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [startTime, setStartTime] = useState('16:00');
   const [durationHours, setDurationHours] = useState(2);
-  const [tripDays, setTripDays] = useState(1);
   const [groupSize, setGroupSize] = useState(2);
   const [experienceType, setExperienceType] = useState('sunset');
   const [notes, setNotes] = useState('');
@@ -56,13 +54,27 @@ export default function BookingModal({
   const { get: getDoc } = useCurrentDocuments();
   const [waiverAccepted, setWaiverAccepted] = useState(false);
   const [showWaiver, setShowWaiver] = useState(false);
+  // Default to daily when available; hourly only otherwise. Tourist can switch when both exist.
+  const [rateMode, setRateMode] = useState<'hour' | 'day'>(hasDaily ? 'day' : 'hour');
 
-  const priceTotal = isHourly ? amount * durationHours : amount * tripDays;
-  const deposit = Math.round(priceTotal * 0.2);
+  const isHourly = rateMode === 'hour';
+  const amount = isHourly ? (boat.pricePerHour ?? 0) : (boat.pricePerDay ?? 0);
+  const days = (() => {
+    if (isHourly) return 1;
+    if (!date || !endDate) return 1;
+    const ms = new Date(endDate).getTime() - new Date(date).getTime();
+    return ms >= 0 ? Math.round(ms / 86_400_000) + 1 : 1;
+  })();
+  const priceTotal = isHourly ? amount * durationHours : amount * days;
+  const deposit = Math.round((priceTotal * boat.depositPercent) / 100);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!isHourly && (!endDate || endDate < date)) {
+      setError('Choose an end date on or after the start date.');
+      return;
+    }
     if (!waiverAccepted) {
       setError('Please accept the booking waiver to continue.');
       return;
@@ -77,7 +89,7 @@ export default function BookingModal({
           guestPhone,
           hotelId,
           startDate: date,
-          days: isHourly ? 1 : tripDays,
+          days,
           startTime: isHourly ? startTime : null,
           durationHours: isHourly ? durationHours : null,
           groupSize,
@@ -127,6 +139,18 @@ export default function BookingModal({
             {step === 'form' && (
               <motion.form key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onSubmit={submit} className="mt-4 space-y-3">
+                {hasHourly && hasDaily && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => setRateMode('day')}
+                      className={`rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${rateMode === 'day' ? 'border-lake-600 bg-lake-50 text-lake-800' : 'border-lake-100 text-lake-500 hover:bg-lake-50'}`}>
+                      Daily ${boat.pricePerDay}/day
+                    </button>
+                    <button type="button" onClick={() => setRateMode('hour')}
+                      className={`rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${rateMode === 'hour' ? 'border-lake-600 bg-lake-50 text-lake-800' : 'border-lake-100 text-lake-500 hover:bg-lake-50'}`}>
+                      Hourly ${boat.pricePerHour}/hour
+                    </button>
+                  </div>
+                )}
                 <div>
                   <label className="text-xs font-medium text-lake-500">
                     {hotelId ? "Guest's full name" : 'Your full name'}
@@ -145,7 +169,7 @@ export default function BookingModal({
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-medium text-lake-500">Date</label>
+                    <label className="text-xs font-medium text-lake-500">{isHourly ? 'Date' : 'Start date'}</label>
                     <input required type="date" min={toISODate(new Date())} value={date}
                       onChange={(e) => setDate(e.target.value)}
                       className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400" />
@@ -177,10 +201,11 @@ export default function BookingModal({
                   </div>
                 ) : (
                   <div>
-                    <label className="text-xs font-medium text-lake-500">Number of days</label>
-                    <input required type="number" min={1} max={30} value={tripDays}
-                      onChange={(e) => setTripDays(Math.max(1, Number(e.target.value) || 1))}
+                    <label className="text-xs font-medium text-lake-500">End date</label>
+                    <input required type="date" min={date || toISODate(new Date())} value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
                       className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400" />
+                    <p className="mt-1 text-[11px] text-lake-400">{days} day{days > 1 ? 's' : ''} total, start and end inclusive.</p>
                   </div>
                 )}
 
@@ -200,11 +225,11 @@ export default function BookingModal({
 
                 <div className="rounded-lg bg-lake-50 px-3 py-2.5 text-xs text-lake-600 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span>{isHourly ? `$${amount}/hour x ${durationHours} hours` : `$${amount}/day x ${tripDays} day${tripDays > 1 ? 's' : ''}`}</span>
+                    <span>{isHourly ? `$${amount}/hour x ${durationHours} hours` : `$${amount}/day x ${days} day${days > 1 ? 's' : ''}`}</span>
                     <span className="font-semibold text-lake-900">${priceTotal}</span>
                   </div>
                   <div className="flex items-center justify-between border-t border-lake-100 pt-1.5">
-                    <span>Deposit to confirm (20%)</span>
+                    <span>Deposit to confirm ({boat.depositPercent}%)</span>
                     <span className="font-semibold text-lake-900">${deposit}</span>
                   </div>
                   <div className="flex items-center justify-between">
