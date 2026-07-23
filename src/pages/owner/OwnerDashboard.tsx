@@ -8,6 +8,7 @@ import BoatImage from '../../components/BoatImage';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
 import StatTile from '../../components/StatTile';
 import VerificationBanner from '../../components/VerificationBanner';
+import DocumentUploader from '../../components/verification/DocumentUploader';
 import { useAuth } from '../../data/AuthContext';
 import { useAsync } from '../../hooks/useAsync';
 import { photos } from '../../data/photos';
@@ -111,6 +112,10 @@ export default function OwnerDashboard() {
         />
 
         <div className="mt-4"><VerificationBanner /></div>
+
+        {currentUser?.verificationStatus !== 'verified' && (
+          <div className="mt-4"><DocumentUploader /></div>
+        )}
 
         <AnimatePresence>
           {unread.map((n) => (

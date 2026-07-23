@@ -781,6 +781,41 @@ export type Database = {
           },
         ]
       }
+      verification_documents: {
+        Row: {
+          file_name: string
+          id: string
+          label: string | null
+          storage_path: string
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          file_name: string
+          id?: string
+          label?: string | null
+          storage_path: string
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          file_name?: string
+          id?: string
+          label?: string | null
+          storage_path?: string
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       public_boats: {
@@ -789,6 +824,7 @@ export type Database = {
           capacity: number | null
           created_at: string | null
           crew_included: boolean | null
+          deposit_percent: number | null
           description: string | null
           facilities: string[] | null
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"] | null

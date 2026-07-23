@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, ShieldAlert, Clock, X } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Clock, X, ExternalLink } from 'lucide-react';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
 import { staggerContainer, staggerItem } from '../motion';
 import { useAsync } from '../../hooks/useAsync';
 import * as usersSvc from '../../services/users.service';
 import type { AppUserRow, VerificationStatus } from '../../services/users.service';
+import { listUserDocuments, signedUrl } from '../../services/documents.service';
 
 const STATUS_CHIP: Record<VerificationStatus, { label: string; className: string }> = {
   pending: { label: 'Pending', className: 'bg-amber-100 text-amber-800' },
@@ -22,6 +23,12 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
   const [hotelName, setHotelName] = useState(user.businessName ?? '');
   const [location, setLocation] = useState('');
   const [commission, setCommission] = useState(8);
+  const { data: docsData } = useAsync(() => listUserDocuments(user.id), [user.id]);
+  const docs = docsData ?? [];
+  const hasDocs = docs.length > 0;
+  const viewDoc = async (path: string) => {
+    try { window.open(await signedUrl(path), '_blank', 'noopener'); } catch { setError('Could not open the document.'); }
+  };
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true); setError('');
@@ -59,6 +66,24 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
         </span>
       </div>
 
+      <div className="mt-3">
+        <p className="text-xs font-semibold text-lake-600">Registration documents ({docs.length})</p>
+        {docs.length === 0 ? (
+          <p className="mt-1 text-xs text-amber-700">None uploaded yet. This account cannot be verified until it uploads at least one document.</p>
+        ) : (
+          <ul className="mt-1 space-y-1">
+            {docs.map((d) => (
+              <li key={d.id}>
+                <button onClick={() => viewDoc(d.storagePath)}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-lake-700 hover:text-lake-900">
+                  <ExternalLink size={12} /> {d.label || d.fileName}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {error && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
 
       {mode === 'none' && (
@@ -72,12 +97,14 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
                   className="mt-1 w-24 rounded-lg border border-lake-100 bg-lake-50 px-3 py-1.5 text-sm outline-none focus:border-lake-400" />
               </div>
               {user.role === 'hotel' ? (
-                <button onClick={() => { setMode('hotel'); setError(''); }} disabled={busy}
+                <button onClick={() => { setMode('hotel'); setError(''); }} disabled={busy || !hasDocs}
+                  title={hasDocs ? '' : 'Upload of a registration document is required first'}
                   className="rounded-lg bg-lake-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
                   Verify hotel
                 </button>
               ) : (
-                <button onClick={verifyOwner} disabled={busy}
+                <button onClick={verifyOwner} disabled={busy || !hasDocs}
+                  title={hasDocs ? '' : 'Upload of a registration document is required first'}
                   className="rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
                   Verify
                 </button>
