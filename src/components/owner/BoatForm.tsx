@@ -18,7 +18,7 @@ const FUEL_POLICIES: { value: BoatInput['fuelPolicy']; label: string }[] = [
 
 const EMPTY: BoatInput = {
   name: '', boatType: 'fishing', capacity: 4, description: '', location: '',
-  pricePerHour: null, pricePerDay: null, facilities: [], safetyEquipment: [],
+  pricePerHour: null, pricePerDay: null, depositPercent: 20, facilities: [], safetyEquipment: [],
   crewIncluded: true, fuelPolicy: 'included', registrationNumber: '',
   maintenanceIntervalHours: 100, accumulatedHours: 0, lastMaintenanceHours: 0,
 };
@@ -37,6 +37,8 @@ function validate(v: BoatInput): Record<string, string> {
   const hasHour = v.pricePerHour != null && v.pricePerHour > 0;
   const hasDay = v.pricePerDay != null && v.pricePerDay > 0;
   if (!hasHour && !hasDay) errors.price = 'Set an hourly price, a daily price, or both.';
+  if (v.depositPercent < 20 || v.depositPercent > 100)
+    errors.depositPercent = 'Deposit must be between 20 and 100 percent.';
   if (!(v.maintenanceIntervalHours > 0))
     errors.maintenanceIntervalHours = 'Service interval must be greater than 0.';
   if (v.lastMaintenanceHours > v.accumulatedHours)
@@ -148,6 +150,14 @@ export default function BoatForm({
         </div>
       </div>
       {err('price')}
+
+      <div className="sm:max-w-xs">
+        <label className={labelClass}>Deposit to confirm a booking (percent)</label>
+        <input type="number" min={20} max={100} step={1} value={v.depositPercent}
+          onChange={(e) => set('depositPercent', Number(e.target.value))} className={inputClass} />
+        <p className="mt-1 text-xs text-lake-400">Minimum 20 percent. Raise it if you want a larger deposit.</p>
+        {err('depositPercent')}
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>

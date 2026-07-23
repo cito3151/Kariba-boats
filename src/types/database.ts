@@ -283,6 +283,7 @@ export type Database = {
           created_at: string
           crew_included: boolean
           deleted_at: string | null
+          deposit_percent: number
           description: string | null
           facilities: string[]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
@@ -316,6 +317,7 @@ export type Database = {
           created_at?: string
           crew_included?: boolean
           deleted_at?: string | null
+          deposit_percent?: number
           description?: string | null
           facilities?: string[]
           fuel_policy?: Database["public"]["Enums"]["fuel_policy_kind"]
@@ -349,6 +351,7 @@ export type Database = {
           created_at?: string
           crew_included?: boolean
           deleted_at?: string | null
+          deposit_percent?: number
           description?: string | null
           facilities?: string[]
           fuel_policy?: Database["public"]["Enums"]["fuel_policy_kind"]
@@ -885,6 +888,7 @@ export type Database = {
           created_at: string
           crew_included: boolean
           deleted_at: string | null
+          deposit_percent: number
           description: string | null
           facilities: string[]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
@@ -927,6 +931,7 @@ export type Database = {
           created_at: string
           crew_included: boolean
           deleted_at: string | null
+          deposit_percent: number
           description: string | null
           facilities: string[]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
@@ -1064,6 +1069,7 @@ export type Database = {
           created_at: string
           crew_included: boolean
           deleted_at: string | null
+          deposit_percent: number
           description: string | null
           facilities: string[]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
@@ -1145,6 +1151,7 @@ export type Database = {
           created_at: string
           crew_included: boolean
           deleted_at: string | null
+          deposit_percent: number
           description: string | null
           facilities: string[]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
@@ -1228,6 +1235,7 @@ export type Database = {
           created_at: string
           crew_included: boolean
           deleted_at: string | null
+          deposit_percent: number
           description: string | null
           facilities: string[]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
@@ -1324,6 +1332,7 @@ export type Database = {
           created_at: string
           crew_included: boolean
           deleted_at: string | null
+          deposit_percent: number
           description: string | null
           facilities: string[]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
@@ -1366,6 +1375,7 @@ export type Database = {
           created_at: string
           crew_included: boolean
           deleted_at: string | null
+          deposit_percent: number
           description: string | null
           facilities: string[]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
