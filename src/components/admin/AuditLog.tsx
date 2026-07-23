@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { staggerContainer, staggerItem } from '../motion';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
 import { useAsync } from '../../hooks/useAsync';
 import { listAudit } from '../../services/audit.service';
@@ -53,7 +55,7 @@ function ChangeDetails({ entry }: { entry: AuditEntry }) {
 function Row({ entry }: { entry: AuditEntry }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-xl border border-lake-100 bg-white p-3">
+    <motion.div variants={staggerItem} className="rounded-xl border border-lake-100 bg-white p-3 transition-shadow hover:shadow-md">
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center justify-between gap-3 text-left">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -69,7 +71,7 @@ function Row({ entry }: { entry: AuditEntry }) {
         {open ? <ChevronUp size={16} className="shrink-0 text-lake-400" /> : <ChevronDown size={16} className="shrink-0 text-lake-400" />}
       </button>
       {open && <div className="mt-2 border-t border-lake-100 pt-2"><ChangeDetails entry={entry} /></div>}
-    </div>
+    </motion.div>
   );
 }
 
@@ -103,7 +105,9 @@ export default function AuditLog() {
       {!loading && !error && rows.length === 0 && (
         <EmptyState title="No activity yet" hint="Changes across the platform will appear here as they happen." />
       )}
-      {rows.map((e) => <Row key={e.id} entry={e} />)}
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
+        {rows.map((e) => <Row key={e.id} entry={e} />)}
+      </motion.div>
     </div>
   );
 }

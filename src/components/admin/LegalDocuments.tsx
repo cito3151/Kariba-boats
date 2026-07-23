@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { LoadingState, ErrorState } from '../StateViews';
 import { useAsync } from '../../hooks/useAsync';
 import { listCurrentDocuments, publishDocument, type LegalDocument } from '../../services/legal.service';
+import { staggerContainer, staggerItem } from '../motion';
 
 function Editor({ doc, onPublished }: { doc: LegalDocument; onPublished: () => void }) {
   const [title, setTitle] = useState(doc.title);
@@ -26,7 +28,7 @@ function Editor({ doc, onPublished }: { doc: LegalDocument; onPublished: () => v
   };
 
   return (
-    <div className="rounded-2xl border border-lake-100 bg-white p-4">
+    <motion.div variants={staggerItem} className="rounded-2xl border border-lake-100 bg-white p-4 transition-shadow hover:shadow-md">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-lake-950">{doc.docType}</h3>
         <span className="text-xs text-lake-500">current v{doc.version}{doc.isRequired ? ' · required' : ''}</span>
@@ -45,7 +47,7 @@ function Editor({ doc, onPublished }: { doc: LegalDocument; onPublished: () => v
         className="mt-2 rounded-lg bg-lake-700 px-4 py-2 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-60">
         {busy ? 'Publishing' : 'Publish new version'}
       </button>
-    </div>
+    </motion.div>
   );
 }
 
@@ -55,8 +57,8 @@ export default function LegalDocuments() {
   if (loading) return <LoadingState label="Loading documents" />;
   if (error) return <ErrorState message={error} onRetry={reload} />;
   return (
-    <div className="space-y-3">
+    <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
       {docs.map((d) => <Editor key={d.docType} doc={d} onPublished={reload} />)}
-    </div>
+    </motion.div>
   );
 }

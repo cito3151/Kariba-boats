@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, Ban, Wrench } from 'lucide-react';
 import PendingChangesDiff from './PendingChangesDiff';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
+import { staggerContainer, staggerItem } from '../motion';
 import { useAsync } from '../../hooks/useAsync';
 import { supabase } from '../../lib/supabase';
 import * as boats from '../../services/boats.service';
@@ -177,8 +178,9 @@ export default function ApprovalQueue() {
           {attention.length === 0 ? (
             <p className="text-sm text-lake-500">No boats are due or overdue for maintenance.</p>
           ) : (
-            attention.map((b) => (
-              <div key={b.id} className="flex items-center justify-between rounded-xl border border-lake-100 bg-white px-4 py-3">
+            <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-2">
+            {attention.map((b) => (
+              <motion.div variants={staggerItem} key={b.id} className="flex items-center justify-between rounded-xl border border-lake-100 bg-white px-4 py-3 transition-shadow hover:shadow-md">
                 <div>
                   <p className="text-sm font-medium text-lake-950">{b.name}</p>
                   <p className="text-xs text-lake-500">{names[b.ownerId] ?? 'Owner'}</p>
@@ -188,8 +190,9 @@ export default function ApprovalQueue() {
                 }`}>
                   {b.maintenanceStatus === 'overdue' ? 'Overdue' : 'Due'}
                 </span>
-              </div>
-            ))
+              </motion.div>
+            ))}
+            </motion.div>
           )}
         </div>
       </section>

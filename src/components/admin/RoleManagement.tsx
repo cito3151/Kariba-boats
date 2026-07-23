@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { ShieldCheck, Search } from 'lucide-react';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
+import { staggerContainer, staggerItem } from '../motion';
 import { useAsync } from '../../hooks/useAsync';
 import * as usersSvc from '../../services/users.service';
 import type { ManagedUser } from '../../services/users.service';
@@ -23,7 +25,7 @@ function UserRow({ user, onSaved }: { user: ManagedUser; onSaved: () => void }) 
   };
 
   return (
-    <div className="rounded-xl border border-lake-100 bg-white p-3">
+    <motion.div variants={staggerItem} className="rounded-xl border border-lake-100 bg-white p-3 transition-shadow hover:shadow-md">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate font-medium text-lake-950">{user.email}</p>
@@ -55,7 +57,7 @@ function UserRow({ user, onSaved }: { user: ManagedUser; onSaved: () => void }) 
         </button>
       </div>
       {error && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
-    </div>
+    </motion.div>
   );
 }
 
@@ -84,7 +86,9 @@ export default function RoleManagement() {
       {filtered.length === 0 ? (
         <EmptyState title="No users match" hint="Try a different email or name." />
       ) : (
-        filtered.map((u) => <UserRow key={u.id} user={u} onSaved={reload} />)
+        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
+          {filtered.map((u) => <UserRow key={u.id} user={u} onSaved={reload} />)}
+        </motion.div>
       )}
     </div>
   );
