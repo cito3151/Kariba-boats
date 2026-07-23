@@ -115,8 +115,8 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       <footer className="border-t border-lake-100 bg-white">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 text-xs text-lake-500 flex flex-col sm:flex-row justify-between gap-2">
-          <p>Kariba Lake Access, MVP prototype. Mock data, no real payments are processed.</p>
-          <p>Built for tourists, hotels, boat operators, and lake tourism in Kariba, Zimbabwe.</p>
+          <p>© {new Date().getFullYear()} Kariba Lake Access. Verified boat bookings on Lake Kariba.</p>
+          <p>Built for tourists, hotels, boat owners, and travel agencies across Kariba, Zimbabwe.</p>
         </div>
       </footer>
     </div>
