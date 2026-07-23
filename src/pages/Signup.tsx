@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AlertCircle, Anchor, Building2, ClipboardCheck, MailCheck } from 'lucide-react';
+import { AlertCircle, Anchor, Building2, ClipboardCheck, MailCheck, Briefcase } from 'lucide-react';
 import AuthCard from '../components/AuthCard';
 import PageTransition from '../components/PageTransition';
 import { useAuth, type Role } from '../data/AuthContext';
@@ -13,6 +13,7 @@ const roleHome: Record<string, string> = {
   tourist: '/',
   owner: '/owner',
   hotel: '/hotel',
+  agency: '/agency',
   admin: '/admin',
 };
 
@@ -20,6 +21,7 @@ const roleOptions: { value: Role; label: string; icon: typeof Anchor }[] = [
   { value: 'tourist', label: 'Tourist', icon: Anchor },
   { value: 'hotel', label: 'Hotel or lodge', icon: Building2 },
   { value: 'owner', label: 'Boat owner', icon: ClipboardCheck },
+  { value: 'agency', label: 'Travel agency', icon: Briefcase },
 ];
 
 export default function Signup() {
@@ -139,7 +141,7 @@ export default function Signup() {
   return (
     <PageTransition>
       <AuthCard title="Create an account" subtitle="Join Kariba Lake Access" wide>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {roleOptions.map((opt) => (
             <button
               key={opt.value}
@@ -181,7 +183,7 @@ export default function Signup() {
             />
           </div>
 
-          {(role === 'owner' || role === 'hotel') && (
+          {(role === 'owner' || role === 'hotel' || role === 'agency') && (
             <div>
               <label className="text-xs font-medium text-lake-500">Business name</label>
               <input
@@ -189,18 +191,18 @@ export default function Signup() {
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
-                placeholder={role === 'hotel' ? 'e.g. Lake Kariba Lodge' : 'e.g. Zambezi Houseboats'}
+                placeholder={role === 'hotel' ? 'e.g. Lake Kariba Lodge' : role === 'agency' ? 'e.g. Zambezi Travel' : 'e.g. Zambezi Houseboats'}
               />
             </div>
           )}
 
-          {(role === 'owner' || role === 'tourist') && (
+          {(role === 'owner' || role === 'tourist' || role === 'agency') && (
             <div>
               <label className="text-xs font-medium text-lake-500">
-                Phone / WhatsApp {role === 'owner' ? '' : '(optional)'}
+                Phone / WhatsApp {role === 'owner' || role === 'agency' ? '' : '(optional)'}
               </label>
               <input
-                required={role === 'owner'}
+                required={role === 'owner' || role === 'agency'}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
@@ -234,11 +236,11 @@ export default function Signup() {
             </div>
           </div>
 
-          {(role === 'hotel' || role === 'owner') && (
+          {(role === 'hotel' || role === 'owner' || role === 'agency') && (
             <p className="text-xs text-lake-500">
-              New {role === 'hotel' ? 'hotel' : 'owner'} accounts and their boat listings are reviewed
-              by the Kariba Lake Access team before they go live. You can set everything up in your
-              portal right away while verification is pending.
+              New {role === 'hotel' ? 'hotel' : role === 'agency' ? 'travel agency' : 'owner'} accounts are
+              reviewed by the Kariba Lake Access team, who check your uploaded registration documents
+              before you go live. You can set everything up in your portal while verification is pending.
             </p>
           )}
 

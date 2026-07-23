@@ -7,7 +7,7 @@ import { useAsync } from '../../hooks/useAsync';
 import * as usersSvc from '../../services/users.service';
 import type { ManagedUser } from '../../services/users.service';
 
-const ROLES: ManagedUser['role'][] = ['tourist', 'owner', 'hotel', 'admin'];
+const ROLES: ManagedUser['role'][] = ['tourist', 'owner', 'hotel', 'agency', 'admin'];
 
 function UserRow({ user, onSaved }: { user: ManagedUser; onSaved: () => void }) {
   const [role, setRole] = useState<ManagedUser['role']>(user.role);
