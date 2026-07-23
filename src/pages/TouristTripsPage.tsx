@@ -5,6 +5,7 @@ import { Anchor, Ban } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import StatusBadge from '../components/StatusBadge';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
+import EmergencyContacts from '../components/EmergencyContacts';
 import { useAuth } from '../data/AuthContext';
 import { useAsync } from '../hooks/useAsync';
 import * as bookingsSvc from '../services/bookings.service';
@@ -80,6 +81,8 @@ export default function TouristTripsPage() {
             ))}
           </AnimatePresence>
         </div>
+
+        {rows.length > 0 && <div className="mt-8"><EmergencyContacts /></div>}
       </div>
     </PageTransition>
   );

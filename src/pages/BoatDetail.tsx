@@ -10,6 +10,7 @@ import AutoCarousel from '../components/AutoCarousel';
 import AvailabilityCalendar from '../components/AvailabilityCalendar';
 import { LoadingState, ErrorState } from '../components/StateViews';
 import { BOAT_TYPE_LABELS, priceView, priceLabels } from '../components/BoatCard';
+import EmergencyContacts from '../components/EmergencyContacts';
 import { useAuth } from '../data/AuthContext';
 import { useAsync } from '../hooks/useAsync';
 import * as boats from '../services/boats.service';
@@ -211,6 +212,8 @@ export default function BoatDetail() {
                 </div>
               </div>
             </motion.div>
+
+            <div className="mt-4"><EmergencyContacts compact /></div>
           </div>
         </div>
       </div>
