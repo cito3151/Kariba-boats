@@ -35,29 +35,28 @@ be forged from the client.
 
 ## Server-authoritative pricing: rework `create_booking` (migration 22)
 
-- Add `p_rate_type text default null` ('hourly' | 'daily').
-- Keep `p_price_total` and `p_deposit_amount` in the signature but make them
-  optional (`default null`) and **ignore** them. This keeps the RPC backward compatible
-  so a production frontend still on the old build keeps working during deploy.
-- Server logic:
-  - Resolve rate type: use `p_rate_type` if given; else infer ('hourly' if only hourly
-    price, 'daily' if only daily, error if ambiguous/none).
-  - daily: `v_total := boat.price_per_day * p_days`. Require `price_per_day` is not null.
-  - hourly: `v_total := boat.price_per_hour * p_duration_hours`. Require `price_per_hour`
-    is not null and `p_duration_hours` is not null.
-  - `v_deposit := round(v_total * boat.deposit_percent / 100)`.
-  - Insert the booking with the **computed** `price_total` and `deposit_amount` (not the
-    client values). Everything else (consent guard, waiver, tourist_id derivation,
-    exclusion-violation handling) unchanged.
-- Signature stays backward compatible; the function is `create or replace` (no drop needed
-  since we only add optional params at the end and change the body).
+- **No signature change** and no new parameter: a body-only `create or replace`, so it is
+  fully backward compatible (a production frontend on the old build keeps working during
+  the deploy, no drop, no PGRST202 window).
+- The rate type is **inferred** exactly as the `period` column does: hourly when both
+  `p_start_time` and `p_duration_hours` are present, otherwise daily. This matches how the
+  client already sends the fields, so no `p_rate_type` param is needed. (When a boat has
+  both rates and the tourist picks one, the client simply sends the fields for that rate.)
+- `p_price_total` and `p_deposit_amount` are still received but **ignored**; the server
+  computes both:
+  - daily: `v_total := boat.price_per_day * p_days` (require `price_per_day` not null).
+  - hourly: `v_total := boat.price_per_hour * p_duration_hours` (require `price_per_hour` not null).
+  - `v_deposit := round(v_total * coalesce(boat.deposit_percent, 20) / 100)`.
+  - Insert with the **computed** `price_total` and `deposit_amount`. Consent guard, waiver
+    recording, `tourist_id` derivation, and exclusion-violation handling are unchanged.
 
 ## Client changes
 
 - `boats.service.ts`: `BoatInput` and `OwnerBoat` gain `depositPercent: number`; map
   `deposit_percent`. `toChanges` includes `deposit_percent`.
-- `bookings.service.ts`: `createBooking` sends `p_rate_type` and the span; stops sending
-  a client-computed price (may still send it, ignored). Returns the server `deposit_amount`.
+- `bookings.service.ts`: `createBooking` sends the span for the chosen rate (days for
+  daily, or start_time + duration_hours for hourly). It may still send a client-computed
+  price; the server ignores it and returns the authoritative `deposit_amount`.
 - `components/owner/BoatForm.tsx`: a "Deposit percentage" number input (min 20, max 100,
   default 20) with helper text.
 - `components/BoatCard.tsx` and `pages/BoatDetail.tsx`: show hourly and/or daily price,
@@ -84,8 +83,8 @@ be forged from the client.
    - daily, 3-day range on a boat at $100/day, 20% deposit -> total 300, deposit 60.
    - hourly, 2h on a boat at $50/hour, 30% deposit -> total 100, deposit 30.
    - rejects when the chosen rate has no price on the boat.
-   - a call with the old arg shape (no `p_rate_type`, sends `p_price_total`) still resolves
-     and computes server-side (backward compatible).
+   - a call with the current arg shape (sends `p_price_total`) still resolves and computes
+     server-side; the returned deposit reflects the boat's percent, not the client value.
 3. Multi-day double-booking across an overlapping span is still rejected (exclusion constraint).
 4. UI: a both-rate boat shows the toggle; date range computes inclusive days; the deposit
    shown reflects the owner's percent; a day-only boat shows only daily; hour-only only hourly.
