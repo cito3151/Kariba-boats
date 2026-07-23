@@ -66,6 +66,33 @@ export type Database = {
           },
         ]
       }
+      agencies: {
+        Row: {
+          commission_rate: number
+          created_at: string
+          id: string
+          is_verified: boolean
+          location: string
+          name: string
+        }
+        Insert: {
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          is_verified?: boolean
+          location: string
+          name: string
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          is_verified?: boolean
+          location?: string
+          name?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -395,6 +422,7 @@ export type Database = {
       }
       bookings: {
         Row: {
+          agency_id: string | null
           boat_id: string
           captain_name: string | null
           captain_phone: string | null
@@ -417,6 +445,7 @@ export type Database = {
           tourist_id: string | null
         }
         Insert: {
+          agency_id?: string | null
           boat_id: string
           captain_name?: string | null
           captain_phone?: string | null
@@ -439,6 +468,7 @@ export type Database = {
           tourist_id?: string | null
         }
         Update: {
+          agency_id?: string | null
           boat_id?: string
           captain_name?: string | null
           captain_phone?: string | null
@@ -461,6 +491,13 @@ export type Database = {
           tourist_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "bookings_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bookings_boat_id_fkey"
             columns: ["boat_id"]
@@ -720,6 +757,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          agency_id: string | null
           business_name: string | null
           created_at: string
           full_name: string
@@ -736,6 +774,7 @@ export type Database = {
           verification_status: Database["public"]["Enums"]["verification_status"]
         }
         Insert: {
+          agency_id?: string | null
           business_name?: string | null
           created_at?: string
           full_name?: string
@@ -752,6 +791,7 @@ export type Database = {
           verification_status?: Database["public"]["Enums"]["verification_status"]
         }
         Update: {
+          agency_id?: string | null
           business_name?: string | null
           created_at?: string
           full_name?: string
@@ -768,6 +808,13 @@ export type Database = {
           verification_status?: Database["public"]["Enums"]["verification_status"]
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_hotel_id_fkey"
             columns: ["hotel_id"]
@@ -956,6 +1003,7 @@ export type Database = {
           p_user_id: string
         }
         Returns: {
+          agency_id: string | null
           business_name: string | null
           created_at: string
           full_name: string
@@ -1071,6 +1119,39 @@ export type Database = {
           p_user_id: string
         }
         Returns: {
+          agency_id: string | null
+          business_name: string | null
+          created_at: string
+          full_name: string
+          hotel_id: string | null
+          id: string
+          is_super_admin: boolean
+          phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          trust_score: number
+          updated_at: string
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["verification_status"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_verify_agency: {
+        Args: {
+          p_agency_name: string
+          p_commission?: number
+          p_location: string
+          p_trust_score?: number
+          p_user_id: string
+        }
+        Returns: {
+          agency_id: string | null
           business_name: string | null
           created_at: string
           full_name: string
@@ -1102,6 +1183,7 @@ export type Database = {
           p_user_id: string
         }
         Returns: {
+          agency_id: string | null
           business_name: string | null
           created_at: string
           full_name: string
@@ -1127,6 +1209,7 @@ export type Database = {
       assign_captain: {
         Args: { p_booking_id: string; p_captain_id: string }
         Returns: {
+          agency_id: string | null
           boat_id: string
           captain_name: string | null
           captain_phone: string | null
@@ -1158,6 +1241,7 @@ export type Database = {
       cancel_booking: {
         Args: { p_booking_id: string }
         Returns: {
+          agency_id: string | null
           boat_id: string
           captain_name: string | null
           captain_phone: string | null
@@ -1332,6 +1416,7 @@ export type Database = {
           p_status: Database["public"]["Enums"]["booking_status"]
         }
         Returns: {
+          agency_id: string | null
           boat_id: string
           captain_name: string | null
           captain_phone: string | null
@@ -1562,7 +1647,7 @@ export type Database = {
         | "operator_agreement"
         | "booking_waiver"
         | "marketing"
-      user_role: "tourist" | "owner" | "hotel" | "admin"
+      user_role: "tourist" | "owner" | "hotel" | "admin" | "agency"
       verification_status: "pending" | "verified" | "rejected"
     }
     CompositeTypes: {
@@ -1710,7 +1795,7 @@ export const Constants = {
         "booking_waiver",
         "marketing",
       ],
-      user_role: ["tourist", "owner", "hotel", "admin"],
+      user_role: ["tourist", "owner", "hotel", "admin", "agency"],
       verification_status: ["pending", "verified", "rejected"],
     },
   },

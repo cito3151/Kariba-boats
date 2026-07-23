@@ -4,7 +4,7 @@ import { humanizeError } from './errors';
 export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 
 export interface AppUserRow {
-  id: string; fullName: string; role: 'tourist' | 'owner' | 'hotel' | 'admin';
+  id: string; fullName: string; role: 'tourist' | 'owner' | 'hotel' | 'admin' | 'agency';
   businessName: string | null; phone: string | null;
   verificationStatus: VerificationStatus; verificationNote: string | null;
   trustScore: number; hotelId: string | null;
@@ -13,7 +13,7 @@ export interface AppUserRow {
 export async function listOwnersAndHotels(): Promise<AppUserRow[]> {
   const { data, error } = await supabase.from('profiles')
     .select('id, full_name, role, business_name, phone, verification_status, verification_note, trust_score, hotel_id, created_at')
-    .in('role', ['owner', 'hotel']).order('created_at', { ascending: false });
+    .in('role', ['owner', 'hotel', 'agency']).order('created_at', { ascending: false });
   if (error) throw new Error(humanizeError(error.message));
   return (data ?? []).map((r) => ({
     id: r.id, fullName: r.full_name, role: r.role, businessName: r.business_name, phone: r.phone,
@@ -34,8 +34,18 @@ export async function reviewAccount(
 
 export interface ManagedUser {
   id: string; email: string; fullName: string;
-  role: 'tourist' | 'owner' | 'hotel' | 'admin';
+  role: 'tourist' | 'owner' | 'hotel' | 'admin' | 'agency';
   isSuperAdmin: boolean; verificationStatus: VerificationStatus;
+}
+
+export async function verifyAgency(
+  userId: string, input: { agencyName: string; location: string; commission?: number; trustScore?: number },
+) {
+  const { error } = await supabase.rpc('admin_verify_agency', {
+    p_user_id: userId, p_agency_name: input.agencyName, p_location: input.location,
+    p_commission: input.commission ?? undefined, p_trust_score: input.trustScore ?? undefined,
+  });
+  if (error) throw new Error(humanizeError(error.message));
 }
 
 export async function listAllUsers(): Promise<ManagedUser[]> {

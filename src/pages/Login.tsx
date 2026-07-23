@@ -1,22 +1,23 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AlertCircle, Info, Anchor, ClipboardCheck, Building2, ShieldCheck } from 'lucide-react';
+import { AlertCircle, Info, Anchor, ClipboardCheck, Building2, ShieldCheck, Briefcase } from 'lucide-react';
 import AuthCard from '../components/AuthCard';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../data/AuthContext';
 
-type Role = 'tourist' | 'owner' | 'hotel' | 'admin';
+type Role = 'tourist' | 'owner' | 'hotel' | 'admin' | 'agency';
 
 const PORTALS: { key: Role; label: string; home: string; icon: typeof Anchor }[] = [
   { key: 'tourist', label: 'Tourist', home: '/', icon: Anchor },
   { key: 'owner', label: 'Boat owner', home: '/owner', icon: ClipboardCheck },
   { key: 'hotel', label: 'Hotel or Lodge', home: '/hotel', icon: Building2 },
+  { key: 'agency', label: 'Travel agency', home: '/agency', icon: Briefcase },
   { key: 'admin', label: 'Admin', home: '/admin', icon: ShieldCheck },
 ];
 
-const roleHome: Record<Role, string> = { tourist: '/', owner: '/owner', hotel: '/hotel', admin: '/admin' };
-const roleLabel: Record<Role, string> = { tourist: 'Browse Boats', owner: 'the Owner portal', hotel: 'the Hotel portal', admin: 'the Admin panel' };
+const roleHome: Record<Role, string> = { tourist: '/', owner: '/owner', hotel: '/hotel', agency: '/agency', admin: '/admin' };
+const roleLabel: Record<Role, string> = { tourist: 'Browse Boats', owner: 'the Owner portal', hotel: 'the Hotel portal', agency: 'the Travel agency portal', admin: 'the Admin panel' };
 
 export default function Login() {
   const { login, currentUser } = useAuth();

@@ -66,6 +66,13 @@ export async function listBookingsForHotel(hotelId: string): Promise<BookingRow[
   return (data ?? []).map(toBookingRow);
 }
 
+export async function listBookingsForAgency(agencyId: string): Promise<BookingRow[]> {
+  const { data, error } = await supabase.from('bookings').select(BOOKING_SELECT)
+    .eq('agency_id', agencyId).order('start_date', { ascending: false });
+  if (error) throw new Error(humanizeError(error.message));
+  return (data ?? []).map(toBookingRow);
+}
+
 export async function listMyBookings(touristId: string): Promise<BookingRow[]> {
   const { data, error } = await supabase.from('bookings').select(BOOKING_SELECT)
     .eq('tourist_id', touristId).order('start_date', { ascending: false });

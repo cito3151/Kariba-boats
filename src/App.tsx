@@ -7,6 +7,7 @@ import TouristHome from './pages/TouristHome';
 import TouristTripsPage from './pages/TouristTripsPage';
 import BoatDetail from './pages/BoatDetail';
 import HotelDashboard from './pages/HotelDashboard';
+import AgencyDashboard from './pages/AgencyDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import OwnerDashboard from './pages/owner/OwnerDashboard';
 import BoatFormPage from './pages/owner/BoatFormPage';
@@ -31,8 +32,16 @@ function App() {
         <Route
           path="/trips"
           element={
-            <ProtectedRoute allow={['tourist', 'hotel', 'owner', 'admin']}>
+            <ProtectedRoute allow={['tourist', 'hotel', 'owner', 'agency', 'admin']}>
               <TouristTripsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/agency"
+          element={
+            <ProtectedRoute allow={['agency', 'admin']}>
+              <AgencyDashboard />
             </ProtectedRoute>
           }
         />

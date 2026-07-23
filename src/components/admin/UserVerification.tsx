@@ -15,7 +15,7 @@ const STATUS_CHIP: Record<VerificationStatus, { label: string; className: string
 };
 
 function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) {
-  const [mode, setMode] = useState<'none' | 'reject' | 'hotel'>('none');
+  const [mode, setMode] = useState<'none' | 'reject' | 'hotel' | 'agency'>('none');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [trust, setTrust] = useState(user.trustScore);
@@ -46,6 +46,10 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
   const submitHotel = () => {
     if (hotelName.trim().length < 2 || location.trim().length < 2) { setError('Enter a hotel name and location.'); return; }
     run(() => usersSvc.verifyHotel(user.id, { hotelName: hotelName.trim(), location: location.trim(), commission, trustScore: trust }));
+  };
+  const submitAgency = () => {
+    if (hotelName.trim().length < 2 || location.trim().length < 2) { setError('Enter an agency name and location.'); return; }
+    run(() => usersSvc.verifyAgency(user.id, { agencyName: hotelName.trim(), location: location.trim(), commission, trustScore: trust }));
   };
 
   const chip = STATUS_CHIP[user.verificationStatus];
@@ -102,6 +106,12 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
                   className="rounded-lg bg-lake-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
                   Verify hotel
                 </button>
+              ) : user.role === 'agency' ? (
+                <button onClick={() => { setMode('agency'); setError(''); }} disabled={busy || !hasDocs}
+                  title={hasDocs ? '' : 'Upload of a registration document is required first'}
+                  className="rounded-lg bg-lake-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
+                  Verify agency
+                </button>
               ) : (
                 <button onClick={verifyOwner} disabled={busy || !hasDocs}
                   title={hasDocs ? '' : 'Upload of a registration document is required first'}
@@ -152,6 +162,27 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
           </div>
           <div className="flex gap-2">
             <button onClick={submitHotel} disabled={busy}
+              className="rounded-lg bg-lake-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">Verify and link</button>
+            <button onClick={() => { setMode('none'); setError(''); }}
+              className="rounded-lg border border-lake-200 px-4 py-1.5 text-xs font-medium text-lake-600 hover:bg-lake-50">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {mode === 'agency' && (
+        <div className="mt-3 space-y-2 rounded-lg border border-lake-100 bg-lake-50/60 p-3">
+          <p className="text-xs font-semibold text-lake-800">Verify and link this travel agency</p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <input value={hotelName} onChange={(e) => setHotelName(e.target.value)} placeholder="Agency name"
+              className="rounded-lg border border-lake-100 bg-white px-3 py-1.5 text-sm outline-none focus:border-lake-400" />
+            <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location"
+              className="rounded-lg border border-lake-100 bg-white px-3 py-1.5 text-sm outline-none focus:border-lake-400" />
+            <input type="number" min={0} max={30} value={commission} onChange={(e) => setCommission(Number(e.target.value))}
+              placeholder="Commission %" title="Commission %"
+              className="rounded-lg border border-lake-100 bg-white px-3 py-1.5 text-sm outline-none focus:border-lake-400" />
+          </div>
+          <div className="flex gap-2">
+            <button onClick={submitAgency} disabled={busy}
               className="rounded-lg bg-lake-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">Verify and link</button>
             <button onClick={() => { setMode('none'); setError(''); }}
               className="rounded-lg border border-lake-200 px-4 py-1.5 text-xs font-medium text-lake-600 hover:bg-lake-50">Cancel</button>

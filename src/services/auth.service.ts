@@ -1,12 +1,12 @@
 import { supabase } from '../lib/supabase';
 
-export type Role = 'tourist' | 'owner' | 'hotel' | 'admin';
+export type Role = 'tourist' | 'owner' | 'hotel' | 'admin' | 'agency';
 export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 
 export interface AppUser {
   id: string; email: string; name: string; role: Role;
   phone: string | null; businessName: string | null;
-  hotelId: string | null;
+  hotelId: string | null; agencyId: string | null;
   verificationStatus: VerificationStatus; verificationNote: string | null;
   isVerified: boolean; isSuperAdmin: boolean;
 }
@@ -66,13 +66,13 @@ export async function updatePassword(newPassword: string) {
 export async function fetchProfile(userId: string, email: string): Promise<AppUser | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, role, full_name, phone, business_name, hotel_id, verification_status, verification_note, is_super_admin')
+    .select('id, role, full_name, phone, business_name, hotel_id, agency_id, verification_status, verification_note, is_super_admin')
     .eq('id', userId)
     .single();
   if (error || !data) return null;
   return {
     id: data.id, email, name: data.full_name, role: data.role as Role,
-    phone: data.phone, businessName: data.business_name, hotelId: data.hotel_id,
+    phone: data.phone, businessName: data.business_name, hotelId: data.hotel_id, agencyId: data.agency_id,
     verificationStatus: data.verification_status as VerificationStatus,
     verificationNote: data.verification_note,
     isVerified: data.verification_status === 'verified',
