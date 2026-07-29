@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Anchor, Ban } from 'lucide-react';
+import { Anchor, Ban, Star } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import StatusBadge from '../components/StatusBadge';
+import ReviewForm from '../components/ReviewForm';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import EmergencyContacts from '../components/EmergencyContacts';
 import { useAuth } from '../data/AuthContext';
@@ -24,6 +25,8 @@ export default function TouristTripsPage() {
   const { data, loading, error, reload } = useAsync(() => bookingsSvc.listMyBookings(touristId), [touristId]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
 
   const cancel = async (id: string) => {
     setBusyId(id); setActionError('');
@@ -61,25 +64,43 @@ export default function TouristTripsPage() {
           <AnimatePresence>
             {rows.map((b) => (
               <motion.div key={b.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-lake-100 bg-white p-4">
-                <div>
-                  <h3 className="font-semibold text-lake-950">{b.boatName}</h3>
-                  <p className="text-xs text-lake-500">
-                    {b.boatLocation} · {tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · ${b.priceTotal}
-                  </p>
-                  {b.captainName && (
-                    <p className="mt-0.5 text-xs text-lake-600">Captain: <span className="font-medium text-lake-900">{b.captainName}</span> · {b.captainPhone}</p>
-                  )}
+                exit={{ opacity: 0 }} className="rounded-2xl border border-lake-100 bg-white p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold text-lake-950">{b.boatName}</h3>
+                    <p className="text-xs text-lake-500">
+                      {b.boatLocation} · {tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · ${b.priceTotal}
+                    </p>
+                    {b.captainName && (
+                      <p className="mt-0.5 text-xs text-lake-600">Captain: <span className="font-medium text-lake-900">{b.captainName}</span> · {b.captainPhone}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <StatusBadge status={b.status} />
+                    {CANCELLABLE.has(b.status) && (
+                      <button onClick={() => cancel(b.id)} disabled={busyId === b.id}
+                        className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">
+                        <Ban size={13} /> Cancel
+                      </button>
+                    )}
+                    {b.status === 'completed' && !reviewedIds.has(b.id) && reviewingId !== b.id && (
+                      <button onClick={() => setReviewingId(b.id)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-lake-200 px-3 py-1.5 text-xs font-semibold text-lake-700 hover:bg-lake-50">
+                        <Star size={13} /> Leave a review
+                      </button>
+                    )}
+                    {reviewedIds.has(b.id) && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600"><Star size={13} className="fill-emerald-500 text-emerald-500" /> Reviewed</span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <StatusBadge status={b.status} />
-                  {CANCELLABLE.has(b.status) && (
-                    <button onClick={() => cancel(b.id)} disabled={busyId === b.id}
-                      className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">
-                      <Ban size={13} /> Cancel
-                    </button>
-                  )}
-                </div>
+                {reviewingId === b.id && (
+                  <ReviewForm bookingId={b.id} touristId={touristId}
+                    onDone={() => {
+                      setReviewedIds((prev) => new Set(prev).add(b.id));
+                      setReviewingId(null);
+                    }} />
+                )}
               </motion.div>
             ))}
           </AnimatePresence>
