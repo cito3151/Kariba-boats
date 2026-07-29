@@ -4,6 +4,7 @@ import { Users, ShieldCheck } from 'lucide-react';
 import AutoCarousel from './AutoCarousel';
 import { useAsync } from '../hooks/useAsync';
 import * as imagesSvc from '../services/images.service';
+import type { BoatImage } from '../services/images.service';
 import type { PublicBoat, BoatKind } from '../services/boats.service';
 
 const MotionLink = motion.create(Link);
@@ -31,9 +32,16 @@ export function priceLabels(boat: Pick<PublicBoat, 'pricePerHour' | 'pricePerDay
   return out;
 }
 
-export default function BoatCard({ boat }: { boat: PublicBoat }) {
-  const { data } = useAsync(() => imagesSvc.listBoatImages(boat.id), [boat.id]);
-  const sorted = [...(data ?? [])].sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
+export default function BoatCard({ boat, images: providedImages }: { boat: PublicBoat; images?: BoatImage[] }) {
+  // When the parent list supplies images (batched, no N+1), use them; otherwise fetch
+  // this one boat's images as a fallback. The hook is always called (Promise.resolve
+  // skips the network when images were provided).
+  const { data } = useAsync(
+    () => (providedImages ? Promise.resolve(providedImages) : imagesSvc.listBoatImages(boat.id)),
+    [boat.id, providedImages],
+  );
+  const rows = providedImages ?? data ?? [];
+  const sorted = [...rows].sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
   const images = sorted.length
     ? sorted.map((i) => imagesSvc.publicImageUrl(i.storagePath))
     : [`illustration:${boat.boatType}`];

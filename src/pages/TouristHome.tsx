@@ -8,12 +8,18 @@ import { LoadingState, ErrorState } from '../components/StateViews';
 import { useAsync } from '../hooks/useAsync';
 import { heroImage } from '../data/photos';
 import * as boats from '../services/boats.service';
+import * as imagesSvc from '../services/images.service';
 import type { BoatKind } from '../services/boats.service';
 
 const TYPE_OPTIONS: (BoatKind | 'all')[] = ['all', 'houseboat', 'speedboat', 'fishing', 'cruiser', 'pontoon'];
 
 export default function TouristHome() {
   const { data, loading, error, reload } = useAsync(() => boats.listPublicBoats(), []);
+  const idsKey = (data ?? []).map((b) => b.id).join(',');
+  const { data: imagesByBoat } = useAsync(
+    () => imagesSvc.listImagesForBoats(idsKey ? idsKey.split(',') : []),
+    [idsKey],
+  );
   const [groupSize, setGroupSize] = useState(2);
   const [boatType, setBoatType] = useState<BoatKind | 'all'>('all');
   const [maxPrice, setMaxPrice] = useState(700);
@@ -144,7 +150,7 @@ export default function TouristHome() {
         {filtered.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filtered.map((boat) => (
-              <BoatCard key={boat.id} boat={boat} />
+              <BoatCard key={boat.id} boat={boat} images={imagesByBoat?.[boat.id] ?? []} />
             ))}
           </div>
         )}
