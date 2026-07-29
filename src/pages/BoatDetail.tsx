@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ShieldCheck, ShieldAlert, Users, LifeBuoy, Phone, TrendingUp } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, ShieldAlert, Users, LifeBuoy, Phone, TrendingUp, Star, Wallet, BadgeCheck } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import StarRating from '../components/StarRating';
 import BookingModal from '../components/BookingModal';
@@ -19,11 +19,20 @@ import { listBookingsForBoat } from '../services/bookings.service';
 import { listReviewsForBoat } from '../services/reviews.service';
 import type { Booking } from '../data/availability';
 
+const GOOD_FOR: Record<string, string[]> = {
+  houseboat: ['Overnight stays', 'Families', 'Sightseeing', 'Relaxation'],
+  speedboat: ['Day trips', 'Watersports', 'Small groups'],
+  fishing: ['Fishing trips', 'Early starts', 'Small groups'],
+  cruiser: ['Sunset cruises', 'Celebrations', 'Sightseeing'],
+  pontoon: ['Groups', 'Relaxed cruising', 'Families'],
+};
+
 export default function BoatDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [showModal, setShowModal] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
 
   const { data: boat, loading, error, reload } = useAsync(
     () => (id ? boats.getPublicBoat(id) : Promise.resolve(null)), [id],
@@ -42,6 +51,14 @@ export default function BoatDetail() {
   const galleryImages = sorted.length
     ? sorted.map((i) => imagesSvc.publicImageUrl(i.storagePath))
     : [`illustration:${boat.boatType}`];
+
+  const reviewList = reviews ?? [];
+  const avgRating = reviewList.length
+    ? reviewList.reduce((s, r) => s + r.rating, 0) / reviewList.length
+    : null;
+  const goodFor = GOOD_FOR[boat.boatType] ?? [];
+  const descLong = boat.description.length > 320;
+  const descShown = descLong && !descExpanded ? `${boat.description.slice(0, 320).trimEnd()}...` : boat.description;
 
   const calendarBoat = { id: boat.id, priceUnit: (price?.unit ?? 'day') as 'hour' | 'day' };
   const calendarBookings: Booking[] = (bookingRows ?? []).map((b) => ({
@@ -87,12 +104,48 @@ export default function BoatDetail() {
             </div>
 
             <h1 className="mt-3 text-3xl sm:text-4xl font-medium text-lake-950">{boat.name}</h1>
-            <div className="mt-1 flex items-center gap-3 text-sm text-lake-500">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-lake-500">
+              {avgRating != null && (
+                <span className="inline-flex items-center gap-1 font-medium text-lake-800">
+                  <Star size={14} className="fill-sunset-400 text-sunset-400" />
+                  {avgRating.toFixed(1)}
+                  <span className="font-normal text-lake-500">({reviewList.length} review{reviewList.length !== 1 ? 's' : ''})</span>
+                </span>
+              )}
+              {avgRating != null && <span aria-hidden>·</span>}
               <span>{boat.location}</span>
-              {reviews && reviews.length > 0 && <><span>·</span><span>{reviews.length} review{reviews.length !== 1 ? 's' : ''}</span></>}
             </div>
 
-            <p className="mt-5 text-sm leading-relaxed text-lake-700">{boat.description}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-lake-100 bg-white px-3 py-1.5 text-xs font-medium text-lake-700">
+                <LifeBuoy size={13} className="text-lake-500" /> {boat.crewIncluded ? 'Captain included' : 'Self-drive'}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-lake-100 bg-white px-3 py-1.5 text-xs font-medium text-lake-700">
+                <Wallet size={13} className="text-lake-500" /> {boat.depositPercent}% deposit to confirm
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
+                <BadgeCheck size={13} /> Free to request, pay nothing until confirmed
+              </span>
+            </div>
+
+            {goodFor.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-lake-400">Great for</p>
+                <div className="mt-1.5 flex flex-wrap gap-2">
+                  {goodFor.map((g) => (
+                    <span key={g} className="rounded-full bg-lake-50 px-3 py-1 text-xs text-lake-700">{g}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-lake-700">{descShown}</p>
+            {descLong && (
+              <button onClick={() => setDescExpanded((v) => !v)}
+                className="mt-1 text-sm font-semibold text-lake-700 hover:text-lake-900">
+                {descExpanded ? 'Show less' : 'Read more'}
+              </button>
+            )}
 
             <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
               <div className="rounded-xl bg-lake-50 p-3 text-center">
@@ -151,12 +204,19 @@ export default function BoatDetail() {
             </Reveal>
 
             <div className="mt-8">
-              <h3 className="font-display text-lg font-medium text-lake-950">Reviews</h3>
+              <h3 className="flex items-center gap-2 font-display text-lg font-medium text-lake-950">
+                Reviews
+                {avgRating != null && (
+                  <span className="inline-flex items-center gap-1 text-sm font-medium text-lake-600">
+                    <Star size={14} className="fill-sunset-400 text-sunset-400" /> {avgRating.toFixed(1)} ({reviewList.length})
+                  </span>
+                )}
+              </h3>
               <div className="mt-3 space-y-3">
-                {(reviews ?? []).length === 0 && (
+                {reviewList.length === 0 && (
                   <p className="text-sm text-lake-500">No reviews yet. Guests can review a trip once it is completed.</p>
                 )}
-                {(reviews ?? []).map((r) => (
+                {reviewList.map((r) => (
                   <motion.div key={r.id} initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }} className="rounded-xl border border-lake-100 p-3">
                     <div className="flex items-center justify-between">
@@ -179,6 +239,13 @@ export default function BoatDetail() {
           <div>
             <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
               className="sticky top-24 rounded-2xl border border-lake-100 p-5 shadow-sm bg-white">
+              {avgRating != null && (
+                <div className="mb-3 flex items-center gap-1 text-sm font-medium text-lake-800">
+                  <Star size={15} className="fill-sunset-400 text-sunset-400" />
+                  {avgRating.toFixed(1)}
+                  <span className="font-normal text-lake-500">· {reviewList.length} review{reviewList.length !== 1 ? 's' : ''}</span>
+                </div>
+              )}
               {rates.length > 0 ? (
                 <div className="space-y-1">
                   {rates.map((r) => (
@@ -206,8 +273,9 @@ export default function BoatDetail() {
               <div className="mt-5 border-t border-lake-100 pt-4">
                 <p className="text-xs font-medium text-lake-500 uppercase tracking-wide">Operated by</p>
                 <p className="mt-1 font-semibold text-lake-950">{boat.operatorName || 'Kariba operator'}</p>
-                <div className="mt-2 flex items-center gap-3 text-xs text-lake-600">
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-lake-600">
                   <span className="inline-flex items-center gap-1"><TrendingUp size={13} className="text-emerald-500" /> Trust {boat.operatorTrustScore}</span>
+                  <span className="inline-flex items-center gap-1"><LifeBuoy size={13} className="text-lake-500" /> {boat.crewIncluded ? 'Captain included' : 'Self-drive'}</span>
                   {boat.operatorPhone && <span className="inline-flex items-center gap-1"><Phone size={13} /> {boat.operatorPhone}</span>}
                 </div>
               </div>
