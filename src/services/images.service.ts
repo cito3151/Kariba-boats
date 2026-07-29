@@ -27,6 +27,27 @@ export async function listBoatImages(boatId: string): Promise<BoatImage[]> {
   }));
 }
 
+// Batched fetch: one query for every visible boat's images, grouped by boat id.
+// Avoids the N+1 of each card fetching its own images on a browse page.
+export async function listImagesForBoats(boatIds: string[]): Promise<Record<string, BoatImage[]>> {
+  if (boatIds.length === 0) return {};
+  const { data, error } = await supabase
+    .from('boat_images')
+    .select('id, boat_id, storage_path, sort_order, is_primary, moderation_status')
+    .in('boat_id', boatIds)
+    .order('sort_order');
+  if (error) throw new Error(humanizeError(error.message));
+  const byBoat: Record<string, BoatImage[]> = {};
+  for (const r of data ?? []) {
+    const img: BoatImage = {
+      id: r.id, boatId: r.boat_id, storagePath: r.storage_path,
+      sortOrder: r.sort_order, isPrimary: r.is_primary, moderationStatus: r.moderation_status,
+    };
+    (byBoat[r.boat_id] ??= []).push(img);
+  }
+  return byBoat;
+}
+
 export async function uploadBoatImages(
   boatId: string, ownerId: string, files: File[],
 ): Promise<BoatImage[]> {
