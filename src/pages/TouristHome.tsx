@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { Search, Users, ShieldCheck } from 'lucide-react';
+import { Search, Users, ShieldCheck, ArrowDownUp, Wallet, MessagesSquare, Anchor } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import BoatCard, { BOAT_TYPE_LABELS, priceView } from '../components/BoatCard';
 import Reveal from '../components/Reveal';
@@ -24,6 +24,11 @@ export default function TouristHome() {
   const [boatType, setBoatType] = useState<BoatKind | 'all'>('all');
   const [maxPrice, setMaxPrice] = useState(700);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [sort, setSort] = useState<'recommended' | 'price_low' | 'capacity'>('recommended');
+
+  const resetFilters = () => {
+    setBoatType('all'); setGroupSize(1); setMaxPrice(700); setVerifiedOnly(false);
+  };
 
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
@@ -41,6 +46,18 @@ export default function TouristHome() {
       return true;
     });
   }, [data, groupSize, boatType, maxPrice, verifiedOnly]);
+
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    if (sort === 'price_low') {
+      arr.sort((a, b) => (priceView(a)?.amount ?? Infinity) - (priceView(b)?.amount ?? Infinity));
+    } else if (sort === 'capacity') {
+      arr.sort((a, b) => b.capacity - a.capacity);
+    } else {
+      arr.sort((a, b) => b.operatorTrustScore - a.operatorTrustScore);
+    }
+    return arr;
+  }, [filtered, sort]);
 
   return (
     <PageTransition>
@@ -126,12 +143,49 @@ export default function TouristHome() {
         </div>
       </section>
 
+      <section className="border-b border-lake-100 bg-white">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-3 sm:px-6">
+          <div className="flex items-center gap-2 text-sm text-lake-700">
+            <ShieldCheck size={16} className="text-lake-600" /> Verified operators and safety checks
+          </div>
+          <div className="flex items-center gap-2 text-sm text-lake-700">
+            <Wallet size={16} className="text-lake-600" /> Transparent pricing, pay a deposit to confirm
+          </div>
+          <div className="flex items-center gap-2 text-sm text-lake-700">
+            <MessagesSquare size={16} className="text-lake-600" /> Real reviews from completed trips
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
         <Reveal>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-xl font-medium text-lake-950 flex items-center gap-2">
-              <Search size={16} /> {filtered.length} boat{filtered.length !== 1 ? 's' : ''} found
-            </h2>
+          <div className="mb-5 flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-display text-xl font-medium text-lake-950 flex items-center gap-2">
+                <Search size={16} /> {filtered.length} boat{filtered.length !== 1 ? 's' : ''} found
+              </h2>
+              <label className="flex items-center gap-2 text-sm text-lake-600">
+                <ArrowDownUp size={14} className="text-lake-400" />
+                <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}
+                  className="rounded-lg border border-lake-100 bg-lake-50 px-3 py-1.5 text-sm outline-none focus:border-lake-400">
+                  <option value="recommended">Recommended</option>
+                  <option value="price_low">Price: low to high</option>
+                  <option value="capacity">Largest first</option>
+                </select>
+              </label>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {TYPE_OPTIONS.map((t) => (
+                <button key={t} type="button" onClick={() => setBoatType(t)}
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                    boatType === t
+                      ? 'bg-lake-700 text-white'
+                      : 'border border-lake-100 bg-white text-lake-600 hover:border-lake-300'
+                  }`}>
+                  {t === 'all' ? 'All boats' : BOAT_TYPE_LABELS[t as BoatKind]}
+                </button>
+              ))}
+            </div>
           </div>
         </Reveal>
 
@@ -142,14 +196,19 @@ export default function TouristHome() {
             No boats are listed yet. Check back soon.
           </div>
         )}
-        {!loading && !error && (data ?? []).length > 0 && filtered.length === 0 && (
-          <div className="rounded-xl border border-dashed border-lake-200 py-16 text-center text-lake-500">
-            No boats match those filters. Try increasing the max price or group size.
+        {!loading && !error && (data ?? []).length > 0 && sorted.length === 0 && (
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-lake-200 py-16 text-center text-lake-500">
+            <Anchor size={22} className="text-lake-300" />
+            <p>No boats match those filters.</p>
+            <button onClick={resetFilters}
+              className="rounded-lg bg-lake-700 px-4 py-2 text-xs font-semibold text-white hover:bg-lake-800">
+              Clear filters
+            </button>
           </div>
         )}
-        {filtered.length > 0 && (
+        {sorted.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filtered.map((boat) => (
+            {sorted.map((boat) => (
               <BoatCard key={boat.id} boat={boat} images={imagesByBoat?.[boat.id] ?? []} />
             ))}
           </div>
