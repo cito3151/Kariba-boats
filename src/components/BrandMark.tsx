@@ -5,10 +5,13 @@ import logoUrl from '../assets/kariba connect logo.png';
 // wordmark is already set in live text next to the mark, so we window in on just
 // the emblem rather than shipping the tiny, unreadable wordmark twice.
 const EMBLEM = {
-  left: 0.14, // fraction of the square where the emblem starts, horizontally
+  // Measured off the asset by scanning pixel rows and columns for ink: the emblem
+  // occupies x 0.155-0.844 and ends at y 0.611, where the wordmark begins at 0.616.
+  // The window stops just short of that seam, so no letter tops bleed into the mark.
+  left: 0.145,
   top: 0.15,
-  width: 0.72,
-  height: 0.5,
+  width: 0.71,
+  height: 0.46,
 };
 
 /**

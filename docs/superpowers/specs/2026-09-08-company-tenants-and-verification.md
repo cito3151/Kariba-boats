@@ -27,7 +27,7 @@ Two things are missing for proof of *company* ownership:
 |---|---|---|
 | Tenant unit | `companies` + `company_members` | Several logins per operator, roles within the company |
 | Documents | Extend `verification_documents`, do not add a parallel table | One upload path, one bucket, existing service and RLS keep working |
-| Document typing | `doc_kind` enum, nullable for existing rows | The 8 documents already uploaded stay valid and can be classified later |
+| Document typing | `doc_kind` enum, nullable for existing rows | Any untyped row stays valid and can be classified later. The live project holds none today, so the document backfill is a no-op there |
 | Review granularity | Per document, then per company | Admin rejects one bad scan without failing the whole application |
 | Existing boats | Backfilled into one company per current owner | No relisting, `owner_id` kept as the creating profile |
 | Verified badge | Company verification, falling back to profile | Tourists see a badge backed by a reviewed company |

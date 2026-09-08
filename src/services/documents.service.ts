@@ -21,9 +21,18 @@ function mapDoc(r: any): VerificationDocument {
 
 const SELECT = 'id, user_id, storage_path, file_name, label, uploaded_at';
 
+/**
+ * Account-level documents only: those not filed against a company.
+ *
+ * Company ownership proofs live in the same table (see companies.service.ts) and
+ * also carry this user's id. Without the company_id filter they would surface here
+ * as unlabelled files next to a delete button, and deleting one would silently
+ * destroy a proof the owner had submitted for verification.
+ */
 export async function listMyDocuments(userId: string): Promise<VerificationDocument[]> {
   const { data, error } = await supabase.from('verification_documents')
-    .select(SELECT).eq('user_id', userId).order('uploaded_at', { ascending: false });
+    .select(SELECT).eq('user_id', userId).is('company_id', null)
+    .order('uploaded_at', { ascending: false });
   if (error) throw new Error(humanizeError(error.message));
   return (data ?? []).map(mapDoc);
 }

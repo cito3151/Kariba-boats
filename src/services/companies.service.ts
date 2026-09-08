@@ -90,10 +90,20 @@ function mapDoc(r: any): CompanyDocument {
   };
 }
 
-/** The company the signed-in user belongs to, or null if they are not in one. */
-export async function getMyCompany(): Promise<Company | null> {
+/**
+ * The company the given profile belongs to, or null if they are not in one.
+ *
+ * The profile filter and the ordering are both deliberate: row level security
+ * already hides other people's memberships, but an admin can see every row, and a
+ * profile may legitimately belong to more than one company. Without both, this
+ * returns a server-chosen row that can differ between page loads.
+ */
+export async function getMyCompany(profileId: string): Promise<Company | null> {
   const { data: membership, error: mErr } = await supabase
-    .from('company_members').select('company_id').limit(1).maybeSingle();
+    .from('company_members').select('company_id')
+    .eq('profile_id', profileId)
+    .order('added_at', { ascending: true })
+    .limit(1).maybeSingle();
   if (mErr) throw new Error(humanizeError(mErr.message));
   if (!membership) return null;
 

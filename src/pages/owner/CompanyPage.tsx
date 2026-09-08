@@ -215,14 +215,21 @@ function CompanyDetails({ company, onSaved }: { company: Company; onSaved: () =>
 
 export default function CompanyPage() {
   const { currentUser } = useAuth();
-  const { data: company, loading, error, reload } = useAsync(() => companies.getMyCompany(), []);
+  const ownerId = currentUser?.id ?? '';
+  const { data: company, loading, error, reload } = useAsync(
+    () => companies.getMyCompany(ownerId), [ownerId],
+  );
   const [docsKey, setDocsKey] = useState(0);
-  const { data: documents, reload: reloadDocs } = useAsync(
+  const {
+    data: documents, loading: docsLoading, error: docsError,
+  } = useAsync(
     () => (company ? companies.listCompanyDocuments(company.id) : Promise.resolve([])),
     [company?.id, docsKey],
   );
 
-  const refreshAll = () => { setDocsKey((k) => k + 1); reloadDocs(); reload(); };
+  // Bumping docsKey re-runs the documents hook on its own; calling its reload as
+  // well would fire the same query twice and leave the first uncancellable.
+  const refreshAll = () => { setDocsKey((k) => k + 1); reload(); };
 
   return (
     <PageTransition>
@@ -278,7 +285,16 @@ export default function CompanyPage() {
               An administrator reviews each document separately, so you only replace the one that fails.
             </p>
 
-            <div className="mt-4 grid gap-3">
+            {/* Without this, a failed document fetch would leave every slot showing
+                "Not uploaded" and an owner would reasonably re-upload all four. */}
+            {docsLoading && <div className="mt-4"><LoadingState label="Loading your documents" /></div>}
+            {docsError && (
+              <div className="mt-4">
+                <ErrorState message={docsError} onRetry={() => setDocsKey((k) => k + 1)} />
+              </div>
+            )}
+
+            <div className={`mt-4 grid gap-3 ${docsLoading || docsError ? 'hidden' : ''}`}>
               {companies.REQUIRED_DOCUMENTS.map((slot) => (
                 <DocumentSlot
                   key={slot.kind}

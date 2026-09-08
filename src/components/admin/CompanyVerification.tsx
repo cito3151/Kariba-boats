@@ -33,7 +33,9 @@ function DocumentRow({ doc, onReviewed }: { doc: CompanyDocument; onReviewed: ()
     }
     setBusy(true); setError(null);
     try {
-      await companies.reviewDocument(doc.id, status, note);
+      // The note box belongs to the rejection flow. Sending it on an approval would
+      // file "the scan is cut off" against a document the admin then decided was fine.
+      await companies.reviewDocument(doc.id, status, status === 'rejected' ? note : undefined);
       setRejecting(false); setNote('');
       onReviewed();
     } catch (e) {
@@ -122,7 +124,8 @@ function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChan
   const decide = async (status: CompanyVerificationStatus) => {
     setBusy(true); setError(null);
     try {
-      await companies.reviewCompany(company.id, status, note);
+      // Same reasoning as the per-document note: a verify carries no rejection text.
+      await companies.reviewCompany(company.id, status, status === 'rejected' ? note : undefined);
       setNote('');
       onChanged();
     } catch (e) {
