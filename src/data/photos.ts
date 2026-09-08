@@ -36,7 +36,9 @@ export const photos = {
   ),
 };
 
-export const heroImage = photos.sunset1;
+// A high-contrast Zimbabwe sunset: the dark lower half carries white hero copy
+// without needing a heavy scrim, so the photograph stays vivid behind the text.
+export const heroImage = photos.sunset2;
 
 // Sentinel values recognised by BoatImage: for listings with no matching real
 // photo, this renders a labelled illustration instead of a real photo that

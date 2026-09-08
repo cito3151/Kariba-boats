@@ -12,6 +12,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import OwnerDashboard from './pages/owner/OwnerDashboard';
 import BoatFormPage from './pages/owner/BoatFormPage';
 import MaintenancePage from './pages/owner/MaintenancePage';
+import CompanyPage from './pages/owner/CompanyPage';
 import OwnerBookingsPage from './pages/owner/OwnerBookingsPage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -74,6 +75,14 @@ function App() {
           element={
             <ProtectedRoute allow={['owner']}>
               <BoatFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/company"
+          element={
+            <ProtectedRoute allow={['owner']}>
+              <CompanyPage />
             </ProtectedRoute>
           }
         />

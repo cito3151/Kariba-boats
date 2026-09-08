@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Anchor } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { heroImage } from '../data/photos';
+import BrandMark from './BrandMark';
 
 export default function AuthCard({
   title,
@@ -27,10 +27,8 @@ export default function AuthCard({
         className={`relative w-full ${wide ? 'max-w-lg' : 'max-w-md'} rounded-2xl bg-white p-6 sm:p-8 shadow-2xl`}
       >
         <Link to="/" className="flex items-center gap-2 justify-center">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-lake-700 text-white">
-            <Anchor size={18} />
-          </span>
-          <span className="font-display text-lg font-medium text-lake-950">Kariba Lake Access</span>
+          <BrandMark height={30} />
+          <span className="font-display text-lg font-medium text-lake-950">Kariba Lake Connect</span>
         </Link>
 
         <div className="mt-6 text-center">

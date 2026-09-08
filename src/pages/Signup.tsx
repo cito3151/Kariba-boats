@@ -140,7 +140,7 @@ export default function Signup() {
 
   return (
     <PageTransition>
-      <AuthCard title="Create an account" subtitle="Join Kariba Lake Access" wide>
+      <AuthCard title="Create an account" subtitle="Join Kariba Lake Connect" wide>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {roleOptions.map((opt) => (
             <button
@@ -239,7 +239,7 @@ export default function Signup() {
           {(role === 'hotel' || role === 'owner' || role === 'agency') && (
             <p className="text-xs text-lake-500">
               New {role === 'hotel' ? 'hotel' : role === 'agency' ? 'travel agency' : 'owner'} accounts are
-              reviewed by the Kariba Lake Access team, who check your uploaded registration documents
+              reviewed by the Kariba Lake Connect team, who check your uploaded registration documents
               before you go live. You can set everything up in your portal while verification is pending.
             </p>
           )}

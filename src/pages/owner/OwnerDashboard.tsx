@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Anchor, Plus, Pencil, Gauge, Trash2, EyeOff, Eye, X, Bell, CalendarDays, Clock } from 'lucide-react';
+import { Anchor, Plus, Pencil, Gauge, Trash2, EyeOff, Eye, X, Bell, CalendarDays, Clock, Building2 } from 'lucide-react';
 import PageTransition from '../../components/PageTransition';
 import DashboardBanner from '../../components/DashboardBanner';
 import BoatImage from '../../components/BoatImage';
@@ -154,6 +154,10 @@ export default function OwnerDashboard() {
               className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-medium text-lake-700 hover:bg-lake-50">
               <Gauge size={15} /> Maintenance
             </Link>
+            <Link to="/owner/company"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-medium text-lake-700 hover:bg-lake-50">
+              <Building2 size={15} /> Company
+            </Link>
             <Link to="/owner/boats/new"
               className="inline-flex items-center gap-1.5 rounded-lg bg-sunset-500 px-3 py-2 text-sm font-semibold text-white hover:bg-sunset-600">
               <Plus size={15} /> Register a boat
@@ -171,7 +175,7 @@ export default function OwnerDashboard() {
           {!loading && !error && list.length === 0 && (
             <EmptyState
               title="No boats yet"
-              hint="Register your first boat to start taking bookings on Kariba Lake Access."
+              hint="Register your first boat to start taking bookings on Kariba Lake Connect."
               action={
                 <Link to="/owner/boats/new"
                   className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-sunset-500 px-4 py-2 text-sm font-semibold text-white hover:bg-sunset-600">

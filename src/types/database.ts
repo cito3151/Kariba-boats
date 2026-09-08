@@ -307,6 +307,7 @@ export type Database = {
           approved_by: string | null
           boat_type: Database["public"]["Enums"]["boat_kind"]
           capacity: number
+          company_id: string | null
           created_at: string
           crew_included: boolean
           deleted_at: string | null
@@ -341,6 +342,7 @@ export type Database = {
           approved_by?: string | null
           boat_type: Database["public"]["Enums"]["boat_kind"]
           capacity: number
+          company_id?: string | null
           created_at?: string
           crew_included?: boolean
           deleted_at?: string | null
@@ -375,6 +377,7 @@ export type Database = {
           approved_by?: string | null
           boat_type?: Database["public"]["Enums"]["boat_kind"]
           capacity?: number
+          company_id?: string | null
           created_at?: string
           crew_included?: boolean
           deleted_at?: string | null
@@ -409,6 +412,13 @@ export type Database = {
             columns: ["approved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boats_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
@@ -554,6 +564,102 @@ export type Database = {
           {
             foreignKeyName: "captains_owner_id_fkey"
             columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      companies: {
+        Row: {
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          registration_number: string | null
+          updated_at: string
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["company_verification_status"]
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          registration_number?: string | null
+          updated_at?: string
+          verification_note?: string | null
+          verification_status?: Database["public"]["Enums"]["company_verification_status"]
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          registration_number?: string | null
+          updated_at?: string
+          verification_note?: string | null
+          verification_status?: Database["public"]["Enums"]["company_verification_status"]
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companies_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_members: {
+        Row: {
+          added_at: string
+          company_id: string
+          member_role: Database["public"]["Enums"]["company_member_role"]
+          profile_id: string
+        }
+        Insert: {
+          added_at?: string
+          company_id: string
+          member_role?: Database["public"]["Enums"]["company_member_role"]
+          profile_id: string
+        }
+        Update: {
+          added_at?: string
+          company_id?: string
+          member_role?: Database["public"]["Enums"]["company_member_role"]
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_members_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -895,30 +1001,65 @@ export type Database = {
       }
       verification_documents: {
         Row: {
+          company_id: string | null
+          doc_kind: Database["public"]["Enums"]["company_document_kind"] | null
+          expires_at: string | null
           file_name: string
           id: string
           label: string | null
+          review_note: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           storage_path: string
           uploaded_at: string
           user_id: string
         }
         Insert: {
+          company_id?: string | null
+          doc_kind?: Database["public"]["Enums"]["company_document_kind"] | null
+          expires_at?: string | null
           file_name: string
           id?: string
           label?: string | null
+          review_note?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           storage_path: string
           uploaded_at?: string
           user_id: string
         }
         Update: {
+          company_id?: string | null
+          doc_kind?: Database["public"]["Enums"]["company_document_kind"] | null
+          expires_at?: string | null
           file_name?: string
           id?: string
           label?: string | null
+          review_note?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           storage_path?: string
           uploaded_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "verification_documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "verification_documents_user_id_fkey"
             columns: ["user_id"]
@@ -1034,6 +1175,7 @@ export type Database = {
           approved_by: string | null
           boat_type: Database["public"]["Enums"]["boat_kind"]
           capacity: number
+          company_id: string | null
           created_at: string
           crew_included: boolean
           deleted_at: string | null
@@ -1077,6 +1219,7 @@ export type Database = {
           approved_by: string | null
           boat_type: Database["public"]["Enums"]["boat_kind"]
           capacity: number
+          company_id: string | null
           created_at: string
           crew_included: boolean
           deleted_at: string | null
@@ -1108,6 +1251,57 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "boats"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_review_company: {
+        Args: {
+          p_company_id: string
+          p_note?: string
+          p_status: Database["public"]["Enums"]["company_verification_status"]
+        }
+        Returns: {
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          registration_number: string | null
+          updated_at: string
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["company_verification_status"]
+          verified_at: string | null
+          verified_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "companies"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_review_document: {
+        Args: { p_document_id: string; p_note?: string; p_status: string }
+        Returns: {
+          company_id: string | null
+          doc_kind: Database["public"]["Enums"]["company_document_kind"] | null
+          expires_at: string | null
+          file_name: string
+          id: string
+          label: string | null
+          review_note: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          storage_path: string
+          uploaded_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "verification_documents"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1284,6 +1478,7 @@ export type Database = {
           approved_by: string | null
           boat_type: Database["public"]["Enums"]["boat_kind"]
           capacity: number
+          company_id: string | null
           created_at: string
           crew_included: boolean
           deleted_at: string | null
@@ -1342,6 +1537,7 @@ export type Database = {
           id: string
         }[]
       }
+      current_user_company: { Args: never; Returns: string }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
@@ -1351,6 +1547,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_company_member: { Args: { p_company_id: string }; Returns: boolean }
       is_sensitive_change: { Args: { p_changes: Json }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       log_operating_hours: {
@@ -1366,6 +1563,7 @@ export type Database = {
           approved_by: string | null
           boat_type: Database["public"]["Enums"]["boat_kind"]
           capacity: number
+          company_id: string | null
           created_at: string
           crew_included: boolean
           deleted_at: string | null
@@ -1453,6 +1651,7 @@ export type Database = {
           approved_by: string | null
           boat_type: Database["public"]["Enums"]["boat_kind"]
           capacity: number
+          company_id: string | null
           created_at: string
           crew_included: boolean
           deleted_at: string | null
@@ -1550,6 +1749,7 @@ export type Database = {
           approved_by: string | null
           boat_type: Database["public"]["Enums"]["boat_kind"]
           capacity: number
+          company_id: string | null
           created_at: string
           crew_included: boolean
           deleted_at: string | null
@@ -1593,6 +1793,7 @@ export type Database = {
           approved_by: string | null
           boat_type: Database["public"]["Enums"]["boat_kind"]
           capacity: number
+          company_id: string | null
           created_at: string
           crew_included: boolean
           deleted_at: string | null
@@ -1639,6 +1840,17 @@ export type Database = {
         | "completed"
         | "declined"
         | "cancelled"
+      company_document_kind:
+        | "company_registration"
+        | "boat_ownership"
+        | "operator_licence"
+        | "director_id"
+      company_member_role: "owner" | "manager" | "staff"
+      company_verification_status:
+        | "unverified"
+        | "pending"
+        | "verified"
+        | "rejected"
       consent_context: "signup" | "re_consent" | "booking"
       fuel_policy_kind: "included" | "excluded" | "prepaid" | "full_to_full"
       legal_doc_type:
@@ -1664,12 +1876,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1693,11 +1905,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1718,11 +1930,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1743,11 +1955,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1760,11 +1972,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1785,6 +1997,19 @@ export const Constants = {
         "completed",
         "declined",
         "cancelled",
+      ],
+      company_document_kind: [
+        "company_registration",
+        "boat_ownership",
+        "operator_licence",
+        "director_id",
+      ],
+      company_member_role: ["owner", "manager", "staff"],
+      company_verification_status: [
+        "unverified",
+        "pending",
+        "verified",
+        "rejected",
       ],
       consent_context: ["signup", "re_consent", "booking"],
       fuel_policy_kind: ["included", "excluded", "prepaid", "full_to_full"],

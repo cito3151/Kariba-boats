@@ -3,12 +3,13 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Anchor, Building2, ClipboardCheck, ShieldCheck, LogOut, Ticket, Briefcase } from 'lucide-react';
 import { useAuth } from '../data/AuthContext';
+import BrandMark from './BrandMark';
 
 const allNavItems = [
   { to: '/', label: 'Browse Boats', icon: Anchor, end: true },
   { to: '/trips', label: 'My Trips', icon: Ticket },
   { to: '/hotel', label: 'Hotel Portal', icon: Building2 },
-  { to: '/owner', label: 'Owner Portal', icon: ClipboardCheck },
+  { to: '/owner', label: 'Boat Owner Portal', icon: ClipboardCheck },
   { to: '/agency', label: 'Agency Portal', icon: Briefcase },
   { to: '/admin', label: 'Admin', icon: ShieldCheck },
 ];
@@ -40,14 +41,11 @@ export default function Layout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-lake-100 bg-white/80 backdrop-blur-md">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
           <NavLink to="/" className="flex items-center gap-2 shrink-0">
-            <motion.div
-              whileHover={{ rotate: -8, scale: 1.05 }}
-              className="grid h-9 w-9 place-items-center rounded-xl bg-lake-700 text-white"
-            >
-              <Anchor size={18} />
+            <motion.div whileHover={{ scale: 1.04 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+              <BrandMark height={34} />
             </motion.div>
             <div className="leading-tight text-left">
-              <p className="font-semibold text-lake-950 text-sm sm:text-base">Kariba Lake Access</p>
+              <p className="font-semibold text-lake-950 text-sm sm:text-base">Kariba Lake Connect</p>
               <p className="text-[11px] text-lake-500 hidden sm:block">Verified boat bookings</p>
             </div>
           </NavLink>
@@ -117,7 +115,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       <footer className="border-t border-lake-100 bg-white">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 text-xs text-lake-500 flex flex-col sm:flex-row justify-between gap-2">
-          <p>© {new Date().getFullYear()} Kariba Lake Access. Verified boat bookings on Lake Kariba.</p>
+          <p>© {new Date().getFullYear()} Kariba Lake Connect. Verified boat bookings on Lake Kariba.</p>
           <p>Built for tourists, hotels, boat owners, and travel agencies across Kariba, Zimbabwe.</p>
         </div>
       </footer>

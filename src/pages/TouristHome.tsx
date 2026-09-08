@@ -64,11 +64,15 @@ export default function TouristHome() {
       <section ref={heroRef} className="relative overflow-hidden text-white">
         <motion.img
           src={heroImage}
-          alt="Sunset over Lake Kariba, Zimbabwe"
+          alt="Sunset sky over Zimbabwe"
           style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-lake-950/80 via-lake-950/55 to-lake-50" />
+        {/* Scrim runs sideways rather than straight down: the headline sits on the
+            left, so only that edge needs darkening and the sky stays saturated. */}
+        <div className="absolute inset-0 bg-gradient-to-r from-lake-950/85 via-lake-950/45 to-lake-950/10" />
+        {/* Short fade at the foot of the hero so the photograph meets the page. */}
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-lake-50" />
 
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-28">
           <motion.p

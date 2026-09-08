@@ -54,7 +54,7 @@ export default function ConsentGate({ children }: { children: React.ReactNode })
         </div>
         <div className="max-h-[60vh] space-y-4 overflow-y-auto px-5 py-4">
           <p className="text-sm text-lake-600">
-            Read and accept the documents below to continue using Kariba Lake Access.
+            Read and accept the documents below to continue using Kariba Lake Connect.
           </p>
           {items.map((it) => (
             <div key={it.docType} className="rounded-xl border border-lake-100 p-3">

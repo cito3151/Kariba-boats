@@ -160,7 +160,7 @@ export default function Login() {
         </div>
 
         <p className="mt-5 text-center text-sm text-lake-500">
-          New to Kariba Lake Access?{' '}
+          New to Kariba Lake Connect?{' '}
           <Link to="/signup" className="font-semibold text-lake-700 hover:text-lake-900">
             Create an account
           </Link>

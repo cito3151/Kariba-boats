@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText, FileText, LifeBuoy } from 'lucide-react';
+import { ShieldCheck, Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText, FileText, LifeBuoy, Building2 } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import DashboardBanner from '../components/DashboardBanner';
 import StatTile from '../components/StatTile';
 import ApprovalQueue from '../components/admin/ApprovalQueue';
 import AdminBookings from '../components/admin/AdminBookings';
 import UserVerification from '../components/admin/UserVerification';
+import CompanyVerification from '../components/admin/CompanyVerification';
 import RoleManagement from '../components/admin/RoleManagement';
 import AuditLog from '../components/admin/AuditLog';
 import LegalDocuments from '../components/admin/LegalDocuments';
@@ -21,9 +22,10 @@ import { photos } from '../data/photos';
 import * as boats from '../services/boats.service';
 import { listAllBookings } from '../services/bookings.service';
 import { listOwnersAndHotels, listAllUsers } from '../services/users.service';
+import { listCompaniesForReview } from '../services/companies.service';
 import type { OwnerBoat, BoatStatus } from '../services/boats.service';
 
-type View = 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users' | 'roles' | 'audit' | 'legal' | 'emergency';
+type View = 'companies' | 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users' | 'roles' | 'audit' | 'legal' | 'emergency';
 
 const STATUS_CHIP: Record<BoatStatus, string> = {
   draft: 'bg-gray-100 text-gray-600',
@@ -78,6 +80,7 @@ export default function AdminDashboard() {
   const { data: allUsers } = useAsync(
     () => (isSuper ? listAllUsers() : Promise.resolve([])), [isSuper],
   );
+  const { data: companyData } = useAsync(listCompaniesForReview, []);
   const [view, setView] = useState<View>('queue');
 
   const list = boatData ?? [];
@@ -85,6 +88,7 @@ export default function AdminDashboard() {
     (b) => b.status === 'requested' || b.status === 'confirmed' || b.status === 'deposit_paid',
   ).length;
   const unverified = (userData ?? []).filter((u) => u.verificationStatus === 'pending').length;
+  const companiesAwaiting = (companyData ?? []).filter((c) => c.pendingCount > 0).length;
 
   const tiles: { key: View; label: string; value: number; icon: typeof Anchor }[] = [
     { key: 'all', label: 'Total boats', value: list.length, icon: Anchor },
@@ -93,6 +97,7 @@ export default function AdminDashboard() {
     { key: 'attention', label: 'Maintenance attention', value: list.filter((b) => b.maintenanceStatus === 'due' || b.maintenanceStatus === 'overdue').length, icon: Wrench },
     { key: 'bookings', label: 'Active bookings', value: activeBookings, icon: CalendarCheck },
     { key: 'users', label: 'Unverified owners/hotels', value: unverified, icon: UserCheck },
+    { key: 'companies', label: 'Company documents', value: companiesAwaiting, icon: Building2 },
     { key: 'audit', label: 'Activity log', value: 0, icon: ScrollText },
     { key: 'emergency', label: 'Emergency contacts', value: 0, icon: LifeBuoy },
   ];
@@ -117,6 +122,7 @@ export default function AdminDashboard() {
           {view === 'queue' && <ApprovalQueue />}
           {view === 'bookings' && (<><h2 className="mb-3 font-semibold text-lake-950">All bookings</h2><AdminBookings /></>)}
           {view === 'users' && (<><h2 className="mb-3 font-semibold text-lake-950">Owner and hotel verification</h2><UserVerification /></>)}
+          {view === 'companies' && (<><h2 className="mb-3 font-semibold text-lake-950">Company ownership verification</h2><CompanyVerification /></>)}
           {view === 'roles' && isSuper && (<><h2 className="mb-3 font-semibold text-lake-950">Admins and roles</h2><RoleManagement /></>)}
           {view === 'audit' && (<><h2 className="mb-3 font-semibold text-lake-950">Activity log</h2><AuditLog /></>)}
           {view === 'legal' && isSuper && (<><h2 className="mb-3 font-semibold text-lake-950">Legal documents</h2><LegalDocuments /></>)}
