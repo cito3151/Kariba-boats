@@ -185,11 +185,18 @@ function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChan
         />
         {error && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
         <div className="mt-3 flex flex-wrap gap-2">
-          <button onClick={() => decide('verified')} disabled={busy || company.approvedCount === 0}
-            title={company.approvedCount === 0 ? 'Approve at least one document first' : undefined}
+          {/* Mirrors admin_review_company's gate exactly, so the button is never
+              offered for a decision the database will refuse. */}
+          <button onClick={() => decide('verified')} disabled={busy || company.awaitingApproval.length > 0}
             className="inline-flex items-center gap-1.5 rounded-lg bg-lake-700 px-3 py-2 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
             <ShieldCheck size={15} /> Verify company
           </button>
+          {company.awaitingApproval.length > 0 && (
+            <p className="w-full text-xs text-lake-600">
+              Every proof must be approved before this company can be verified. Outstanding:{' '}
+              {company.awaitingApproval.map((k) => companies.DOCUMENT_LABELS[k]).join(', ')}.
+            </p>
+          )}
           <button onClick={() => decide('rejected')} disabled={busy || !note.trim()}
             title={!note.trim() ? 'Give a reason first' : undefined}
             className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">

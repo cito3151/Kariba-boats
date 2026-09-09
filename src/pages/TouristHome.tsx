@@ -68,9 +68,10 @@ export default function TouristHome() {
           style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
           className="absolute inset-0 h-full w-full object-cover"
         />
-        {/* Scrim runs sideways rather than straight down: the headline sits on the
-            left, so only that edge needs darkening and the sky stays saturated. */}
-        <div className="absolute inset-0 bg-gradient-to-r from-lake-950/85 via-lake-950/45 to-lake-950/10" />
+        {/* Two scrims, because the copy sits differently at each size. On mobile the
+            headline spans the full width, so it needs cover everywhere; from sm up it
+            is confined to the left half and the sideways scrim keeps the sky vivid. */}
+        <div className="absolute inset-0 bg-gradient-to-b from-lake-950/80 via-lake-950/70 to-lake-950/55 sm:bg-gradient-to-r sm:from-lake-950/85 sm:via-lake-950/45 sm:to-lake-950/10" />
         {/* Short fade at the foot of the hero so the photograph meets the page. */}
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-lake-50" />
 

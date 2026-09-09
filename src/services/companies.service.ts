@@ -192,7 +192,10 @@ export interface CompanyForReview extends Company {
   documents: CompanyDocument[];
   pendingCount: number;
   approvedCount: number;
+  /** Kinds with no document on file at all, or only rejected ones. */
   missingKinds: DocumentKind[];
+  /** Kinds without an approved document. Verification is blocked while any remain. */
+  awaitingApproval: DocumentKind[];
 }
 
 /** Every company plus its documents, for the admin verification queue. */
@@ -218,12 +221,15 @@ export async function listCompaniesForReview(): Promise<CompanyForReview[]> {
     const company = mapCompany(raw);
     const documents = byCompany.get(company.id) ?? [];
     const present = new Set(documents.filter((d) => d.reviewStatus !== 'rejected').map((d) => d.docKind));
+    const approved = new Set(documents.filter((d) => d.reviewStatus === 'approved').map((d) => d.docKind));
+    const kinds = REQUIRED_DOCUMENTS.map((r) => r.kind);
     return {
       ...company,
       documents,
       pendingCount: documents.filter((d) => d.reviewStatus === 'pending').length,
       approvedCount: documents.filter((d) => d.reviewStatus === 'approved').length,
-      missingKinds: REQUIRED_DOCUMENTS.map((r) => r.kind).filter((k) => !present.has(k)),
+      missingKinds: kinds.filter((k) => !present.has(k)),
+      awaitingApproval: kinds.filter((k) => !approved.has(k)),
     };
   });
 }
