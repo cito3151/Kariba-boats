@@ -1,48 +1,34 @@
-import logoUrl from '../assets/kariba connect logo.png';
-
-// The source logo is a square lockup: the sun/boat/waves emblem sits in the upper
-// area with the "Kariba Lake Connect" wordmark beneath it. In the app chrome the
-// wordmark is already set in live text next to the mark, so we window in on just
-// the emblem rather than shipping the tiny, unreadable wordmark twice.
-const EMBLEM = {
-  // Measured off the asset by scanning pixel rows and columns for ink: the emblem
-  // occupies x 0.155-0.844 and ends at y 0.611, where the wordmark begins at 0.616.
-  // The window stops just short of that seam, so no letter tops bleed into the mark.
-  left: 0.145,
-  top: 0.15,
-  width: 0.71,
-  height: 0.46,
-};
+import brandMarkUrl from '../assets/brandmark.png';
 
 /**
- * The Kariba Lake Connect emblem, cropped out of the full logo lockup.
- * `height` is the rendered height in pixels; width follows the emblem's aspect.
+ * Intrinsic size of brandmark.png. The asset is pre-cropped and background-keyed
+ * by scripts/build-brandmark.mjs, which windows the emblem out of the full
+ * "kariba connect logo.png" lockup (still the source of truth in src/assets) and
+ * keys its flat white ground to transparent. Nothing needs cropping at runtime.
+ *
+ * Both dimensions are set explicitly rather than leaving width auto, so the
+ * sticky header reserves the right box before the image decodes.
+ */
+const INTRINSIC = { width: 185, height: 120 };
+const ASPECT = INTRINSIC.width / INTRINSIC.height;
+
+/**
+ * The Kariba Lake Connect emblem — sun, boat and waves, without the wordmark.
+ * In the app chrome the wordmark is already set in live text beside the mark.
+ *
+ * `height` is the rendered height in CSS pixels; the width follows the emblem's
+ * aspect ratio.
  */
 export default function BrandMark({ height = 36, className = '' }: { height?: number; className?: string }) {
-  const scale = height / EMBLEM.height;
-
   return (
-    <span
-      className={`block shrink-0 overflow-hidden ${className}`}
-      style={{ height, width: scale * EMBLEM.width }}
-    >
-      <img
-        src={logoUrl}
-        alt=""
-        aria-hidden
-        style={{
-          width: scale,
-          height: scale,
-          maxWidth: 'none',
-          marginLeft: -scale * EMBLEM.left,
-          marginTop: -scale * EMBLEM.top,
-        }}
-      />
-    </span>
+    <img
+      src={brandMarkUrl}
+      alt=""
+      aria-hidden
+      width={INTRINSIC.width}
+      height={INTRINSIC.height}
+      className={`block shrink-0 ${className}`}
+      style={{ height, width: height * ASPECT, maxWidth: 'none' }}
+    />
   );
-}
-
-/** The full logo lockup, emblem plus wordmark. For splash and auth surfaces. */
-export function BrandLockup({ className = '' }: { className?: string }) {
-  return <img src={logoUrl} alt="Kariba Lake Connect" className={className} />;
 }

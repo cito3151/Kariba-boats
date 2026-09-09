@@ -84,3 +84,25 @@ export async function signedUrl(storagePath: string): Promise<string> {
   if (error) throw new Error(humanizeError(error.message));
   return data.signedUrl;
 }
+
+/**
+ * Opens a private document in a new tab.
+ *
+ * The tab is opened synchronously inside the click because awaiting the signed URL
+ * first breaks the user-gesture chain, and Safari and Firefox then block the window
+ * silently. `noopener` in the feature string would make window.open return null, so
+ * the opener link is cut by hand instead.
+ */
+export async function openDocument(storagePath: string): Promise<void> {
+  const tab = window.open('', '_blank');
+  if (!tab) {
+    throw new Error('Your browser blocked the document window. Allow pop-ups for this site, then try again.');
+  }
+  tab.opener = null;
+  try {
+    tab.location.replace(await signedUrl(storagePath));
+  } catch (e) {
+    tab.close();
+    throw e;
+  }
+}

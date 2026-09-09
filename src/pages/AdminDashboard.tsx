@@ -22,7 +22,7 @@ import { photos } from '../data/photos';
 import * as boats from '../services/boats.service';
 import { listAllBookings } from '../services/bookings.service';
 import { listOwnersAndHotels, listAllUsers } from '../services/users.service';
-import { listCompaniesForReview } from '../services/companies.service';
+import { countCompaniesAwaitingReview } from '../services/companies.service';
 import type { OwnerBoat, BoatStatus } from '../services/boats.service';
 
 type View = 'companies' | 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users' | 'roles' | 'audit' | 'legal' | 'emergency';
@@ -80,7 +80,11 @@ export default function AdminDashboard() {
   const { data: allUsers } = useAsync(
     () => (isSuper ? listAllUsers() : Promise.resolve([])), [isSuper],
   );
-  const { data: companyData } = useAsync(listCompaniesForReview, []);
+  // A count, not the queue: listCompaniesForReview reads every verification document
+  // on the platform, which is a lot to download for one tile an admin may never open.
+  const {
+    data: companiesAwaiting, reload: reloadCompanyCount,
+  } = useAsync(countCompaniesAwaitingReview, []);
   const [view, setView] = useState<View>('queue');
 
   const list = boatData ?? [];
@@ -88,7 +92,6 @@ export default function AdminDashboard() {
     (b) => b.status === 'requested' || b.status === 'confirmed' || b.status === 'deposit_paid',
   ).length;
   const unverified = (userData ?? []).filter((u) => u.verificationStatus === 'pending').length;
-  const companiesAwaiting = (companyData ?? []).filter((c) => c.pendingCount > 0).length;
 
   const tiles: { key: View; label: string; value: number; icon: typeof Anchor }[] = [
     { key: 'all', label: 'Total boats', value: list.length, icon: Anchor },
@@ -97,7 +100,7 @@ export default function AdminDashboard() {
     { key: 'attention', label: 'Maintenance attention', value: list.filter((b) => b.maintenanceStatus === 'due' || b.maintenanceStatus === 'overdue').length, icon: Wrench },
     { key: 'bookings', label: 'Active bookings', value: activeBookings, icon: CalendarCheck },
     { key: 'users', label: 'Unverified owners/hotels', value: unverified, icon: UserCheck },
-    { key: 'companies', label: 'Company documents', value: companiesAwaiting, icon: Building2 },
+    { key: 'companies', label: 'Company documents', value: companiesAwaiting ?? 0, icon: Building2 },
     { key: 'audit', label: 'Activity log', value: 0, icon: ScrollText },
     { key: 'emergency', label: 'Emergency contacts', value: 0, icon: LifeBuoy },
   ];
@@ -122,7 +125,7 @@ export default function AdminDashboard() {
           {view === 'queue' && <ApprovalQueue />}
           {view === 'bookings' && (<><h2 className="mb-3 font-semibold text-lake-950">All bookings</h2><AdminBookings /></>)}
           {view === 'users' && (<><h2 className="mb-3 font-semibold text-lake-950">Owner and hotel verification</h2><UserVerification /></>)}
-          {view === 'companies' && (<><h2 className="mb-3 font-semibold text-lake-950">Company ownership verification</h2><CompanyVerification /></>)}
+          {view === 'companies' && (<><h2 className="mb-3 font-semibold text-lake-950">Company ownership verification</h2><CompanyVerification onReviewed={reloadCompanyCount} /></>)}
           {view === 'roles' && isSuper && (<><h2 className="mb-3 font-semibold text-lake-950">Admins and roles</h2><RoleManagement /></>)}
           {view === 'audit' && (<><h2 className="mb-3 font-semibold text-lake-950">Activity log</h2><AuditLog /></>)}
           {view === 'legal' && isSuper && (<><h2 className="mb-3 font-semibold text-lake-950">Legal documents</h2><LegalDocuments /></>)}

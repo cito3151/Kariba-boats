@@ -1,0 +1,32 @@
+{
+  "name": "Kariba Lake Connect",
+  "short_name": "Kariba Connect",
+  "description": "Book verified boats on Lake Kariba, Zimbabwe — houseboat stays, fishing trips and sunset cruises from trusted local operators.",
+  "lang": "en",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#eef7fb",
+  "theme_color": "#0d2532",
+  "icons": [
+    {
+      "src": "/favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

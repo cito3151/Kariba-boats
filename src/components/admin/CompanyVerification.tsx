@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Building2, ShieldCheck, ShieldAlert, Eye, Check, X, AlertTriangle } from 'lucide-react';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
 import { useAsync } from '../../hooks/useAsync';
@@ -25,6 +25,22 @@ function DocumentRow({ doc, onReviewed }: { doc: CompanyDocument; onReviewed: ()
   const [note, setNote] = useState('');
   const [rejecting, setRejecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const noteRef = useRef<HTMLInputElement>(null);
+  const rejectRef = useRef<HTMLButtonElement>(null);
+  const returnFocus = useRef(false);
+
+  // The note panel appears well below the button that opened it, so without moving
+  // focus a screen-reader user gets no signal that anything happened. Cancelling
+  // hands focus back rather than dropping it on the body.
+  useEffect(() => {
+    if (rejecting) { noteRef.current?.focus(); return; }
+    if (returnFocus.current) { returnFocus.current = false; rejectRef.current?.focus(); }
+  }, [rejecting]);
+
+  const cancelReject = () => {
+    returnFocus.current = true;
+    setRejecting(false); setNote(''); setError(null);
+  };
 
   const act = async (status: CompanyDocument['reviewStatus']) => {
     if (status === 'rejected' && !note.trim()) {
@@ -48,7 +64,7 @@ function DocumentRow({ doc, onReviewed }: { doc: CompanyDocument; onReviewed: ()
   const view = async () => {
     setError(null);
     try {
-      window.open(await companies.signedUrl(doc.storagePath), '_blank', 'noopener');
+      await companies.openDocument(doc.storagePath);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open that document.');
     }
@@ -73,14 +89,17 @@ function DocumentRow({ doc, onReviewed }: { doc: CompanyDocument; onReviewed: ()
             className="inline-flex items-center gap-1 rounded-md border border-lake-200 bg-white px-2 py-1 text-xs text-lake-700 hover:bg-lake-50">
             <Eye size={13} /> View
           </button>
-          {doc.reviewStatus !== 'approved' && (
+          {/* Hidden while the note panel is open: otherwise this Reject becomes a
+              second live submit once a note exists, and the card carries two
+              controls with the same label in different places. */}
+          {!rejecting && doc.reviewStatus !== 'approved' && (
             <button onClick={() => act('approved')} disabled={busy}
               className="inline-flex items-center gap-1 rounded-md bg-lake-700 px-2 py-1 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
               <Check size={13} /> Approve
             </button>
           )}
-          {doc.reviewStatus !== 'rejected' && (
-            <button onClick={() => act('rejected')} disabled={busy}
+          {!rejecting && doc.reviewStatus !== 'rejected' && (
+            <button ref={rejectRef} onClick={() => act('rejected')} disabled={busy}
               className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-2 py-1 text-xs text-red-700 hover:bg-red-50 disabled:opacity-50">
               <X size={13} /> Reject
             </button>
@@ -97,21 +116,31 @@ function DocumentRow({ doc, onReviewed }: { doc: CompanyDocument; onReviewed: ()
           <label htmlFor={`note-${doc.id}`} className="text-xs font-medium text-lake-600">
             Tell the operator what to fix
           </label>
-          <div className="mt-1 flex gap-2">
+          <div className="mt-1 flex flex-wrap gap-2">
             <input
+              ref={noteRef}
               id={`note-${doc.id}`} value={note} onChange={(e) => setNote(e.target.value)}
               placeholder="For example: the scan is cut off at the bottom"
-              className="w-full rounded-lg border border-lake-200 bg-white px-3 py-2 text-sm text-lake-950 outline-none focus:border-lake-400"
+              className="w-full min-w-0 flex-1 rounded-lg border border-lake-200 bg-white px-3 py-2 text-sm text-lake-950 outline-none focus:border-lake-400 sm:w-auto"
             />
             <button onClick={() => act('rejected')} disabled={busy || !note.trim()}
               className="shrink-0 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50">
-              Reject
+              Confirm rejection
+            </button>
+            <button onClick={cancelReject} disabled={busy}
+              className="shrink-0 rounded-lg border border-lake-200 px-3 py-2 text-sm font-medium text-lake-600 hover:bg-lake-50 disabled:opacity-50">
+              Cancel
             </button>
           </div>
+          {/* A disabled button is out of the tab order and fires no tooltip, so the
+              reason it is unavailable belongs on the page. */}
+          {!note.trim() && (
+            <p className="mt-1 text-xs text-lake-600">Write what needs fixing before you can reject this document.</p>
+          )}
         </div>
       )}
 
-      {error && <p className="mt-2 text-xs text-red-700">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-xs text-red-700">{error}</p>}
     </li>
   );
 }
@@ -183,7 +212,9 @@ function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChan
           placeholder="Visible to the operator on their company page"
           className="mt-1 w-full rounded-lg border border-lake-200 bg-white px-3 py-2 text-sm text-lake-950 outline-none focus:border-lake-400"
         />
-        {error && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && (
+          <p role="alert" className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        )}
         <div className="mt-3 flex flex-wrap gap-2">
           {/* Mirrors admin_review_company's gate exactly, so the button is never
               offered for a decision the database will refuse. */}
@@ -198,18 +229,26 @@ function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChan
             </p>
           )}
           <button onClick={() => decide('rejected')} disabled={busy || !note.trim()}
-            title={!note.trim() ? 'Give a reason first' : undefined}
             className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
             <ShieldAlert size={15} /> Reject company
           </button>
+          {/* A title on a disabled button reaches nobody: it is out of the tab order
+              and does not reliably fire a tooltip. */}
+          {!note.trim() && (
+            <p className="w-full text-xs text-lake-600">Add a note above before rejecting this company.</p>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-export default function CompanyVerification() {
+export default function CompanyVerification({ onReviewed }: { onReviewed?: () => void }) {
   const { data, loading, error, reload } = useAsync(() => companies.listCompaniesForReview(), []);
+
+  // The dashboard tile counts the same queue from its own narrower query, so it has
+  // to be told when a decision lands or it keeps its pre-review number.
+  const refresh = () => { reload(); onReviewed?.(); };
 
   if (loading) return <LoadingState label="Loading companies" />;
   if (error) return <ErrorState message={error} onRetry={reload} />;
@@ -228,7 +267,7 @@ export default function CompanyVerification() {
 
   return (
     <div className="space-y-3">
-      {sorted.map((c) => <CompanyCard key={c.id} company={c} onChanged={reload} />)}
+      {sorted.map((c) => <CompanyCard key={c.id} company={c} onChanged={refresh} />)}
     </div>
   );
 }

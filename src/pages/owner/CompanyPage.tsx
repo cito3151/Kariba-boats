@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Building2, ShieldCheck, Clock, ShieldAlert, Upload, Trash2, Eye, ArrowLeft, CheckCircle2,
@@ -52,9 +52,11 @@ function DocumentSlot({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const mine = documents.filter((d) => d.docKind === kind);
   const best = mine.find((d) => d.reviewStatus === 'approved') ?? mine[0] ?? null;
+  const uploadLabel = busy ? 'Uploading' : mine.length > 0 ? 'Upload another' : 'Upload document';
 
   const upload = async (file: File | undefined) => {
     if (!file) return;
@@ -84,7 +86,7 @@ function DocumentSlot({
   const view = async (doc: CompanyDocument) => {
     setError(null);
     try {
-      window.open(await companies.signedUrl(doc.storagePath), '_blank', 'noopener');
+      await companies.openDocument(doc.storagePath);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open that document.');
     }
@@ -136,18 +138,29 @@ function DocumentSlot({
         </ul>
       )}
 
-      <label className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-medium text-lake-700 hover:bg-lake-50">
+      {/* A real button, not a <label> around the input: the input has to be
+          display:none to hide the browser's own control, and that takes it out of
+          the tab order, while a <label> is not focusable at all. Keyboard users
+          could reach View and Remove but never the upload itself. */}
+      <button
+        type="button" onClick={() => fileRef.current?.click()} disabled={busy}
+        aria-label={`${uploadLabel} for ${label}`}
+        aria-describedby={`upload-hint-${kind}`}
+        className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-medium text-lake-700 outline-none hover:bg-lake-50 focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 disabled:opacity-50"
+      >
         <Upload size={15} />
-        {busy ? 'Uploading' : mine.length > 0 ? 'Upload another' : 'Upload document'}
-        <input
-          type="file" className="hidden" disabled={busy}
-          accept="application/pdf,image/jpeg,image/png"
-          onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = ''; }}
-        />
-      </label>
-      <p className="mt-1 text-[11px] text-lake-400">PDF, JPEG or PNG, up to 10 MB.</p>
+        {uploadLabel}
+      </button>
+      <input
+        ref={fileRef} type="file" className="hidden" tabIndex={-1} aria-hidden="true" disabled={busy}
+        accept="application/pdf,image/jpeg,image/png"
+        onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = ''; }}
+      />
+      <p id={`upload-hint-${kind}`} className="mt-1 text-[11px] text-lake-400">PDF, JPEG or PNG, up to 10 MB.</p>
 
-      {error && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
+      {error && (
+        <p role="alert" className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>
+      )}
     </div>
   );
 }
@@ -197,8 +210,10 @@ function CompanyDetails({ company, onSaved }: { company: Company; onSaved: () =>
           <input id="company-phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className={field} />
         </div>
       </div>
-      {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-      <div className="mt-3 flex items-center gap-3">
+      {error && (
+        <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+      )}
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <button onClick={save} disabled={saving || !name.trim()}
           className="rounded-lg bg-lake-700 px-4 py-2 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
           {saving ? 'Saving' : 'Save details'}
@@ -207,6 +222,11 @@ function CompanyDetails({ company, onSaved }: { company: Company; onSaved: () =>
           <span className="inline-flex items-center gap-1 text-sm text-lake-600">
             <CheckCircle2 size={15} /> Saved
           </span>
+        )}
+        {/* A disabled button is skipped by the tab order and fires no tooltip, so
+            the reason it is unavailable has to be on the page. */}
+        {!name.trim() && (
+          <p className="w-full text-xs text-lake-600">Enter the registered company name before saving.</p>
         )}
       </div>
     </div>

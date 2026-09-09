@@ -71,21 +71,45 @@ const COMPANY_SELECT =
 const DOC_SELECT =
   'id, company_id, user_id, doc_kind, storage_path, file_name, label, review_status, review_note, reviewed_at, expires_at, uploaded_at';
 
+const COMPANY_STATUSES: readonly CompanyVerificationStatus[] = ['unverified', 'pending', 'verified', 'rejected'];
+const REVIEW_STATUSES: readonly DocumentReviewStatus[] = ['pending', 'approved', 'rejected'];
+const DOC_KINDS: readonly DocumentKind[] = REQUIRED_DOCUMENTS.map((d) => d.kind);
+
+/**
+ * review_status is a plain text column behind a CHECK constraint, so a later
+ * migration can widen it without TypeScript noticing. Assigning an unseen value
+ * straight into a closed union puts it into the Record lookups the screens index
+ * by status, where the miss throws on `.chip` and white-screens the page. Coercing
+ * here keeps the union honest and degrades to a safe status instead.
+ */
+function oneOf<T extends string>(allowed: readonly T[], value: unknown, fallback: T): T {
+  return allowed.includes(value as T) ? (value as T) : fallback;
+}
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function mapCompany(r: any): Company {
   return {
     id: r.id, name: r.name, registrationNumber: r.registration_number,
     contactEmail: r.contact_email, contactPhone: r.contact_phone,
-    verificationStatus: r.verification_status, verificationNote: r.verification_note,
+    // 'pending' rather than 'unverified': an unknown status must never read as
+    // verified, nor tell an operator to re-upload proofs they already filed.
+    verificationStatus: oneOf(COMPANY_STATUSES, r.verification_status, 'pending'),
+    verificationNote: r.verification_note,
     verifiedAt: r.verified_at, createdAt: r.created_at,
   };
 }
 
 function mapDoc(r: any): CompanyDocument {
   return {
-    id: r.id, companyId: r.company_id, userId: r.user_id, docKind: r.doc_kind,
+    id: r.id, companyId: r.company_id, userId: r.user_id,
+    // An unrecognised kind falls to null, which both screens already render as an
+    // unclassified document rather than slotting it under the wrong proof.
+    docKind: r.doc_kind && DOC_KINDS.includes(r.doc_kind) ? r.doc_kind : null,
     storagePath: r.storage_path, fileName: r.file_name, label: r.label,
-    reviewStatus: r.review_status, reviewNote: r.review_note, reviewedAt: r.reviewed_at,
+    // 'pending' keeps an unknown review state out of the approved set, so it blocks
+    // verification rather than silently satisfying it.
+    reviewStatus: oneOf(REVIEW_STATUSES, r.review_status, 'pending'),
+    reviewNote: r.review_note, reviewedAt: r.reviewed_at,
     expiresAt: r.expires_at, uploadedAt: r.uploaded_at,
   };
 }
@@ -186,6 +210,28 @@ export async function signedUrl(storagePath: string): Promise<string> {
   return data.signedUrl;
 }
 
+/**
+ * Opens a private document in a new tab.
+ *
+ * The tab has to be opened synchronously inside the click: awaiting the signed URL
+ * first breaks the user-gesture chain, and Safari and Firefox then block the window
+ * without telling anyone. `noopener` in the feature string is not usable either,
+ * because it makes window.open return null, so the opener link is cut by hand.
+ */
+export async function openDocument(storagePath: string): Promise<void> {
+  const tab = window.open('', '_blank');
+  if (!tab) {
+    throw new Error('Your browser blocked the document window. Allow pop-ups for this site, then try again.');
+  }
+  tab.opener = null;
+  try {
+    tab.location.replace(await signedUrl(storagePath));
+  } catch (e) {
+    tab.close();
+    throw e;
+  }
+}
+
 // ---------------------------------------------------------------- admin side
 
 export interface CompanyForReview extends Company {
@@ -204,8 +250,11 @@ export async function listCompaniesForReview(): Promise<CompanyForReview[]> {
     .from('companies').select(COMPANY_SELECT).order('created_at', { ascending: false });
   if (error) throw new Error(humanizeError(error.message));
 
+  // Account-level documents live in the same table and were previously fetched here
+  // only to be dropped in the loop below. The queue only ever shows company proofs.
   const { data: docs, error: dErr } = await supabase
-    .from('verification_documents').select(DOC_SELECT).order('uploaded_at', { ascending: false });
+    .from('verification_documents').select(DOC_SELECT)
+    .not('company_id', 'is', null).order('uploaded_at', { ascending: false });
   if (dErr) throw new Error(humanizeError(dErr.message));
 
   const byCompany = new Map<string, CompanyDocument[]>();
@@ -232,6 +281,22 @@ export async function listCompaniesForReview(): Promise<CompanyForReview[]> {
       awaitingApproval: kinds.filter((k) => !approved.has(k)),
     };
   });
+}
+
+/**
+ * How many companies have at least one document still awaiting a decision.
+ *
+ * Deliberately not listCompaniesForReview: that reads every company and every
+ * company document, so an admin who opens the dashboard for an unrelated tab would
+ * download the whole review queue to render one tile number. Only pending rows are
+ * read here, and only their company id.
+ */
+export async function countCompaniesAwaitingReview(): Promise<number> {
+  const { data, error } = await supabase
+    .from('verification_documents').select('company_id')
+    .eq('review_status', 'pending').not('company_id', 'is', null);
+  if (error) throw new Error(humanizeError(error.message));
+  return new Set((data ?? []).map((r) => r.company_id)).size;
 }
 
 export async function reviewDocument(

@@ -4,7 +4,7 @@ import { LoadingState, ErrorState } from '../StateViews';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../data/AuthContext';
 import {
-  listMyDocuments, uploadDocuments, deleteDocument, signedUrl,
+  listMyDocuments, uploadDocuments, deleteDocument, openDocument,
   type VerificationDocument,
 } from '../../services/documents.service';
 
@@ -43,7 +43,8 @@ export default function DocumentUploader() {
   };
 
   const view = async (doc: VerificationDocument) => {
-    try { window.open(await signedUrl(doc.storagePath), '_blank', 'noopener'); }
+    setMsg('');
+    try { await openDocument(doc.storagePath); }
     catch (err) { setMsg(err instanceof Error ? err.message : 'Could not open the document.'); }
   };
 
@@ -86,18 +87,22 @@ export default function DocumentUploader() {
 
           <div className="mt-3 flex flex-wrap items-end gap-2">
             <div className="min-w-0 flex-1">
-              <label className="text-xs font-medium text-lake-500">Label (optional)</label>
-              <input value={label} onChange={(e) => setLabel(e.target.value)}
+              <label htmlFor="document-label" className="text-xs font-medium text-lake-500">Label (optional)</label>
+              <input id="document-label" value={label} onChange={(e) => setLabel(e.target.value)}
                 placeholder="e.g. Certificate of incorporation"
                 className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400" />
             </div>
-            <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-lake-700 px-4 py-2 text-xs font-semibold text-white hover:bg-lake-800 ${busy ? 'opacity-60' : ''}`}>
+            {/* A button rather than a <label> around the input: the input must be
+                display:none to hide the browser's own control, which also drops it
+                from the tab order, and a <label> cannot take focus itself. */}
+            <button type="button" onClick={() => fileRef.current?.click()} disabled={busy}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-lake-700 px-4 py-2 text-xs font-semibold text-white outline-none hover:bg-lake-800 focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 disabled:opacity-60">
               <Upload size={14} /> {busy ? 'Uploading' : 'Upload'}
-              <input ref={fileRef} type="file" accept="application/pdf,image/jpeg,image/png" multiple
-                className="hidden" onChange={onPick} disabled={busy} />
-            </label>
+            </button>
+            <input ref={fileRef} type="file" accept="application/pdf,image/jpeg,image/png" multiple
+              className="hidden" tabIndex={-1} aria-hidden="true" onChange={onPick} disabled={busy} />
           </div>
-          {msg && <p className="mt-2 text-xs text-red-600">{msg}</p>}
+          {msg && <p role="alert" className="mt-2 text-xs text-red-600">{msg}</p>}
         </>
       )}
     </div>
