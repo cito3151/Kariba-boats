@@ -1,5 +1,8 @@
 import { supabase } from '../lib/supabase';
 import { humanizeError } from './errors';
+import { DOCUMENT_BUCKET, deleteVerificationDocument } from './documentStorage.service';
+
+export { signedUrl, openDocument } from './documentStorage.service';
 
 export type CompanyVerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected';
 export type CompanyMemberRole = 'owner' | 'manager' | 'staff';
@@ -62,7 +65,6 @@ export interface CompanyDocument {
   uploadedAt: string;
 }
 
-const BUCKET = 'registration-docs';
 const MAX_BYTES = 10 * 1024 * 1024;
 const ALLOWED = ['application/pdf', 'image/jpeg', 'image/png'];
 
@@ -181,7 +183,7 @@ export async function uploadDocument(input: {
 
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'pdf';
   const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-  const { error: upErr } = await supabase.storage.from(BUCKET)
+  const { error: upErr } = await supabase.storage.from(DOCUMENT_BUCKET)
     .upload(path, file, { cacheControl: '3600', upsert: false });
   if (upErr) throw new Error(`Upload failed for ${file.name}: ${upErr.message}`);
 
@@ -192,44 +194,13 @@ export async function uploadDocument(input: {
   });
   if (error) {
     // Do not leave an orphaned object behind if the row insert is refused.
-    await supabase.storage.from(BUCKET).remove([path]);
+    await supabase.storage.from(DOCUMENT_BUCKET).remove([path]);
     throw new Error(humanizeError(error.message));
   }
 }
 
 export async function deleteDocument(doc: CompanyDocument): Promise<void> {
-  const { error } = await supabase.from('verification_documents').delete().eq('id', doc.id);
-  if (error) throw new Error(humanizeError(error.message));
-  await supabase.storage.from(BUCKET).remove([doc.storagePath]);
-}
-
-/** Short-lived URL for viewing a private document. Owner or admin, per storage RLS. */
-export async function signedUrl(storagePath: string): Promise<string> {
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(storagePath, 60);
-  if (error) throw new Error(humanizeError(error.message));
-  return data.signedUrl;
-}
-
-/**
- * Opens a private document in a new tab.
- *
- * The tab has to be opened synchronously inside the click: awaiting the signed URL
- * first breaks the user-gesture chain, and Safari and Firefox then block the window
- * without telling anyone. `noopener` in the feature string is not usable either,
- * because it makes window.open return null, so the opener link is cut by hand.
- */
-export async function openDocument(storagePath: string): Promise<void> {
-  const tab = window.open('', '_blank');
-  if (!tab) {
-    throw new Error('Your browser blocked the document window. Allow pop-ups for this site, then try again.');
-  }
-  tab.opener = null;
-  try {
-    tab.location.replace(await signedUrl(storagePath));
-  } catch (e) {
-    tab.close();
-    throw e;
-  }
+  await deleteVerificationDocument(doc.id, doc.storagePath);
 }
 
 // ---------------------------------------------------------------- admin side

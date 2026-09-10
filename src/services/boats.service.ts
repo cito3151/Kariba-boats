@@ -27,6 +27,21 @@ const OWNER_COLS = `id, owner_id, name, boat_type, capacity, description, locati
   next_maintenance_hours, hours_remaining, maintenance_status,
   status, is_active, rejection_reason, pending_changes`;
 
+const BOAT_STATUSES: readonly BoatStatus[] = ['draft', 'pending', 'approved', 'rejected', 'suspended'];
+const MAINTENANCE_STATUSES: readonly MaintenanceStatus[] = ['ok', 'approaching', 'due', 'overdue'];
+
+/**
+ * status and maintenance_status are plain text columns behind CHECK constraints, so
+ * a later migration can widen either without TypeScript noticing (same class of bug
+ * companies.service.ts guards against for its own status columns). An unseen value
+ * dropped straight into these closed unions would reach the Records the admin and
+ * owner dashboards index by status, where the miss throws and white-screens the
+ * page. Coercing here keeps the unions honest and degrades to a safe status.
+ */
+function oneOf<T extends string>(allowed: readonly T[], value: unknown, fallback: T): T {
+  return allowed.includes(value as T) ? (value as T) : fallback;
+}
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function toOwnerBoat(r: any): OwnerBoat {
   return {
@@ -42,8 +57,14 @@ function toOwnerBoat(r: any): OwnerBoat {
     lastMaintenanceHours: Number(r.last_maintenance_hours),
     nextMaintenanceHours: Number(r.next_maintenance_hours),
     hoursRemaining: Number(r.hours_remaining),
-    maintenanceStatus: r.maintenance_status,
-    status: r.status, isActive: r.is_active,
+    // 'overdue' rather than 'ok': an unknown maintenance state must never read as
+    // healthy and quietly drop out of the admin's maintenance-attention queue.
+    maintenanceStatus: oneOf(MAINTENANCE_STATUSES, r.maintenance_status, 'overdue'),
+    // 'pending' rather than 'approved': an unknown status must never read as
+    // approved (surfacing an unreviewed boat as a live public listing) or as
+    // already-live; 'pending' routes it back into the review queue instead.
+    status: oneOf(BOAT_STATUSES, r.status, 'pending'),
+    isActive: r.is_active,
     rejectionReason: r.rejection_reason, pendingChanges: r.pending_changes,
   };
 }

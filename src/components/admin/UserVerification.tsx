@@ -6,7 +6,8 @@ import { staggerContainer, staggerItem } from '../motion';
 import { useAsync } from '../../hooks/useAsync';
 import * as usersSvc from '../../services/users.service';
 import type { AppUserRow, VerificationStatus } from '../../services/users.service';
-import { listUserDocuments, signedUrl } from '../../services/documents.service';
+import { listUserDocuments } from '../../services/documents.service';
+import { openDocument } from '../../services/documentStorage.service';
 
 const STATUS_CHIP: Record<VerificationStatus, { label: string; className: string }> = {
   pending: { label: 'Pending', className: 'bg-amber-100 text-amber-800' },
@@ -26,8 +27,13 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
   const { data: docsData } = useAsync(() => listUserDocuments(user.id), [user.id]);
   const docs = docsData ?? [];
   const hasDocs = docs.length > 0;
+  // Routed through the shared helper: opening the tab has to happen synchronously
+  // on the click, or Safari/Firefox block the popup without telling anyone, and the
+  // helper surfaces that as a thrown error instead of a silently discarded null.
   const viewDoc = async (path: string) => {
-    try { window.open(await signedUrl(path), '_blank', 'noopener'); } catch { setError('Could not open the document.'); }
+    setError('');
+    try { await openDocument(path); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Could not open the document.'); }
   };
 
   const run = async (fn: () => Promise<void>) => {
@@ -102,19 +108,16 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
               </div>
               {user.role === 'hotel' ? (
                 <button onClick={() => { setMode('hotel'); setError(''); }} disabled={busy || !hasDocs}
-                  title={hasDocs ? '' : 'Upload of a registration document is required first'}
                   className="rounded-lg bg-lake-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
                   Verify hotel
                 </button>
               ) : user.role === 'agency' ? (
                 <button onClick={() => { setMode('agency'); setError(''); }} disabled={busy || !hasDocs}
-                  title={hasDocs ? '' : 'Upload of a registration document is required first'}
                   className="rounded-lg bg-lake-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
                   Verify agency
                 </button>
               ) : (
                 <button onClick={verifyOwner} disabled={busy || !hasDocs}
-                  title={hasDocs ? '' : 'Upload of a registration document is required first'}
                   className="rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
                   Verify
                 </button>
@@ -123,6 +126,11 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
                 className="rounded-lg border border-red-200 px-4 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">
                 Reject
               </button>
+              {/* A title on a disabled button reaches nobody: it is out of the tab
+                  order and does not reliably fire a tooltip. */}
+              {!hasDocs && (
+                <p className="w-full text-xs text-lake-600">Upload a registration document before this account can be verified.</p>
+              )}
             </>
           )}
           {user.verificationStatus === 'verified' && (
