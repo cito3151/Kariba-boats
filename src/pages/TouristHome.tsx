@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { Search, Users, ShieldCheck, ArrowDownUp, Wallet, MessagesSquare, Anchor } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import BoatCard, { BOAT_TYPE_LABELS, priceView } from '../components/BoatCard';
@@ -31,10 +31,30 @@ export default function TouristHome() {
   };
 
   const heroRef = useRef<HTMLElement>(null);
+  const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
-  const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
-  const heroScale = useTransform(scrollYProgress, [0, 1], [1.08, 1.25]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 1], [1, 0.4]);
+
+  // A full-bleed image that drifts and scales under the page is the textbook
+  // vestibular trigger. Under prefers-reduced-motion the photograph is simply a
+  // photograph: it still dims on scroll, because that is an opacity change which
+  // aids comprehension rather than implying movement.
+  const heroY = useTransform(scrollYProgress, [0, 1], ['0%', reduceMotion ? '0%' : '30%']);
+  const heroScale = useTransform(scrollYProgress, [0, 1], reduceMotion ? [1, 1] : [1.08, 1.25]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 1], [1, reduceMotion ? 0.7 : 0.4]);
+
+  /**
+   * Hero entry: a short rise that settles without overshoot. Nothing here was
+   * thrown by the user, so bounce would be motion for its own sake; `bounce: 0`
+   * is the critically damped default. Under reduced motion the travel is dropped
+   * and only the cross-fade remains.
+   */
+  const rise = (delay: number) => ({
+    initial: reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 },
+    animate: { opacity: 1, y: 0 },
+    transition: reduceMotion
+      ? { duration: 0.2, delay: delay / 2 }
+      : ({ type: 'spring', bounce: 0, duration: 0.5, delay } as const),
+  });
 
   const filtered = useMemo(() => {
     return (data ?? []).filter((b) => {
@@ -77,19 +97,26 @@ export default function TouristHome() {
 
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-28">
           <motion.p
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+            {...rise(0.05)}
             className="text-sunset-300 font-semibold text-sm tracking-[0.15em] uppercase"
           >
             Lake Kariba, Zimbabwe
           </motion.p>
           <motion.h1
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12, duration: 0.6 }}
-            className="mt-3 font-display text-4xl sm:text-6xl font-medium leading-[1.05] max-w-2xl"
+            {...rise(0.12)}
+            /* Fluid rather than a jump at one breakpoint, so the headline is set at
+               the right size for the actual window instead of two fixed sizes. The
+               measure widens with it: at max-w-2xl a 60px headline broke to three
+               lines on a widescreen, which reads as an accident rather than a
+               composition. */
+            className="mt-3 font-display font-medium max-w-2xl lg:max-w-4xl
+                       text-[clamp(2.25rem,4.4vw,3.75rem)]
+                       leading-[1.06] tracking-[-0.016em] lg:tracking-[-0.022em]"
           >
             Find and book a real, verified boat on Kariba, today.
           </motion.h1>
           <motion.p
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
+            {...rise(0.22)}
             className="mt-5 max-w-xl text-lg text-lake-100"
           >
             Compare fishing boats, houseboats, and sunset cruises with transparent pricing,
@@ -97,7 +124,7 @@ export default function TouristHome() {
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32, duration: 0.5 }}
+            {...rise(0.32)}
             className="mt-9 rounded-2xl bg-white/95 backdrop-blur p-4 sm:p-5 text-lake-950 shadow-2xl"
           >
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">

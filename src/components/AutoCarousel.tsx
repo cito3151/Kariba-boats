@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import BoatImage from './BoatImage';
 
@@ -12,10 +12,20 @@ interface Props {
   showDots?: boolean;
 }
 
-const variants = {
+const slideVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? '100%' : '-100%', opacity: 0 }),
   center: { x: '0%', opacity: 1 },
   exit: (dir: number) => ({ x: dir > 0 ? '-100%' : '100%', opacity: 0 }),
+};
+
+// Reduced motion keeps the slideshow, but it cross-fades in place instead of
+// sweeping the frame sideways, and it stops advancing by itself: an unprompted
+// loop every few seconds is the thing the setting most wants gone. The arrows
+// and dots still work, so nothing becomes unreachable.
+const fadeVariants = {
+  enter: () => ({ opacity: 0 }),
+  center: { x: '0%', opacity: 1 },
+  exit: () => ({ opacity: 0 }),
 };
 
 export default function AutoCarousel({
@@ -29,15 +39,17 @@ export default function AutoCarousel({
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [paused, setPaused] = useState(false);
+  const reduce = useReducedMotion();
+  const variants = reduce ? fadeVariants : slideVariants;
 
   useEffect(() => {
-    if (images.length <= 1 || paused) return;
+    if (images.length <= 1 || paused || reduce) return;
     const timer = setInterval(() => {
       setDirection(1);
       setIndex((i) => (i + 1) % images.length);
     }, intervalMs);
     return () => clearInterval(timer);
-  }, [images.length, paused, intervalMs]);
+  }, [images.length, paused, intervalMs, reduce]);
 
   const go = (e: React.MouseEvent, dir: number) => {
     e.preventDefault();
@@ -67,7 +79,7 @@ export default function AutoCarousel({
           initial="enter"
           animate="center"
           exit="exit"
-          transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          transition={reduce ? { duration: 0.25 } : { duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           className="absolute inset-0"
         >
           <BoatImage src={images[index]} alt={alt} className="h-full w-full" />

@@ -41,9 +41,36 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 {
-  font-family: var(--font-display);
-  letter-spacing: -0.01em;
+/* In @layer base so a utility class can still override these: unlayered rules
+   beat layered ones in the cascade, so a bare h1 selector here would silently
+   win over tracking-[...] on the hero headline. */
+@layer base {
+  /* Tracking is size-specific, never one value for every heading. Letterforms read
+     progressively further apart as they grow, so display sizes need negative
+     tracking to look evenly set, while a small h3 at the same value looks cramped.
+     Leading moves the opposite way: tight on large type, looser as it gets small. */
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+  }
+
+  /* Sized for the ordinary page-title h1 (24-36px). The hero headline runs up to
+     60px and tightens further on its own, because tracking has to keep getting
+     tighter as type grows, and an em value alone only scales proportionally. */
+  h1 {
+    letter-spacing: -0.014em;
+    line-height: 1.08;
+  }
+
+  h2 {
+    letter-spacing: -0.014em;
+    line-height: 1.15;
+  }
+
+  h3 {
+    letter-spacing: -0.007em;
+    line-height: 1.25;
+  }
 }
 
 ::-webkit-scrollbar {
