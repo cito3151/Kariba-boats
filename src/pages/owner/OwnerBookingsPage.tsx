@@ -103,7 +103,7 @@ export default function OwnerBookingsPage() {
                   <div className="min-w-0">
                     <h3 className="break-words text-[1.0625rem] font-semibold leading-snug text-lake-950">{b.boatName}</h3>
                     <p className="mt-1 break-words text-[15px] leading-normal tabular-nums text-lake-700">
-                      <span className="font-semibold text-lake-900">{b.guestName}</span> · {bookingsSvc.tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · <span className="font-semibold text-lake-900">${b.priceTotal}</span>
+                      <span className="font-semibold text-lake-900">{b.guestName}</span> · {bookingsSvc.tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · <span className="font-semibold text-lake-900">{bookingsSvc.tripPrice(b)}</span>
                     </p>
                   </div>
                   <StatusBadge status={b.status} />

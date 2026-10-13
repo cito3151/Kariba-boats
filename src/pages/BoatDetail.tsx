@@ -349,7 +349,7 @@ export default function BoatDetail() {
               )}
 
               <button onClick={handleBookClick}
-                className="mt-4 w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 transition-colors">
+                className="mt-4 w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-lake-950 hover:bg-sunset-400 transition-colors">
                 Request to book
               </button>
               <p className="mt-2 text-center text-[11px] text-lake-400">{boat.depositPercent}% deposit to confirm · balance paid on the day</p>

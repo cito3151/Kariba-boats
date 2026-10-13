@@ -26,7 +26,7 @@ export default function AdminBookings() {
             <div className="min-w-0">
               <p className="break-words text-base font-semibold text-lake-950">{b.boatName}</p>
               <p className="mt-0.5 break-words text-[15px] leading-normal tabular-nums text-lake-700">
-                {b.guestName} · {bookingsSvc.tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · ${b.priceTotal}
+                {b.guestName} · {bookingsSvc.tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · {bookingsSvc.tripPrice(b)}
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-3">

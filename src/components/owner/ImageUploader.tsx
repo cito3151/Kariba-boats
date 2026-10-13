@@ -78,13 +78,15 @@ export default function ImageUploader({
                     Cover
                   </span>
                 )}
-                <div className="absolute inset-x-0 bottom-0 flex justify-end gap-1 bg-black/50 p-1 opacity-0 transition-opacity group-hover:opacity-100">
+                {/* Always shown: a hover-only bar is unreachable on a phone, where
+                    most owners manage their listing. */}
+                <div className="absolute inset-x-0 bottom-0 flex justify-end gap-1 bg-gradient-to-t from-black/70 to-transparent p-1.5 pt-4">
                   {!img.isPrimary && (
-                    <button type="button" onClick={() => makePrimary(img)} title="Make cover photo"
-                      className="rounded p-1 text-white hover:bg-white/20"><Star size={13} /></button>
+                    <button type="button" onClick={() => makePrimary(img)} title="Make cover photo" aria-label="Make cover photo"
+                      className="grid h-8 w-8 place-items-center rounded-md text-white hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-white"><Star size={17} /></button>
                   )}
-                  <button type="button" onClick={() => remove(img)} title="Delete photo"
-                    className="rounded p-1 text-white hover:bg-white/20"><Trash2 size={13} /></button>
+                  <button type="button" onClick={() => remove(img)} title="Delete photo" aria-label="Delete photo"
+                    className="grid h-8 w-8 place-items-center rounded-md text-white hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-white"><Trash2 size={17} /></button>
                 </div>
               </motion.div>
             ))}

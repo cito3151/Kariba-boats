@@ -190,8 +190,8 @@ export default function TouristHome() {
             <button
               type="button"
               onClick={() => document.getElementById('boats')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })}
-              className="m-1 inline-flex items-center justify-center gap-2 rounded-md bg-sunset-500 px-6 py-3.5 text-[15px] font-bold text-white
-                         transition-[background-color,transform] duration-150 hover:bg-sunset-600 active:scale-[0.98]
+              className="m-1 inline-flex items-center justify-center gap-2 rounded-md bg-sunset-500 px-6 py-3.5 text-[15px] font-bold text-lake-950
+                         transition-[background-color,transform] duration-150 hover:bg-sunset-400 active:scale-[0.98]
                          outline-none focus-visible:ring-2 focus-visible:ring-sunset-500 focus-visible:ring-offset-2 sm:col-span-2 lg:col-span-1"
             >
               <Search size={17} aria-hidden />

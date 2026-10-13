@@ -66,7 +66,7 @@ export default function ConsentGate({ children }: { children: React.ReactNode })
         </div>
         <div className="border-t border-lake-100 px-5 py-3">
           <button onClick={acceptAll} disabled={busy}
-            className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 disabled:opacity-60">
+            className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-lake-950 hover:bg-sunset-400 disabled:opacity-60">
             {busy ? 'Recording' : 'I accept'}
           </button>
           <button onClick={() => logout()} disabled={busy}

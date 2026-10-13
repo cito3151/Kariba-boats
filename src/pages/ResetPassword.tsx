@@ -83,7 +83,7 @@ export default function ResetPassword() {
             <button
               type="submit"
               disabled={busy}
-              className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 transition-colors disabled:opacity-60"
+              className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-lake-950 hover:bg-sunset-400 transition-colors disabled:opacity-60"
             >
               {busy ? 'Saving' : 'Set new password'}
             </button>

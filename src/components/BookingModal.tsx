@@ -291,7 +291,7 @@ export default function BookingModal({
                 </label>
 
                 <button type="submit"
-                  className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 transition-colors">
+                  className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-lake-950 hover:bg-sunset-400 transition-colors">
                   Send request to {boat.operatorName || 'the operator'}
                 </button>
                 <p className="text-[11px] text-lake-400 text-center">No charge until the operator confirms.</p>

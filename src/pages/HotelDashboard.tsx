@@ -16,7 +16,7 @@ import { useAuth } from '../data/AuthContext';
 import { useAsync } from '../hooks/useAsync';
 import { photos } from '../data/photos';
 import * as boats from '../services/boats.service';
-import { listBookingsForHotel } from '../services/bookings.service';
+import { listBookingsForHotel, tripPrice } from '../services/bookings.service';
 import type { PublicBoat } from '../services/boats.service';
 
 export default function HotelDashboard() {
@@ -133,7 +133,7 @@ export default function HotelDashboard() {
                       {b.guestName} → {boatsById.get(b.boatId)?.name ?? 'Boat'}
                     </p>
                     <p className="mt-0.5 break-words text-[15px] leading-normal tabular-nums text-lake-700">
-                      {b.startDate} · {b.groupSize} guests · ${b.priceTotal}
+                      {b.startDate} · {b.groupSize} guests · {tripPrice(b)}
                     </p>
                   </div>
                   <StatusBadge status={b.status} />

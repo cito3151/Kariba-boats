@@ -43,6 +43,11 @@ export function tripWhen(b: Pick<BookingRow, 'startDate' | 'days' | 'startTime' 
   return `${b.startDate}, ${b.days} day${b.days > 1 ? 's' : ''}`;
 }
 
+/** The booking's total, or a plain note for requests saved before prices were recorded (stored as 0). */
+export function tripPrice(b: Pick<BookingRow, 'priceTotal'>): string {
+  return b.priceTotal > 0 ? `$${b.priceTotal}` : 'no price recorded';
+}
+
 export async function createBooking(input: BookingInput, touristId: string | null) {
   void touristId; // tourist_id is derived server-side in create_booking
   const { data, error } = await supabase.rpc('create_booking', {

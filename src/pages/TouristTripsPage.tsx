@@ -51,7 +51,7 @@ export default function TouristTripsPage() {
                   <div className="min-w-0">
                     <h3 className="break-words text-[1.0625rem] font-semibold leading-snug text-lake-950">{b.boatName}</h3>
                     <p className="mt-1 break-words text-[15px] leading-normal tabular-nums text-lake-700">
-                      {b.boatLocation} · {bookingsSvc.tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · ${b.priceTotal}
+                      {b.boatLocation} · {bookingsSvc.tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · {bookingsSvc.tripPrice(b)}
                     </p>
                     {b.captainName && (
                       <p className="mt-1 text-[15px] leading-normal text-lake-700">Captain: <span className="font-semibold text-lake-900">{b.captainName}</span> · <span className="tabular-nums">{b.captainPhone}</span></p>

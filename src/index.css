@@ -77,6 +77,13 @@ body {
     letter-spacing: -0.007em;
     line-height: 1.25;
   }
+
+  /* The browser default placeholder grey is under 4.5:1 on white. lake-600 is
+     6.3:1 and still reads lighter than the lake-950 of a typed value. */
+  ::placeholder {
+    color: var(--color-lake-600);
+    opacity: 1;
+  }
 }
 
 ::-webkit-scrollbar {
