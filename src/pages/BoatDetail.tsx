@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ShieldCheck, ShieldAlert, Users, LifeBuoy, Phone, TrendingUp, Star, Wallet, BadgeCheck } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
@@ -7,7 +7,7 @@ import StarRating from '../components/StarRating';
 import BookingModal from '../components/BookingModal';
 import Reveal from '../components/Reveal';
 import AutoCarousel from '../components/AutoCarousel';
-import AvailabilityCalendar from '../components/AvailabilityCalendar';
+import AvailabilityCalendar, { type DateRange } from '../components/AvailabilityCalendar';
 import { LoadingState, ErrorState } from '../components/StateViews';
 import { BOAT_TYPE_LABELS, priceView, priceLabels } from '../components/BoatCard';
 import EmergencyContacts from '../components/EmergencyContacts';
@@ -15,9 +15,17 @@ import { useAuth } from '../data/AuthContext';
 import { useAsync } from '../hooks/useAsync';
 import * as boats from '../services/boats.service';
 import * as imagesSvc from '../services/images.service';
-import { listBookingsForBoat } from '../services/bookings.service';
+import { listBusyPeriodsForBoat } from '../services/bookings.service';
 import { listReviewsForBoat } from '../services/reviews.service';
-import type { Booking } from '../data/availability';
+import { checkRangeSelectable, toISODate } from '../data/availability';
+
+// A day picked on the calendar travels in the URL (?start=2026-06-12&end=2026-06-14)
+// so it survives the round trip through /login and a page refresh.
+function validIsoDay(v: string | null): v is string {
+  if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const [y, m, d] = v.split('-').map(Number);
+  return toISODate(new Date(y, m - 1, d)) === v;
+}
 
 const GOOD_FOR: Record<string, string[]> = {
   houseboat: ['Overnight stays', 'Families', 'Sightseeing', 'Relaxation'],
@@ -33,12 +41,18 @@ export default function BoatDetail() {
   const { currentUser } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { data: boat, loading, error, reload } = useAsync(
     () => (id ? boats.getPublicBoat(id) : Promise.resolve(null)), [id],
   );
   const { data: imageRows } = useAsync(() => (id ? imagesSvc.listBoatImages(id) : Promise.resolve([])), [id]);
-  const { data: bookingRows } = useAsync(() => (id ? listBookingsForBoat(id) : Promise.resolve([])), [id]);
+  // Busy periods, not listBookingsForBoat: RLS hides other customers' bookings from a
+  // tourist, so a plain table read left this calendar blank for exactly the people
+  // who need it. The service falls back to the table read if the function is absent.
+  const { data: bookingRows, reload: reloadBookings } = useAsync(
+    () => (id ? listBusyPeriodsForBoat(id) : Promise.resolve([])), [id],
+  );
   const { data: reviews } = useAsync(() => (id ? listReviewsForBoat(id) : Promise.resolve([])), [id]);
 
   if (loading) return <PageTransition><div className="mx-auto max-w-6xl px-4 py-10"><LoadingState label="Loading boat" /></div></PageTransition>;
@@ -61,17 +75,55 @@ export default function BoatDetail() {
   const descShown = descLong && !descExpanded ? `${boat.description.slice(0, 320).trimEnd()}...` : boat.description;
 
   const calendarBoat = { id: boat.id, priceUnit: (price?.unit ?? 'day') as 'hour' | 'day' };
-  const calendarBookings: Booking[] = (bookingRows ?? []).map((b) => ({
-    id: b.id, boatId: b.boatId, status: b.status, date: b.startDate, days: b.days,
-    startTime: b.startTime, durationHours: b.durationHours, touristName: b.guestName,
-  }));
+  const calendarBookings = bookingRows ?? [];
+
+  // Date selection. A boat with no usable rate ("On request") has nothing to price a
+  // range against, so it keeps the read-only calendar. Hourly-only boats pick one date.
+  const selectionEnabled = price !== null;
+  const singleDate = calendarBoat.priceUnit === 'hour';
+  const urlStart = searchParams.get('start');
+  const urlEnd = searchParams.get('end');
+  let range: DateRange | null = null;
+  let rangeDropped = false;
+  if (selectionEnabled && urlStart) {
+    const end = singleDate ? urlStart : validIsoDay(urlEnd) ? urlEnd : null;
+    // Re-checked against the live bookings, so a stale or hand-edited link cannot
+    // select a past or booked day.
+    const check = validIsoDay(urlStart)
+      ? checkRangeSelectable(calendarBoat, calendarBookings, urlStart, end ?? urlStart, toISODate(new Date()))
+      : { ok: false };
+    if (check.ok) range = { start: urlStart, end };
+    else rangeDropped = true;
+  }
+
+  const handleRangeChange = (next: DateRange | null) => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.delete('start');
+      params.delete('end');
+      if (next) {
+        params.set('start', next.start);
+        if (next.end) params.set('end', next.end);
+      }
+      return params;
+    }, { replace: true });
+  };
 
   const handleBookClick = () => {
     if (!currentUser) {
-      navigate('/login', { state: { from: `/boats/${boat.id}` } });
+      // Login returns here via state.from, which keeps the query string and so the
+      // selected dates. The modal does not reopen by itself; they press the button again.
+      const query = range ? `?start=${range.start}${range.end ? `&end=${range.end}` : ''}` : '';
+      navigate('/login', { state: { from: `/boats/${boat.id}${query}` } });
       return;
     }
     setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    // A request sent from the modal now holds its days; refresh so the calendar shows it.
+    reloadBookings();
   };
 
   return (
@@ -197,9 +249,21 @@ export default function BoatDetail() {
             </Reveal>
 
             <Reveal className="mt-6">
-              <AvailabilityCalendar boat={calendarBoat} bookings={calendarBookings} />
+              <AvailabilityCalendar
+                boat={calendarBoat}
+                bookings={calendarBookings}
+                selectedRange={range}
+                onRangeChange={selectionEnabled ? handleRangeChange : undefined}
+              />
+              {rangeDropped && (
+                <p role="status" className="mt-2 text-xs text-amber-800">
+                  The dates in your link are no longer available. Pick new ones above.
+                </p>
+              )}
               <p className="mt-2 text-xs text-lake-400">
-                Tap a date to see booked times and free slots. Requested bookings hold their slot until the operator responds.
+                {selectionEnabled
+                  ? 'Your dates carry into the booking form. Requested bookings hold their slot until the operator responds.'
+                  : 'Tap a date to see booked times and free slots. Requested bookings hold their slot until the operator responds.'}
               </p>
             </Reveal>
 
@@ -292,7 +356,9 @@ export default function BoatDetail() {
           touristId={currentUser?.id ?? null}
           initialName={currentUser?.name}
           initialPhone={currentUser?.phone ?? undefined}
-          onClose={() => setShowModal(false)}
+          initialStartDate={range?.start}
+          initialEndDate={singleDate ? undefined : range?.end ?? undefined}
+          onClose={closeModal}
         />
       )}
     </PageTransition>

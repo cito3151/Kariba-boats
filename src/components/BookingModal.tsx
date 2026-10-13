@@ -27,13 +27,19 @@ interface Props {
   hotelId?: string | null;
   initialName?: string;
   initialPhone?: string;
+  // Dates picked on the boat page calendar. They only prefill the date inputs,
+  // which stay editable. `initialEndDate` is for daily trips; an hourly boat gets
+  // the start date alone, which is the single date of the trip.
+  initialStartDate?: string;
+  initialEndDate?: string;
   onClose: () => void;
 }
 
 type Step = 'form' | 'submitting' | 'success';
 
 export default function BookingModal({
-  boat, touristId, hotelId = null, initialName = '', initialPhone = '', onClose,
+  boat, touristId, hotelId = null, initialName = '', initialPhone = '',
+  initialStartDate = '', initialEndDate = '', onClose,
 }: Props) {
   // `> 0`, not just non-null: a rate of 0 means the owner did not offer that
   // basis. Checking only for null opened this modal on "Daily, $0/day" for a boat
@@ -44,8 +50,9 @@ export default function BookingModal({
   const [step, setStep] = useState<Step>('form');
   const [guestName, setGuestName] = useState(initialName);
   const [guestPhone, setGuestPhone] = useState(initialPhone);
-  const [date, setDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [date, setDate] = useState(initialStartDate);
+  // A one-day daily trip arrives with no end date; the end defaults to the start.
+  const [endDate, setEndDate] = useState(initialEndDate || (hasDaily ? initialStartDate : ''));
   const [startTime, setStartTime] = useState('16:00');
   const [durationHours, setDurationHours] = useState(2);
   const [groupSize, setGroupSize] = useState(2);
@@ -57,7 +64,8 @@ export default function BookingModal({
   const { get: getDoc } = useCurrentDocuments();
   const [waiverAccepted, setWaiverAccepted] = useState(false);
   const [showWaiver, setShowWaiver] = useState(false);
-  // Default to daily when available; hourly only otherwise. Tourist can switch when both exist.
+  // Default to daily when available (so a range picked on the calendar lands in daily
+  // mode); hourly only otherwise. Tourist can switch when both exist.
   const [rateMode, setRateMode] = useState<'hour' | 'day'>(hasDaily ? 'day' : 'hour');
 
   const isHourly = rateMode === 'hour';

@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { humanizeError } from './errors';
+import type { Booking } from '../data/availability';
 
 export type BookingStatus =
   | 'requested' | 'confirmed' | 'deposit_paid' | 'completed' | 'declined' | 'cancelled';
@@ -57,6 +58,42 @@ export async function listBookingsForBoat(boatId: string): Promise<BookingRow[]>
   const { data, error } = await supabase.from('bookings').select(BOOKING_SELECT).eq('boat_id', boatId);
   if (error) throw new Error(humanizeError(error.message));
   return (data ?? []).map(toBookingRow);
+}
+
+/**
+ * Busy periods for the public availability calendar, mapped into the calendar's own
+ * Booking shape so dayStatus / bookingCoversDate / checkAvailability work unchanged.
+ *
+ * listBookingsForBoat cannot serve this: RLS (bookings_read_involved) hides other
+ * customers' bookings, so a tourist or logged-out visitor got no rows and the
+ * calendar showed every day free. boat_busy_periods (migration 30) is a narrow
+ * SECURITY DEFINER read that returns dates and hours only, never guest details. It
+ * has no ids, so each row gets a local key, and guest names stay undefined.
+ *
+ * If the function is not deployed yet, or the call fails, fall back to the plain
+ * table read: owners and admins still see their own bookings, and a tourist gets the
+ * same empty calendar as before rather than an error page. The server's overlap
+ * constraint stays the final word either way.
+ */
+export async function listBusyPeriodsForBoat(boatId: string): Promise<Booking[]> {
+  const { data, error } = await supabase.rpc('boat_busy_periods', { p_boat_id: boatId });
+  if (!error) {
+    return (data ?? []).map((r, i) => ({
+      id: `busy-${i}`, boatId, status: r.status, date: r.start_date, days: r.days,
+      startTime: r.start_time ?? null,
+      durationHours: r.duration_hours === null ? null : Number(r.duration_hours),
+    }));
+  }
+  const rows = await listBookingsForBoat(boatId);
+  return rows.map(toCalendarBooking);
+}
+
+/** BookingRow (owner/admin view, with guest names) to the calendar's Booking shape. */
+export function toCalendarBooking(b: BookingRow): Booking {
+  return {
+    id: b.id, boatId: b.boatId, status: b.status, date: b.startDate, days: b.days,
+    startTime: b.startTime, durationHours: b.durationHours, touristName: b.guestName,
+  };
 }
 
 export async function listBookingsForHotel(hotelId: string): Promise<BookingRow[]> {

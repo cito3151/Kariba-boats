@@ -1514,6 +1514,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      boat_busy_periods: {
+        Args: { p_boat_id: string }
+        Returns: {
+          days: number
+          duration_hours: number
+          start_date: string
+          start_time: string
+          status: Database["public"]["Enums"]["booking_status"]
+        }[]
+      }
       create_booking: {
         Args: {
           p_boat_id: string

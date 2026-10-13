@@ -19,6 +19,9 @@ type Boat = CalendarBoat;
 // so two tourists cannot race for the same slot while an operator decides.
 export const BLOCKING_STATUSES = ['requested', 'confirmed', 'deposit_paid'] as const;
 
+// bookings.days is constrained to 1..30 in the database (migration 05).
+export const MAX_BOOKING_DAYS = 30;
+
 // Operating window for hourly boats on Kariba (dawn to dusk trips).
 export const DAY_START = 6; // 06:00
 export const DAY_END = 18; // 18:00
@@ -94,6 +97,47 @@ export function freeGaps(dayBookings: Booking[]): { start: string; end: string }
 export interface ConflictCheck {
   ok: boolean;
   reason?: string;
+}
+
+/** Whole days from `startIso` to `endIso`, both inclusive (same day = 1). */
+export function inclusiveDays(startIso: string, endIso: string): number {
+  const [sy, sm, sd] = startIso.split('-').map(Number);
+  const [ey, em, ed] = endIso.split('-').map(Number);
+  // Date.UTC keeps DST shifts in the viewer's timezone out of the count.
+  return Math.round((Date.UTC(ey, em - 1, ed) - Date.UTC(sy, sm - 1, sd)) / 86_400_000) + 1;
+}
+
+/**
+ * Can a tourist pick `startIso` to `endIso` (inclusive) on this calendar?
+ * Composes the primitives above rather than adding a second overlap check:
+ *  - day/weekend boats ask checkAvailability, the same day-range overlap rule the
+ *    bookings_no_overlap constraint enforces, so any booked day in the span fails;
+ *  - hourly boats take a single date and ask dayStatus, because a partly booked
+ *    day still has free hours and only a fully booked day is out.
+ */
+export function checkRangeSelectable(
+  boat: Boat,
+  bookings: Booking[],
+  startIso: string,
+  endIso: string,
+  todayIso: string,
+): ConflictCheck {
+  if (startIso < todayIso) return { ok: false, reason: 'That date has already passed.' };
+  if (endIso < startIso) return { ok: false, reason: 'Pick an end day on or after the start day.' };
+
+  if (boat.priceUnit === 'hour') {
+    if (endIso !== startIso) return { ok: false, reason: 'This boat is booked by the hour, so pick a single date.' };
+    const dayBookings = activeBookingsForBoat(bookings, boat.id).filter((b) => bookingCoversDate(b, startIso));
+    return dayStatus(boat, dayBookings) === 'booked'
+      ? { ok: false, reason: 'That day is fully booked.' }
+      : { ok: true };
+  }
+  const days = inclusiveDays(startIso, endIso);
+  if (days > MAX_BOOKING_DAYS) return { ok: false, reason: `A booking can cover up to ${MAX_BOOKING_DAYS} days.` };
+  // checkAvailability names the first clash by ISO date; a tourist just needs to
+  // know the span is blocked, so the reason is reworded here.
+  const check = checkAvailability(boat, bookings, { date: startIso, days });
+  return check.ok ? check : { ok: false, reason: 'Those dates include a booked day.' };
 }
 
 /**
