@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   Anchor, Building2, ClipboardCheck, ShieldCheck, LogOut, Ticket, Briefcase, Menu, X,
@@ -16,12 +16,16 @@ const allNavItems = [
   { to: '/admin', label: 'Admin', icon: ShieldCheck },
 ];
 
-// The brand block, five role-filtered nav items and the auth controls cannot all
+// The brand block, role-filtered nav items and the auth controls cannot all
 // share one row at phone widths -- the nav gets squeezed to a few unusable pixels.
 // Below this width the nav and auth controls move into a disclosure panel under
-// the header; at and above it the original single-row desktop header is used.
+// the header; at and above it the single-row desktop header is used.
 const DESKTOP_QUERY = '(min-width: 1024px)'; // Tailwind `lg`
 const MENU_ID = 'primary-mobile-menu';
+
+// Footer links sit on lake-950: lake-200 is 10.6:1 there and white is 15.8:1.
+const footerLinkClass =
+  'rounded-sm text-left text-sm text-lake-200 outline-none transition-colors underline-offset-4 hover:text-white hover:underline focus-visible:ring-2 focus-visible:ring-sunset-400 focus-visible:ring-offset-2 focus-visible:ring-offset-lake-950';
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { currentUser, logout } = useAuth();
@@ -40,7 +44,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     if (item.to === '/trips') return !!currentUser;
     // Checked before the logged-out passthrough below, which would otherwise
     // advertise the admin panel to the public. The route itself is guarded, but
-    // the pill should not be there at all, and dropping it also takes the
+    // the link should not be there at all, and dropping it also takes the
     // logged-out nav back under the width it has to fit in.
     if (item.to === '/admin') return false;
     if (!currentUser) return true;
@@ -93,79 +97,102 @@ export default function Layout({ children }: { children: ReactNode }) {
     navigate('/');
   };
 
+  // Every target is a route that exists in App.tsx. Portal links are entry points:
+  // ProtectedRoute sends anyone without the right role to the login page.
+  const footerColumns = [
+    {
+      id: 'footer-book',
+      heading: 'Book a boat',
+      links: [
+        { to: '/', label: 'Browse boats' },
+        ...(currentUser ? [{ to: '/trips', label: 'My trips' }] : []),
+      ],
+    },
+    {
+      id: 'footer-partners',
+      heading: 'For partners',
+      links: [
+        { to: '/hotel', label: 'Hotel portal' },
+        { to: '/owner', label: 'Boat owner portal' },
+        { to: '/agency', label: 'Agency portal' },
+      ],
+    },
+    {
+      id: 'footer-account',
+      heading: 'Your account',
+      links: currentUser
+        ? []
+        : [
+            { to: '/login', label: 'Log in' },
+            { to: '/signup', label: 'Sign up' },
+            { to: '/forgot-password', label: 'Reset your password' },
+          ],
+    },
+  ];
+
   const panelTransition = { duration: reduceMotion ? 0 : 0.24, ease: 'easeOut' as const };
 
   return (
     <div className="min-h-svh flex flex-col bg-lake-50">
-      <header className="sticky top-0 z-40 border-b border-lake-100 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex items-center justify-between gap-3 lg:gap-4">
-          <NavLink to="/" className="flex items-center gap-2 shrink-0">
-            <motion.div whileHover={{ scale: 1.04 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
-              <BrandMark height={34} />
-            </motion.div>
-            <div className="leading-tight text-left">
-              <p className="font-semibold text-lake-950 text-sm sm:text-base">Kariba Lake Connect</p>
-              <p className="text-[11px] text-lake-500 hidden sm:block">Verified boat bookings</p>
-            </div>
+      <header className="sticky top-0 z-40 border-b border-lake-100 bg-white">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6 lg:h-[72px] lg:gap-6">
+          <NavLink
+            to="/"
+            className="flex shrink-0 items-center gap-2.5 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2"
+          >
+            <BrandMark height={34} />
+            <span className="whitespace-nowrap text-base font-bold tracking-tight text-lake-950 sm:text-lg">
+              Kariba Lake Connect
+            </span>
           </NavLink>
 
-          {/* Desktop nav. Sole owner of the `nav-pill` layoutId -- see the panel below. */}
-          <nav
-            aria-label="Primary"
-            className="hidden lg:flex items-center gap-1 rounded-full bg-lake-100/70 p-1 overflow-x-auto"
-          >
+          {/* Desktop nav. The active route is marked by an orange bar on the header's
+              bottom edge, drawn by the link itself, so no shared layoutId is needed. */}
+          <nav aria-label="Primary" className="hidden self-stretch lg:flex lg:items-stretch lg:gap-6 xl:gap-8">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  `relative flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs xl:px-3 xl:text-sm font-medium whitespace-nowrap transition-colors ${
-                    isActive ? 'text-white' : 'text-lake-700 hover:text-lake-900'
+                  `relative flex items-center whitespace-nowrap text-sm font-medium outline-none transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:transition-colors focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 ${
+                    isActive
+                      ? 'text-lake-950 after:bg-sunset-500'
+                      : 'text-lake-700 after:bg-transparent hover:text-lake-950 hover:after:bg-lake-200'
                   }`
                 }
               >
-                {({ isActive }) => (
-                  <>
-                    {isActive && (
-                      <motion.span
-                        layoutId="nav-pill"
-                        className="absolute inset-0 rounded-full bg-lake-700"
-                        transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
-                      />
-                    )}
-                    <item.icon size={14} className="relative z-10" />
-                    <span className="relative z-10">{item.label}</span>
-                  </>
-                )}
+                {item.label}
               </NavLink>
             ))}
           </nav>
 
           {currentUser ? (
-            <div className="hidden lg:flex items-center gap-2 shrink-0">
-              <div className="text-right leading-tight">
-                <p className="text-xs font-semibold text-lake-950">{currentUser.name}</p>
-                <p className="text-[11px] capitalize text-lake-500">{currentUser.role}</p>
+            <div className="hidden shrink-0 items-center gap-3 lg:flex">
+              <div className="min-w-0 text-right leading-tight">
+                <p className="max-w-[10rem] truncate text-sm font-semibold text-lake-950">{currentUser.name}</p>
+                <p className="text-xs capitalize text-lake-600">{currentUser.role}</p>
               </div>
               <button
+                type="button"
                 onClick={handleLogout}
-                className="inline-flex items-center gap-1.5 rounded-full border border-lake-100 px-3 py-1.5 text-xs font-medium text-lake-600 hover:bg-lake-50"
+                className="inline-flex items-center gap-1.5 rounded-md border border-lake-200 px-3 py-2 text-sm font-medium text-lake-700 outline-none transition-colors hover:bg-lake-50 hover:text-lake-950 focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2"
               >
-                <LogOut size={13} /> <span>Log out</span>
+                <LogOut size={14} /> <span>Log out</span>
               </button>
             </div>
           ) : (
-            <div className="hidden lg:flex items-center gap-2 shrink-0">
+            <div className="hidden shrink-0 items-center gap-2 lg:flex">
               <NavLink
                 to="/login"
-                className="rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium text-lake-700 hover:text-lake-900 whitespace-nowrap"
+                className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-lake-700 outline-none transition-colors hover:text-lake-950 focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2"
               >
                 Log in
               </NavLink>
+              {/* Navy text, not white: white on this orange is 3.1:1, navy is 5.1:1. */}
               <NavLink
                 to="/signup"
-                className="rounded-full bg-sunset-500 px-3 py-1.5 text-xs sm:text-sm font-semibold text-white hover:bg-sunset-600 whitespace-nowrap"
+                className="whitespace-nowrap rounded-md bg-sunset-500 px-5 py-2.5 text-sm font-bold text-lake-950 outline-none transition-colors hover:bg-sunset-400 focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2"
               >
                 Sign up
               </NavLink>
@@ -179,7 +206,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             aria-expanded={menuOpen}
             aria-controls={MENU_ID}
             aria-label={menuOpen ? 'Close main menu' : 'Open main menu'}
-            className="lg:hidden inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-lake-100 text-lake-700 outline-none transition-colors hover:bg-lake-50 focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-lake-200 text-lake-700 outline-none transition-colors hover:bg-lake-50 focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 lg:hidden"
           >
             {menuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
@@ -200,10 +227,6 @@ export default function Layout({ children }: { children: ReactNode }) {
                 className="overflow-hidden border-t border-lake-100 bg-white outline-none"
               >
                 <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3">
-                  {/* No `nav-pill` layoutId here: the desktop nav keeps that id even
-                      while hidden, and two live holders of one layoutId make the
-                      shared-layout animation fight itself. The panel closes on
-                      navigation anyway, so a sliding pill would never be seen. */}
                   <nav aria-label="Primary, mobile" className="flex flex-col gap-1">
                     {navItems.map((item) => (
                       <NavLink
@@ -212,8 +235,10 @@ export default function Layout({ children }: { children: ReactNode }) {
                         end={item.end}
                         onClick={() => closeMenu(true)}
                         className={({ isActive }) =>
-                          `flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-lake-500 ${
-                            isActive ? 'bg-lake-700 text-white' : 'text-lake-700 hover:bg-lake-50'
+                          `flex items-center gap-3 rounded-md border-l-4 px-3 py-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-lake-500 ${
+                            isActive
+                              ? 'border-sunset-500 bg-lake-50 text-lake-950'
+                              : 'border-transparent text-lake-700 hover:bg-lake-50 hover:text-lake-950'
                           }`
                         }
                       >
@@ -228,7 +253,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0 leading-tight">
                           <p className="truncate text-sm font-semibold text-lake-950">{currentUser.name}</p>
-                          <p className="text-xs capitalize text-lake-500">{currentUser.role}</p>
+                          <p className="text-xs capitalize text-lake-600">{currentUser.role}</p>
                         </div>
                         <button
                           type="button"
@@ -236,7 +261,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                             closeMenu(true);
                             handleLogout();
                           }}
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-lake-100 px-4 py-2.5 text-xs font-medium text-lake-600 outline-none transition-colors hover:bg-lake-50 focus-visible:ring-2 focus-visible:ring-lake-500"
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-lake-200 px-4 py-2.5 text-sm font-medium text-lake-700 outline-none transition-colors hover:bg-lake-50 focus-visible:ring-2 focus-visible:ring-lake-500"
                         >
                           <LogOut size={14} /> Log out
                         </button>
@@ -246,14 +271,14 @@ export default function Layout({ children }: { children: ReactNode }) {
                         <NavLink
                           to="/login"
                           onClick={() => closeMenu(true)}
-                          className="rounded-full border border-lake-100 px-4 py-3 text-center text-sm font-medium text-lake-700 outline-none transition-colors hover:bg-lake-50 focus-visible:ring-2 focus-visible:ring-lake-500"
+                          className="rounded-md border border-lake-200 px-4 py-3 text-center text-sm font-medium text-lake-700 outline-none transition-colors hover:bg-lake-50 focus-visible:ring-2 focus-visible:ring-lake-500"
                         >
                           Log in
                         </NavLink>
                         <NavLink
                           to="/signup"
                           onClick={() => closeMenu(true)}
-                          className="rounded-full bg-sunset-500 px-4 py-3 text-center text-sm font-semibold text-white outline-none transition-colors hover:bg-sunset-600 focus-visible:ring-2 focus-visible:ring-lake-500"
+                          className="rounded-md bg-sunset-500 px-4 py-3 text-center text-sm font-bold text-lake-950 outline-none transition-colors hover:bg-sunset-400 focus-visible:ring-2 focus-visible:ring-lake-500"
                         >
                           Sign up
                         </NavLink>
@@ -286,10 +311,52 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       <main className="flex-1">{children}</main>
 
-      <footer className="border-t border-lake-100 bg-white">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 text-xs text-lake-500 flex flex-col sm:flex-row justify-between gap-2">
-          <p>© {new Date().getFullYear()} Kariba Lake Connect. Verified boat bookings on Lake Kariba.</p>
-          <p>Built for tourists, hotels, boat owners, and travel agencies across Kariba, Zimbabwe.</p>
+      <footer className="bg-lake-950 text-lake-200">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-14">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-12">
+            <div className="sm:col-span-2 lg:col-span-1">
+              {/* The emblem's boat is navy, so it sits on a white tile to stay visible. */}
+              <div className="flex items-center gap-3">
+                <span className="inline-flex rounded-md bg-white p-1.5">
+                  <BrandMark height={32} />
+                </span>
+                <p className="text-lg font-bold tracking-tight text-white">Kariba Lake Connect</p>
+              </div>
+              <p className="mt-4 max-w-sm text-sm leading-relaxed text-lake-200">
+                A booking site for verified boats on Lake Kariba, Zimbabwe, used by tourists, hotels, travel agencies
+                and boat companies.
+              </p>
+            </div>
+
+            {footerColumns.map((column) => (
+              <nav key={column.id} aria-labelledby={column.id}>
+                <h2 id={column.id} className="text-xs font-bold uppercase tracking-wider text-white">
+                  {column.heading}
+                </h2>
+                <ul className="mt-4 space-y-3">
+                  {column.links.map((link) => (
+                    <li key={link.to}>
+                      <Link to={link.to} className={footerLinkClass}>
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                  {column.id === 'footer-account' && currentUser && (
+                    <li>
+                      <button type="button" onClick={handleLogout} className={footerLinkClass}>
+                        Log out
+                      </button>
+                    </li>
+                  )}
+                </ul>
+              </nav>
+            ))}
+          </div>
+
+          <div className="mt-12 flex flex-col gap-2 border-t border-white/15 pt-6 text-xs text-lake-200 sm:flex-row sm:items-center sm:justify-between">
+            <p>&copy; {new Date().getFullYear()} Kariba Lake Connect. All rights reserved.</p>
+            <p>Lake Kariba, Zimbabwe</p>
+          </div>
         </div>
       </footer>
     </div>
