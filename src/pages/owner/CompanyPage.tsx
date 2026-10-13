@@ -1,14 +1,13 @@
 import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
-  Building2, ShieldCheck, Clock, ShieldAlert, Upload, Trash2, Eye, ArrowLeft, CheckCircle2,
+  ShieldCheck, Clock, ShieldAlert, Upload, Trash2, Eye, CheckCircle2,
 } from 'lucide-react';
-import PageTransition from '../../components/PageTransition';
-import DashboardBanner from '../../components/DashboardBanner';
+import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
+import PortalSection from '../../components/portal/PortalSection';
+import { portalCard } from '../../components/portal/styles';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../data/AuthContext';
-import { photos } from '../../data/photos';
 import * as companies from '../../services/companies.service';
 import type {
   Company, CompanyDocument, DocumentKind, CompanyVerificationStatus,
@@ -93,7 +92,7 @@ function DocumentSlot({
   };
 
   return (
-    <div className="rounded-2xl border border-lake-100 bg-white p-4">
+    <div className={`${portalCard} p-4 sm:p-5`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-[1.0625rem] font-semibold leading-snug text-lake-950">{label}</h3>
@@ -190,7 +189,7 @@ function CompanyDetails({ company, onSaved }: { company: Company; onSaved: () =>
   const field = 'mt-1.5 w-full rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base text-lake-950 outline-none focus:border-lake-500';
 
   return (
-    <div className="rounded-2xl border border-lake-100 bg-white p-4">
+    <div className={`${portalCard} p-4 sm:p-5`}>
       <h2 className="text-lg font-bold tracking-[-0.01em] text-lake-950">Company details</h2>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
@@ -252,69 +251,56 @@ export default function CompanyPage() {
   const refreshAll = () => { setDocsKey((k) => k + 1); reload(); };
 
   return (
-    <PageTransition>
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8">
-        <Link to="/owner" className="inline-flex items-center gap-1.5 py-1 text-[15px] font-medium text-lake-700 hover:text-lake-900">
-          <ArrowLeft size={16} /> Back to your boats
-        </Link>
+    <OwnerPortalPage title="Your company" crumb="Company">
+      {loading && <LoadingState large label="Loading your company" />}
+      {error && <ErrorState large message={error} onRetry={reload} />}
 
-        <div className="mt-4">
-          <DashboardBanner image={photos.harbour} eyebrow="Boat Owner Portal" title="Your company" icon={Building2} />
-        </div>
+      {!loading && !error && !company && (
+        <EmptyState large
+          title="No company on your account"
+          hint="Your login is not linked to a company yet. Contact an administrator so your fleet can be moved onto one."
+        />
+      )}
 
-        {loading && <div className="mt-6"><LoadingState large label="Loading your company" /></div>}
-        {error && <div className="mt-6"><ErrorState large message={error} onRetry={reload} /></div>}
-
-        {!loading && !error && !company && (
-          <div className="mt-6">
-            <EmptyState large
-              title="No company on your account"
-              hint="Your login is not linked to a company yet. Contact an administrator so your fleet can be moved onto one."
-            />
-          </div>
-        )}
-
-        {company && (
-          <>
-            <div className="mt-6 rounded-2xl border border-lake-100 bg-white p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  {company.verificationStatus === 'verified' ? <ShieldCheck size={20} className="text-lake-600" />
-                    : company.verificationStatus === 'rejected' ? <ShieldAlert size={20} className="text-red-600" />
-                    : <Clock size={20} className="text-amber-600" />}
-                  <h2 className="min-w-0 break-words text-xl font-bold leading-snug tracking-[-0.015em] text-lake-950">{company.name}</h2>
-                </div>
-                <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${STATUS_VIEW[company.verificationStatus].chip}`}>
-                  {STATUS_VIEW[company.verificationStatus].label}
-                </span>
+      {company && (
+        <>
+          {/* Verification status beside the editable details on a wide screen,
+              the way an account page sets the summary next to the form. */}
+          <div className="grid items-start gap-4 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-6">
+            <div className={`${portalCard} min-w-0 p-4 sm:p-5`}>
+              <span className={`inline-flex rounded-full px-2.5 py-1 text-[13px] font-semibold leading-none ${STATUS_VIEW[company.verificationStatus].chip}`}>
+                {STATUS_VIEW[company.verificationStatus].label}
+              </span>
+              <div className="mt-3 flex min-w-0 items-start gap-2">
+                {company.verificationStatus === 'verified' ? <ShieldCheck size={20} className="mt-1 shrink-0 text-lake-600" />
+                  : company.verificationStatus === 'rejected' ? <ShieldAlert size={20} className="mt-1 shrink-0 text-red-600" />
+                  : <Clock size={20} className="mt-1 shrink-0 text-amber-600" />}
+                <h2 className="min-w-0 break-words text-xl font-bold leading-snug tracking-[-0.015em] text-lake-950">{company.name}</h2>
               </div>
               <p className="mt-2 text-base leading-normal text-lake-700">{STATUS_VIEW[company.verificationStatus].blurb}</p>
               {company.verificationNote && (
-                <p className="mt-2 rounded-lg bg-lake-50 px-3.5 py-2.5 text-[15px] leading-normal text-lake-800">
+                <p className="mt-3 break-words rounded-lg bg-lake-50 px-3.5 py-2.5 text-[15px] leading-normal text-lake-800">
                   Administrator: {company.verificationNote}
                 </p>
               )}
             </div>
 
-            <div className="mt-4">
-              <CompanyDetails company={company} onSaved={reload} />
-            </div>
+            <CompanyDetails company={company} onSaved={reload} />
+          </div>
 
-            <h2 className="mt-10 font-display text-xl font-bold tracking-[-0.015em] text-lake-950">Proof of company ownership</h2>
-            <p className="mt-1.5 text-base leading-normal text-lake-700">
-              An administrator reviews each document separately, so you only replace the one that fails.
-            </p>
-
+          <PortalSection
+            title="Proof of company ownership"
+            description="An administrator reviews each document separately, so you only replace the one that fails."
+            className="mt-10"
+          >
             {/* Without this, a failed document fetch would leave every slot showing
                 "Not uploaded" and an owner would reasonably re-upload all four. */}
-            {docsLoading && <div className="mt-4"><LoadingState large label="Loading your documents" /></div>}
+            {docsLoading && <LoadingState large label="Loading your documents" />}
             {docsError && (
-              <div className="mt-4">
-                <ErrorState large message={docsError} onRetry={() => setDocsKey((k) => k + 1)} />
-              </div>
+              <ErrorState large message={docsError} onRetry={() => setDocsKey((k) => k + 1)} />
             )}
 
-            <div className={`mt-4 grid gap-3 ${docsLoading || docsError ? 'hidden' : ''}`}>
+            <div className={`grid items-start gap-4 md:grid-cols-2 ${docsLoading || docsError ? 'hidden' : ''}`}>
               {companies.REQUIRED_DOCUMENTS.map((slot) => (
                 <DocumentSlot
                   key={slot.kind}
@@ -326,9 +312,9 @@ export default function CompanyPage() {
                 />
               ))}
             </div>
-          </>
-        )}
-      </div>
-    </PageTransition>
+          </PortalSection>
+        </>
+      )}
+    </OwnerPortalPage>
   );
 }

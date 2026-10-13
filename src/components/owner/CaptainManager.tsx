@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, Trash2, Anchor } from 'lucide-react';
 import { createCaptain, deleteCaptain, type Captain } from '../../services/captains.service';
+import { portalCard } from '../portal/styles';
 
 // Owner's reusable captain roster. Parent owns the list and passes a reload callback.
 export default function CaptainManager({
@@ -29,8 +30,10 @@ export default function CaptainManager({
   };
 
   return (
-    <div className="rounded-2xl border border-lake-100 bg-lake-50/60 p-4">
-      <h2 className="flex items-center gap-2 text-lg font-bold tracking-[-0.01em] text-lake-900">
+    // A container, so the add row lays out by the card's width: it sits in a narrow
+    // side column beside the bookings on a wide screen.
+    <div className={`${portalCard} @container p-4 sm:p-5`}>
+      <h2 className="flex items-center gap-2 text-lg font-bold tracking-[-0.01em] text-lake-950">
         <Anchor size={18} /> Your captains
       </h2>
       <p className="mt-1.5 text-[15px] leading-normal text-lake-700">Add the captains who run your trips, then assign one to each confirmed booking.</p>
@@ -38,7 +41,7 @@ export default function CaptainManager({
       {captains.length > 0 && (
         <ul className="mt-3 space-y-1.5">
           {captains.map((c) => (
-            <li key={c.id} className="flex items-center justify-between gap-3 rounded-lg bg-white px-3.5 py-2.5 text-base">
+            <li key={c.id} className="flex items-center justify-between gap-3 rounded-lg bg-lake-50 px-3.5 py-2.5 text-base">
               <span className="min-w-0 break-words"><span className="font-semibold text-lake-900">{c.name}</span> <span className="whitespace-nowrap text-[15px] tabular-nums text-lake-700">{c.phone}</span></span>
               <button onClick={() => remove(c.id)} disabled={busy}
                 className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
@@ -49,9 +52,9 @@ export default function CaptainManager({
         </ul>
       )}
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Captain name" className={inputClass} />
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" className={inputClass} />
+      <div className="mt-3 grid gap-2 @md:grid-cols-[1fr_1fr_auto]">
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Captain name" aria-label="Captain name" className={inputClass} />
+        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" aria-label="Captain phone" className={inputClass} />
         <button onClick={add} disabled={busy}
           className="inline-flex items-center justify-center gap-1 rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
           <Plus size={16} /> Add

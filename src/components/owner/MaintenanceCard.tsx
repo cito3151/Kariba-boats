@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Gauge, Wrench, Clock } from 'lucide-react';
 import * as maint from '../../services/maintenance.service';
 import type { OwnerBoat, MaintenanceStatus } from '../../services/boats.service';
+import { portalCard } from '../portal/styles';
 
 const BAR_COLOR: Record<MaintenanceStatus, string> = {
   ok: 'bg-lake-500',
@@ -78,10 +79,12 @@ export default function MaintenanceCard({
   };
 
   return (
-    <div className="rounded-2xl border border-lake-100 bg-white p-5">
+    // A container: the maintenance page sets two of these side by side on a wide
+    // screen, so the figures and forms lay out by the card's width, not the window's.
+    <div className={`${portalCard} @container p-4 sm:p-5`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="break-words text-[1.0625rem] font-semibold leading-snug text-lake-950">{boat.name}</h3>
+          <h3 className="break-words text-lg font-bold leading-snug tracking-[-0.01em] text-lake-950">{boat.name}</h3>
           <p className="mt-0.5 text-[15px] text-lake-700">{STATUS_LABEL[boat.maintenanceStatus]}</p>
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[13px] font-semibold leading-none ${
@@ -103,7 +106,7 @@ export default function MaintenanceCard({
         <div className={`h-full rounded-full ${BAR_COLOR[boat.maintenanceStatus]}`} style={{ width: `${pct}%` }} />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-4 @xl:grid-cols-4">
         <Figure label="Total hours" value={boat.accumulatedHours.toFixed(1)} />
         <Figure label="Last service at" value={boat.lastMaintenanceHours.toFixed(1)} />
         <Figure label="Next due at" value={boat.nextMaintenanceHours.toFixed(1)} />
@@ -133,9 +136,9 @@ export default function MaintenanceCard({
       {error && <p className="mt-3 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{error}</p>}
 
       {mode === 'hours' && (
-        <div className="mt-4 space-y-3 rounded-xl border border-lake-100 bg-lake-50/50 p-4">
+        <div className="mt-4 space-y-3 rounded-lg border border-lake-100 bg-lake-50/60 p-4">
           <p className="flex items-center gap-2 text-lg font-bold tracking-[-0.01em] text-lake-900"><Clock size={18} /> Log operating hours</p>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 @md:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-lake-700">Hours this trip (0.5 to 24)</label>
               <input type="number" min={0.5} max={24} step="0.5" value={hours}
@@ -163,7 +166,7 @@ export default function MaintenanceCard({
       )}
 
       {mode === 'service' && (
-        <div className="mt-4 space-y-3 rounded-xl border border-lake-100 bg-lake-50/50 p-4">
+        <div className="mt-4 space-y-3 rounded-lg border border-lake-100 bg-lake-50/60 p-4">
           <p className="flex items-center gap-2 text-lg font-bold tracking-[-0.01em] text-lake-900"><Wrench size={18} /> Record maintenance</p>
           <div>
             <label className="block text-sm font-medium text-lake-700">What was done</label>
@@ -171,7 +174,7 @@ export default function MaintenanceCard({
               className="mt-1 w-full rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base outline-none focus:border-lake-500"
               placeholder="Engine service, oil and filter change" />
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 @xl:grid-cols-3">
             <div>
               <label className="block text-sm font-medium text-lake-700">Date</label>
               <input type="date" value={performedAt} onChange={(e) => setPerformedAt(e.target.value)}

@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Check, X, Wallet, CheckCircle2, UserCheck } from 'lucide-react';
-import PageTransition from '../../components/PageTransition';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Check, X, Wallet, CheckCircle2, UserCheck } from 'lucide-react';
+import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
+import PortalSection from '../../components/portal/PortalSection';
+import { portalCard } from '../../components/portal/styles';
 import StatusBadge from '../../components/StatusBadge';
 import CancelBookingButton from '../../components/CancelBookingButton';
 import CaptainManager from '../../components/owner/CaptainManager';
@@ -48,6 +49,8 @@ function AssignCaptain({ booking, captains, onAssigned }: {
   );
 }
 
+const detailLabel = 'text-[13px] font-semibold uppercase tracking-[0.05em] text-lake-700';
+
 const ORDER: Record<BookingStatus, number> = {
   requested: 0, confirmed: 1, deposit_paid: 2, completed: 3, declined: 4, cancelled: 5,
 };
@@ -69,86 +72,109 @@ export default function OwnerBookingsPage() {
   };
 
   const rows = [...(data ?? [])].sort((a, b) => ORDER[a.status] - ORDER[b.status]);
+  const reduceMotion = useReducedMotion();
 
   return (
-    <PageTransition>
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 py-6">
-        <Link to="/owner" className="inline-flex items-center gap-1.5 py-1 text-[15px] font-medium text-lake-700 hover:text-lake-900">
-          <ArrowLeft size={16} /> Back to your boats
-        </Link>
-        <h1 className="mt-3 font-display text-[1.75rem] font-bold leading-tight tracking-[-0.02em] text-lake-950 sm:text-[2rem]">Bookings</h1>
-        <p className="mt-2 text-base leading-normal text-lake-700">
-          Confirm or decline requests, then mark deposits and completed trips as they happen.
-        </p>
+    <OwnerPortalPage
+      title="Bookings"
+      crumb="Bookings"
+      subtitle="Confirm or decline requests, then mark deposits and completed trips as they happen."
+    >
+      {actionError && (
+        <p className="mb-4 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{actionError}</p>
+      )}
 
-        {actionError && (
-          <p className="mt-3 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{actionError}</p>
-        )}
+      {/* The captain roster sits beside the list on a wide screen, the way a
+          booking site keeps the summary next to the detail. Bookings come first in
+          the source, so a phone opens on the requests and keyboard order matches
+          the left-to-right reading order. */}
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <PortalSection title="Booking requests" className="min-w-0">
+          <div className="space-y-3">
+            {loading && <LoadingState large label="Loading bookings" />}
+            {error && <ErrorState large message={error} onRetry={reload} />}
+            {!loading && !error && rows.length === 0 && (
+              <EmptyState large title="No bookings yet" hint="Requests from tourists and hotels will appear here." />
+            )}
+            <AnimatePresence>
+              {rows.map((b) => (
+                <motion.div key={b.id} layout={!reduceMotion}
+                  initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }} transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
+                  className={`${portalCard} p-4 sm:p-5`}>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <h3 className="min-w-0 break-words text-lg font-bold leading-snug tracking-[-0.01em] text-lake-950">{b.boatName}</h3>
+                    <StatusBadge status={b.status} />
+                  </div>
 
-        <div className="mt-5">
+                  {/* Labelled figures, the way a booking confirmation lays out its
+                      details, instead of one dot-separated line to parse. */}
+                  <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-lake-100 py-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1.6fr)_minmax(0,0.8fr)_minmax(0,1fr)]">
+                    <div className="min-w-0">
+                      <dt className={detailLabel}>Guest</dt>
+                      <dd className="mt-0.5 break-words text-base font-semibold text-lake-950">{b.guestName}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className={detailLabel}>When</dt>
+                      <dd className="mt-0.5 break-words text-base tabular-nums text-lake-950">{bookingsSvc.tripWhen(b)}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className={detailLabel}>Group</dt>
+                      <dd className="mt-0.5 text-base tabular-nums text-lake-950">{b.groupSize} guest{b.groupSize > 1 ? 's' : ''}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className={detailLabel}>Total</dt>
+                      <dd className={`mt-0.5 break-words tabular-nums ${b.priceTotal > 0 ? 'text-lg font-bold text-lake-950' : 'text-base text-lake-700'}`}>
+                        {bookingsSvc.tripPrice(b)}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  <div className="mt-3.5 flex flex-wrap items-start gap-2">
+                    {b.status === 'requested' && (
+                      <>
+                        <button onClick={() => run(b.id, () => bookingsSvc.setOwnerBookingStatus(b.id, 'confirmed'))}
+                          disabled={busyId === b.id}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
+                          <Check size={15} /> Confirm
+                        </button>
+                        <button onClick={() => run(b.id, () => bookingsSvc.setOwnerBookingStatus(b.id, 'declined'))}
+                          disabled={busyId === b.id}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-semibold text-lake-700 hover:bg-lake-50 disabled:opacity-50">
+                          <X size={15} /> Decline
+                        </button>
+                      </>
+                    )}
+                    {b.status === 'confirmed' && (
+                      <button onClick={() => run(b.id, () => bookingsSvc.setOwnerBookingStatus(b.id, 'deposit_paid'))}
+                        disabled={busyId === b.id}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-lake-700 px-3 py-2 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
+                        <Wallet size={15} /> Mark deposit paid
+                      </button>
+                    )}
+                    {(b.status === 'confirmed' || b.status === 'deposit_paid') && (
+                      <>
+                        <button onClick={() => run(b.id, () => bookingsSvc.setOwnerBookingStatus(b.id, 'completed'))}
+                          disabled={busyId === b.id}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
+                          <CheckCircle2 size={15} /> Complete
+                        </button>
+                        <CancelBookingButton booking={b} onCancelled={reload} disabled={busyId === b.id} />
+                      </>
+                    )}
+                  </div>
+
+                  <AssignCaptain booking={b} captains={captains} onAssigned={run} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </PortalSection>
+
+        <div className="min-w-0">
           <CaptainManager ownerId={ownerId} captains={captains} onChanged={reloadCaptains} />
         </div>
-
-        <div className="mt-5 space-y-3">
-          {loading && <LoadingState large label="Loading bookings" />}
-          {error && <ErrorState large message={error} onRetry={reload} />}
-          {!loading && !error && rows.length === 0 && (
-            <EmptyState large title="No bookings yet" hint="Requests from tourists and hotels will appear here." />
-          )}
-          <AnimatePresence>
-            {rows.map((b) => (
-              <motion.div key={b.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }} className="rounded-2xl border border-lake-100 bg-white p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="break-words text-[1.0625rem] font-semibold leading-snug text-lake-950">{b.boatName}</h3>
-                    <p className="mt-1 break-words text-[15px] leading-normal tabular-nums text-lake-700">
-                      <span className="font-semibold text-lake-900">{b.guestName}</span> · {bookingsSvc.tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · <span className="font-semibold text-lake-900">{bookingsSvc.tripPrice(b)}</span>
-                    </p>
-                  </div>
-                  <StatusBadge status={b.status} />
-                </div>
-
-                <div className="mt-3.5 flex flex-wrap items-start gap-2">
-                  {b.status === 'requested' && (
-                    <>
-                      <button onClick={() => run(b.id, () => bookingsSvc.setOwnerBookingStatus(b.id, 'confirmed'))}
-                        disabled={busyId === b.id}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
-                        <Check size={15} /> Confirm
-                      </button>
-                      <button onClick={() => run(b.id, () => bookingsSvc.setOwnerBookingStatus(b.id, 'declined'))}
-                        disabled={busyId === b.id}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-semibold text-lake-700 hover:bg-lake-50 disabled:opacity-50">
-                        <X size={15} /> Decline
-                      </button>
-                    </>
-                  )}
-                  {b.status === 'confirmed' && (
-                    <button onClick={() => run(b.id, () => bookingsSvc.setOwnerBookingStatus(b.id, 'deposit_paid'))}
-                      disabled={busyId === b.id}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-lake-700 px-3 py-2 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
-                      <Wallet size={15} /> Mark deposit paid
-                    </button>
-                  )}
-                  {(b.status === 'confirmed' || b.status === 'deposit_paid') && (
-                    <>
-                      <button onClick={() => run(b.id, () => bookingsSvc.setOwnerBookingStatus(b.id, 'completed'))}
-                        disabled={busyId === b.id}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
-                        <CheckCircle2 size={15} /> Complete
-                      </button>
-                      <CancelBookingButton booking={b} onCancelled={reload} disabled={busyId === b.id} />
-                    </>
-                  )}
-                </div>
-
-                <AssignCaptain booking={b} captains={captains} onAssigned={run} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
       </div>
-    </PageTransition>
+    </OwnerPortalPage>
   );
 }

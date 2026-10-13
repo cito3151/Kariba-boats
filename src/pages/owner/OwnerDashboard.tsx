@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Anchor, Plus, Pencil, Gauge, Trash2, EyeOff, Eye, X, Bell, CalendarDays, Clock, Building2 } from 'lucide-react';
-import PageTransition from '../../components/PageTransition';
-import DashboardBanner from '../../components/DashboardBanner';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Anchor, Plus, Pencil, Gauge, Trash2, EyeOff, Eye, X, Bell, Clock, MapPin } from 'lucide-react';
+import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
+import { BOAT_STATUS_CHIP } from '../../components/owner/boatStatus';
+import PortalSection from '../../components/portal/PortalSection';
+import { portalCard, portalButtonPrimary, portalButtonSecondary, portalButtonDanger } from '../../components/portal/styles';
 import BoatImage from '../../components/BoatImage';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
 import StatTile from '../../components/StatTile';
@@ -11,19 +13,10 @@ import VerificationBanner from '../../components/VerificationBanner';
 import DocumentUploader from '../../components/verification/DocumentUploader';
 import { useAuth } from '../../data/AuthContext';
 import { useAsync } from '../../hooks/useAsync';
-import { photos } from '../../data/photos';
 import * as boats from '../../services/boats.service';
 import * as imagesSvc from '../../services/images.service';
 import * as maint from '../../services/maintenance.service';
-import type { OwnerBoat, BoatStatus, MaintenanceStatus } from '../../services/boats.service';
-
-const STATUS_CHIP: Record<BoatStatus, { label: string; className: string }> = {
-  draft: { label: 'Draft', className: 'bg-gray-100 text-gray-600' },
-  pending: { label: 'Awaiting review', className: 'bg-amber-100 text-amber-800' },
-  approved: { label: 'Live', className: 'bg-lake-100 text-lake-700' },
-  rejected: { label: 'Rejected', className: 'bg-red-100 text-red-700' },
-  suspended: { label: 'Suspended', className: 'bg-red-100 text-red-700' },
-};
+import type { OwnerBoat, MaintenanceStatus } from '../../services/boats.service';
 
 const MAINT_CHIP: Record<MaintenanceStatus, { label: string; className: string } | null> = {
   ok: null,
@@ -31,6 +24,10 @@ const MAINT_CHIP: Record<MaintenanceStatus, { label: string; className: string }
   due: { label: 'Service due', className: 'bg-sunset-200 text-sunset-800' },
   overdue: { label: 'Service overdue', className: 'bg-red-100 text-red-700' },
 };
+
+// Card actions sit two to a row and share the width, so all four fit a phone
+// card without wrapping into a ragged third line.
+const cardAction = `${portalButtonSecondary} w-full`;
 
 function CoverImage({ boat }: { boat: OwnerBoat }) {
   const { data } = useAsync(() => imagesSvc.listBoatImages(boat.id), [boat.id]);
@@ -46,6 +43,7 @@ type BoatFilter = 'all' | 'live' | 'pending' | 'attention';
 export default function OwnerDashboard() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
   const ownerId = currentUser?.id ?? '';
   const [filter, setFilter] = useState<BoatFilter>('all');
 
@@ -102,120 +100,101 @@ export default function OwnerDashboard() {
   });
 
   return (
-    <PageTransition>
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6">
-        <DashboardBanner
-          image={photos.kapentaRig}
-          eyebrow="Owner portal"
-          title={currentUser?.businessName || currentUser?.name || 'Your boats'}
-          icon={Anchor}
-        />
+    <OwnerPortalPage
+      title={currentUser?.businessName || currentUser?.name || 'Your boats'}
+      actions={
+        <Link to="/owner/boats/new" className={portalButtonPrimary}>
+          <Plus size={16} /> Register a boat
+        </Link>
+      }
+    >
+      <VerificationBanner />
 
-        <div className="mt-4"><VerificationBanner /></div>
+      {currentUser?.verificationStatus !== 'verified' && (
+        <div className="mb-4"><DocumentUploader /></div>
+      )}
 
-        {currentUser?.verificationStatus !== 'verified' && (
-          <div className="mt-4"><DocumentUploader /></div>
-        )}
+      <AnimatePresence initial={false}>
+        {unread.map((n) => (
+          <motion.div key={n.id} layout={!reduceMotion}
+            initial={reduceMotion ? false : { opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
+            className={`${portalCard} mb-4 flex items-start justify-between gap-3 border-l-4 border-l-sunset-500 px-4 py-3`}>
+            <p className="flex min-w-0 items-start gap-2 break-words text-base leading-normal text-lake-900">
+              <Bell size={18} className="mt-1 shrink-0 text-sunset-700" /> {n.message}
+            </p>
+            <button onClick={() => dismissNotif(n.id)} aria-label="Dismiss notification"
+              className="shrink-0 rounded-md p-1 text-lake-700 outline-none hover:bg-lake-50 hover:text-lake-950 focus-visible:ring-2 focus-visible:ring-lake-500">
+              <X size={18} />
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
 
-        <AnimatePresence>
-          {unread.map((n) => (
-            <motion.div key={n.id} layout
-              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="mt-4 flex items-start justify-between gap-3 rounded-xl bg-sunset-50 px-4 py-3">
-              <p className="flex items-start gap-2 text-base leading-normal text-sunset-800">
-                <Bell size={18} className="mt-1 shrink-0" /> {n.message}
-              </p>
-              <button onClick={() => dismissNotif(n.id)} aria-label="Dismiss notification" className="shrink-0 p-1 text-sunset-700 hover:text-sunset-900">
-                <X size={18} />
-              </button>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+        <StatTile index={0} icon={Anchor} label="Total boats" value={stats.total}
+          active={filter === 'all'} onClick={() => setFilter('all')} />
+        <StatTile index={1} icon={Eye} label="Live for tourists" value={stats.live}
+          active={filter === 'live'} onClick={() => setFilter(filter === 'live' ? 'all' : 'live')} />
+        <StatTile index={2} icon={Clock} label="Awaiting review" value={stats.pending}
+          active={filter === 'pending'} onClick={() => setFilter(filter === 'pending' ? 'all' : 'pending')} />
+        <StatTile index={3} icon={Gauge} label="Need maintenance" value={stats.attention}
+          active={filter === 'attention'} onClick={() => setFilter(filter === 'attention' ? 'all' : 'attention')} />
+      </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatTile index={0} icon={Anchor} label="Total boats" value={stats.total}
-            active={filter === 'all'} onClick={() => setFilter('all')} />
-          <StatTile index={1} icon={Eye} label="Live for tourists" value={stats.live}
-            active={filter === 'live'} onClick={() => setFilter(filter === 'live' ? 'all' : 'live')} />
-          <StatTile index={2} icon={Clock} label="Awaiting review" value={stats.pending}
-            active={filter === 'pending'} onClick={() => setFilter(filter === 'pending' ? 'all' : 'pending')} />
-          <StatTile index={3} icon={Gauge} label="Need maintenance" value={stats.attention}
-            active={filter === 'attention'} onClick={() => setFilter(filter === 'attention' ? 'all' : 'attention')} />
-        </div>
-
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-xl font-bold tracking-[-0.015em] text-lake-950">Your boats</h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link to="/owner/bookings"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3.5 py-2.5 text-sm font-semibold text-lake-700 hover:bg-lake-50">
-              <CalendarDays size={16} /> Bookings
-            </Link>
-            <Link to="/owner/maintenance"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3.5 py-2.5 text-sm font-semibold text-lake-700 hover:bg-lake-50">
-              <Gauge size={16} /> Maintenance
-            </Link>
-            <Link to="/owner/company"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3.5 py-2.5 text-sm font-semibold text-lake-700 hover:bg-lake-50">
-              <Building2 size={16} /> Company
-            </Link>
-            <Link to="/owner/boats/new"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-sunset-500 px-3.5 py-2.5 text-sm font-semibold text-lake-950 hover:bg-sunset-400">
-              <Plus size={16} /> Register a boat
-            </Link>
-          </div>
-        </div>
-
+      <PortalSection title="Your boats" className="mt-10">
         {actionError && (
-          <p className="mt-3 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{actionError}</p>
+          <p className="mb-4 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{actionError}</p>
         )}
 
-        <div className="mt-4">
-          {loading && <LoadingState large label="Loading your boats" />}
-          {error && <ErrorState large message={error} onRetry={reload} />}
-          {!loading && !error && list.length === 0 && (
-            <EmptyState large
-              title="No boats yet"
-              hint="Register your first boat to start taking bookings on Kariba Lake Connect."
-              action={
-                <Link to="/owner/boats/new"
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-sunset-500 px-4 py-2.5 text-sm font-semibold text-lake-950 hover:bg-sunset-400">
-                  <Plus size={16} /> Register your first boat
-                </Link>
-              }
-            />
-          )}
+        {loading && <LoadingState large label="Loading your boats" />}
+        {error && <ErrorState large message={error} onRetry={reload} />}
+        {!loading && !error && list.length === 0 && (
+          <EmptyState large
+            title="No boats yet"
+            hint="Register your first boat to start taking bookings on Kariba Lake Connect."
+            action={
+              <Link to="/owner/boats/new" className={`${portalButtonPrimary} mt-2`}>
+                <Plus size={16} /> Register your first boat
+              </Link>
+            }
+          />
+        )}
 
-          {!loading && !error && list.length > 0 && filter !== 'all' && (
-            <p className="mb-3 text-base text-lake-700">
-              Showing {visible.length} {filter === 'live' ? 'live' : filter === 'pending' ? 'awaiting review' : 'needing maintenance'} boat{visible.length !== 1 ? 's' : ''}.
-              <button onClick={() => setFilter('all')} className="ml-2 font-semibold text-lake-800 underline underline-offset-2 hover:text-lake-950">Show all</button>
-            </p>
-          )}
-          {!loading && !error && list.length > 0 && visible.length === 0 && (
-            <p className="rounded-xl border border-dashed border-lake-200 py-10 text-center text-base text-lake-600">
-              No boats match this filter.
-            </p>
-          )}
+        {!loading && !error && list.length > 0 && filter !== 'all' && (
+          <p className="mb-4 text-base text-lake-700">
+            Showing <span className="tabular-nums">{visible.length}</span> {filter === 'live' ? 'live' : filter === 'pending' ? 'awaiting review' : 'needing maintenance'} boat{visible.length !== 1 ? 's' : ''}.
+            <button onClick={() => setFilter('all')} className="ml-2 rounded-sm font-semibold text-lake-800 underline underline-offset-2 outline-none hover:text-lake-950 focus-visible:ring-2 focus-visible:ring-lake-500">Show all</button>
+          </p>
+        )}
+        {!loading && !error && list.length > 0 && visible.length === 0 && (
+          <p className="rounded-lg border border-dashed border-lake-200 bg-white py-10 text-center text-base text-lake-700">
+            No boats match this filter.
+          </p>
+        )}
 
-          {!loading && !error && visible.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {visible.map((boat) => {
-                const maintChip = MAINT_CHIP[boat.maintenanceStatus];
-                return (
-                  <div key={boat.id} className="overflow-hidden rounded-2xl border border-lake-100 bg-white">
-                    <div className="aspect-[4/3] w-full overflow-hidden bg-lake-100">
-                      <CoverImage boat={boat} />
-                    </div>
-                    <div className="p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="min-w-0 break-words text-[1.0625rem] font-semibold leading-snug text-lake-950">{boat.name}</h3>
-                        <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${STATUS_CHIP[boat.status].className}`}>
-                          {STATUS_CHIP[boat.status].label}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-[15px] leading-snug text-lake-600">{boat.location}</p>
+        {!loading && !error && visible.length > 0 && (
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {visible.map((boat) => {
+              const maintChip = MAINT_CHIP[boat.maintenanceStatus];
+              return (
+                <li key={boat.id} className={`${portalCard} flex flex-col overflow-hidden`}>
+                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-lake-100">
+                    <CoverImage boat={boat} />
+                    <span className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[13px] font-semibold leading-none shadow-sm ${BOAT_STATUS_CHIP[boat.status].className}`}>
+                      {BOAT_STATUS_CHIP[boat.status].label}
+                    </span>
+                  </div>
 
-                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  <div className="flex-1 p-4">
+                    <h3 className="break-words text-lg font-bold leading-snug tracking-[-0.01em] text-lake-950">{boat.name}</h3>
+                    <p className="mt-1 flex items-start gap-1.5 text-[15px] leading-snug text-lake-700">
+                      <MapPin size={15} className="mt-0.5 shrink-0 text-lake-600" aria-hidden />
+                      <span className="min-w-0 break-words">{boat.location}</span>
+                    </p>
+
+                    {(maintChip || boat.pendingChanges) && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
                         {maintChip && (
                           <span className={`rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${maintChip.className}`}>
                             {maintChip.label}
@@ -227,37 +206,34 @@ export default function OwnerDashboard() {
                           </span>
                         )}
                       </div>
+                    )}
 
-                      {boat.status === 'rejected' && boat.rejectionReason && (
-                        <p className="mt-2 text-[15px] leading-normal text-red-700">{boat.rejectionReason}</p>
-                      )}
-
-                      <div className="mt-3.5 flex flex-wrap gap-2">
-                        <button onClick={() => navigate(`/owner/boats/${boat.id}/edit`)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-semibold text-lake-700 hover:bg-lake-50">
-                          <Pencil size={15} /> Edit
-                        </button>
-                        <Link to="/owner/maintenance"
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-semibold text-lake-700 hover:bg-lake-50">
-                          <Gauge size={15} /> Hours
-                        </Link>
-                        <button onClick={() => toggleActive(boat)} disabled={busyId === boat.id}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-semibold text-lake-700 hover:bg-lake-50 disabled:opacity-50">
-                          {boat.isActive ? <><EyeOff size={15} /> Unavailable</> : <><Eye size={15} /> Available</>}
-                        </button>
-                        <button onClick={() => remove(boat)} disabled={busyId === boat.id}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
-                          <Trash2 size={15} /> Delete
-                        </button>
-                      </div>
-                    </div>
+                    {boat.status === 'rejected' && boat.rejectionReason && (
+                      <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[15px] leading-normal text-red-700">{boat.rejectionReason}</p>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-    </PageTransition>
+
+                  <div className="grid grid-cols-2 gap-2 border-t border-lake-100 bg-lake-50/60 p-3">
+                    <button onClick={() => navigate(`/owner/boats/${boat.id}/edit`)} className={cardAction}>
+                      <Pencil size={15} /> Edit
+                    </button>
+                    <Link to="/owner/maintenance" className={cardAction}>
+                      <Gauge size={15} /> Hours
+                    </Link>
+                    <button onClick={() => toggleActive(boat)} disabled={busyId === boat.id} className={cardAction}>
+                      {boat.isActive ? <><EyeOff size={15} /> Unavailable</> : <><Eye size={15} /> Available</>}
+                    </button>
+                    <button onClick={() => remove(boat)} disabled={busyId === boat.id}
+                      className={`${portalButtonDanger} w-full`}>
+                      <Trash2 size={15} /> Delete
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </PortalSection>
+    </OwnerPortalPage>
   );
 }

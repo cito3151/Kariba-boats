@@ -1,6 +1,11 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 
+/**
+ * @deprecated Replaced by PortalHeader (through PortalPage) in components/portal.
+ * Only the admin, hotel and agency dashboards still use it, until they move onto
+ * the portal shell; delete this file with the last of those call sites.
+ */
 export default function DashboardBanner({
   image,
   eyebrow,

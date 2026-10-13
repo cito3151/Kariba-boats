@@ -1,6 +1,9 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 
+// A figure tile for the portal dashboards, in the portal card grammar (thin border,
+// 8px radius, one soft shadow). Clickable tiles act as filters: the active one gets
+// a navy border and the orange bar the site header and portal tabs use for "here".
 export default function StatTile({
   label, value, icon: Icon, active, onClick, index = 0,
 }: {
@@ -15,30 +18,31 @@ export default function StatTile({
   const clickable = Boolean(onClick);
 
   const base =
-    'group relative min-w-0 overflow-hidden rounded-2xl border p-4 text-left shadow-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2';
+    'group relative min-w-0 overflow-hidden rounded-lg border bg-white p-4 text-left shadow-[0_1px_2px_rgb(13_37_50/0.06)] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2';
   const state = !clickable
-    ? 'border-lake-100 bg-white'
+    ? 'border-lake-100'
     : active
-      ? 'w-full cursor-pointer border-lake-500 bg-gradient-to-br from-lake-50 to-white'
-      : 'w-full cursor-pointer border-lake-100 bg-white hover:border-lake-300 hover:shadow-md';
+      ? 'w-full cursor-pointer border-lake-950'
+      : 'w-full cursor-pointer border-lake-100 hover:border-lake-300';
 
   const chip = active
-    ? 'bg-lake-600 text-white'
-    : 'bg-lake-50 text-lake-600 group-hover:bg-lake-100';
+    ? 'bg-lake-950 text-white'
+    : 'bg-lake-50 text-lake-700 group-hover:bg-lake-100';
 
   const inner = (
     <>
       {Icon && (
-        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${chip}`}>
+        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors ${chip}`}>
           <Icon size={18} />
         </span>
       )}
       <p className="mt-3 text-[2rem] font-bold leading-none tracking-[-0.02em] tabular-nums text-lake-950">{value}</p>
-      <p className="mt-2 break-words text-sm font-medium leading-snug text-lake-700">{label}</p>
+      <p className="mt-2 break-words text-sm font-semibold leading-snug text-lake-700">{label}</p>
       {active && (
         <motion.span
-          layoutId="stat-tile-accent"
-          className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-lake-500 to-sunset-400"
+          layoutId={reduce ? undefined : 'stat-tile-accent'}
+          transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
+          className="absolute inset-x-0 bottom-0 h-[3px] bg-sunset-500"
         />
       )}
     </>
@@ -47,9 +51,9 @@ export default function StatTile({
   const entrance = reduce
     ? {}
     : {
-        initial: { opacity: 0, y: 12, scale: 0.96 },
-        animate: { opacity: 1, y: 0, scale: 1 },
-        transition: { duration: 0.35, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] as const },
+        initial: { opacity: 0, y: 12 },
+        animate: { opacity: 1, y: 0 },
+        transition: { type: 'spring' as const, bounce: 0, duration: 0.4, delay: index * 0.05 },
       };
 
   if (!clickable) {
@@ -60,8 +64,8 @@ export default function StatTile({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      whileHover={reduce ? undefined : { y: -3 }}
-      whileTap={reduce ? undefined : { scale: 0.98 }}
+      // Its own transition, or the press would inherit the staggered entrance delay.
+      whileTap={reduce ? undefined : { scale: 0.98, transition: { type: 'spring', bounce: 0, duration: 0.15 } }}
       {...entrance}
       className={`${base} ${state}`}
     >

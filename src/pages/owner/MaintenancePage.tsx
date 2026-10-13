@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
-import PageTransition from '../../components/PageTransition';
+import { useId, useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
+import PortalSection from '../../components/portal/PortalSection';
+import { portalCard } from '../../components/portal/styles';
 import MaintenanceCard from '../../components/owner/MaintenanceCard';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
 import { useAuth } from '../../data/AuthContext';
@@ -16,16 +17,17 @@ function BoatHistory({ boatId }: { boatId: string }) {
   const [open, setOpen] = useState(false);
   const { data: records } = useAsync(() => maint.listMaintenance(boatId), [boatId, open ? 1 : 0]);
   const { data: hours } = useAsync(() => maint.listHours(boatId), [boatId, open ? 1 : 0]);
+  const panelId = useId();
 
   return (
-    <div className="mt-2 rounded-xl border border-lake-100 bg-white">
-      <button onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left text-base font-semibold text-lake-800">
+    <div className={`${portalCard} mt-2`}>
+      <button onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls={panelId}
+        className="flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3.5 text-left text-base font-semibold text-lake-800 outline-none hover:text-lake-950 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lake-500">
         Service history and hours log
         {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
       </button>
       {open && (
-        <div className="border-t border-lake-100 p-4">
+        <div id={panelId} className="border-t border-lake-100 p-4">
           <p className="text-[13px] font-semibold uppercase tracking-[0.05em] text-lake-700">Maintenance records</p>
           {(records ?? []).length === 0 ? (
             <p className="mt-1.5 text-base text-lake-700">No maintenance recorded yet.</p>
@@ -78,31 +80,28 @@ export default function MaintenancePage() {
   );
 
   return (
-    <PageTransition>
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 py-6">
-        <Link to="/owner" className="inline-flex items-center gap-1.5 py-1 text-[15px] font-medium text-lake-700 hover:text-lake-900">
-          <ArrowLeft size={16} /> Back to your boats
-        </Link>
-        <h1 className="mt-3 font-display text-[1.75rem] font-bold leading-tight tracking-[-0.02em] text-lake-950 sm:text-[2rem]">Maintenance</h1>
-        <p className="mt-2 text-base leading-normal text-lake-700">
-          Log operating hours after each trip. Boats that go overdue are hidden from tourist search
-          until you record a service.
-        </p>
-
-        <div className="mt-6 space-y-6">
-          {loading && <LoadingState large label="Loading maintenance" />}
-          {error && <ErrorState large message={error} onRetry={reload} />}
-          {!loading && !error && sorted.length === 0 && (
-            <EmptyState large title="No boats yet" hint="Register a boat to start tracking its hours." />
-          )}
+    <OwnerPortalPage
+      title="Maintenance"
+      crumb="Maintenance"
+      subtitle="Log operating hours after each trip. Boats that go overdue are hidden from tourist search until you record a service."
+    >
+      <PortalSection title="Your fleet" description="Most urgent first.">
+        {loading && <LoadingState large label="Loading maintenance" />}
+        {error && <ErrorState large message={error} onRetry={reload} />}
+        {!loading && !error && sorted.length === 0 && (
+          <EmptyState large title="No boats yet" hint="Register a boat to start tracking its hours." />
+        )}
+        {/* Two boats a row on a wide screen; items-start so opening one boat's
+            history does not stretch its neighbour. */}
+        <div className="grid items-start gap-6 lg:grid-cols-2">
           {sorted.map((boat: OwnerBoat) => (
-            <div key={boat.id}>
+            <div key={boat.id} className="min-w-0">
               <MaintenanceCard boat={boat} onChanged={reload} />
               <BoatHistory boatId={boat.id} />
             </div>
           ))}
         </div>
-      </div>
-    </PageTransition>
+      </PortalSection>
+    </OwnerPortalPage>
   );
 }

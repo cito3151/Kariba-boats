@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Send, CheckCircle2, AlertCircle } from 'lucide-react';
-import PageTransition from '../../components/PageTransition';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
+import { portalCard, portalButtonPrimary } from '../../components/portal/styles';
+import { BOAT_STATUS_CHIP } from '../../components/owner/boatStatus';
 import BoatForm from '../../components/owner/BoatForm';
 import ImageUploader from '../../components/owner/ImageUploader';
 import { LoadingState, ErrorState } from '../../components/StateViews';
@@ -89,53 +91,52 @@ export default function BoatFormPage() {
   const accountVerified = currentUser.verificationStatus === 'verified';
   const canSubmit = boat && (boat.status === 'draft' || boat.status === 'rejected') && accountVerified;
 
+  const title = editing ? 'Edit boat' : 'Register a boat';
+  const showSide = editing && boat;
+
   return (
-    <PageTransition>
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 py-6">
-        <Link to="/owner" className="inline-flex items-center gap-1.5 py-1 text-[15px] font-medium text-lake-700 hover:text-lake-900">
-          <ArrowLeft size={16} /> Back to your boats
-        </Link>
+    <OwnerPortalPage
+      title={title}
+      crumb={title}
+      subtitle={editing
+        ? 'Update the details, add photos, and submit for review when ready.'
+        : 'Start with the details. You will add photos on the next step.'}
+    >
+      <VerificationBanner />
 
-        <h1 className="mt-3 font-display text-[1.75rem] font-bold leading-tight tracking-[-0.02em] text-lake-950 sm:text-[2rem]">
-          {editing ? 'Edit boat' : 'Register a boat'}
-        </h1>
-        <p className="mt-2 text-base leading-normal text-lake-700">
-          {editing
-            ? 'Update the details, add photos, and submit for review when ready.'
-            : 'Start with the details. You will add photos on the next step.'}
-        </p>
-
-        <div className="mt-4"><VerificationBanner /></div>
-
-        <div className="mt-2 rounded-2xl border border-lake-100 bg-white p-5 sm:p-6">
-          {editing && loading && <LoadingState large label="Loading boat" />}
-          {editing && error && <ErrorState large message={error} onRetry={reload} />}
-          {editing && !loading && !boat && (
-            <ErrorState large message="This boat could not be found." />
-          )}
-
-          {(!editing || (editing && boat)) && (
-            <BoatForm
-              initial={boat ? toInput(boat) : undefined}
-              submitLabel={editing ? 'Save changes' : 'Create boat'}
-              onSubmit={editing ? handleEdit : handleCreate}
-            />
-          )}
+      {boat?.status === 'rejected' && boat.rejectionReason && (
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-200 border-l-4 border-l-red-600 bg-red-50 p-4 text-[15px] leading-normal text-red-700">
+          <AlertCircle size={20} className="mt-0.5 shrink-0" />
+          <div className="min-w-0 break-words">
+            <p className="text-base font-semibold">This boat was not approved</p>
+            <p>{boat.rejectionReason}</p>
+          </div>
         </div>
+      )}
 
-        {editing && boat && (
-          <>
-            {boat.status === 'rejected' && boat.rejectionReason && (
-              <div className="mt-4 flex items-start gap-3 rounded-xl bg-red-50 p-4 text-[15px] leading-normal text-red-700">
-                <AlertCircle size={20} className="mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-base font-semibold">This boat was not approved</p>
-                  <p>{boat.rejectionReason}</p>
-                </div>
-              </div>
+      {/* Once a boat exists, its review status and the submit step sit in a side
+          column beside the form on a wide screen, like the summary panel of a
+          booking. Before that there is only the form, kept to a readable width. */}
+      <div className={showSide ? 'grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]' : 'max-w-3xl'}>
+        <div className="min-w-0 space-y-6">
+          <div className={`${portalCard} p-5 sm:p-6`}>
+            {editing && loading && <LoadingState large label="Loading boat" />}
+            {editing && error && <ErrorState large message={error} onRetry={reload} />}
+            {editing && !loading && !boat && (
+              <ErrorState large message="This boat could not be found." />
             )}
 
-            <div className="mt-6 rounded-2xl border border-lake-100 bg-white p-5 sm:p-6">
+            {(!editing || (editing && boat)) && (
+              <BoatForm
+                initial={boat ? toInput(boat) : undefined}
+                submitLabel={editing ? 'Save changes' : 'Create boat'}
+                onSubmit={editing ? handleEdit : handleCreate}
+              />
+            )}
+          </div>
+
+          {editing && boat && (
+            <div className={`${portalCard} p-5 sm:p-6`}>
               {imagesLoaded ? (
                 <ImageUploader boatId={boat.id} ownerId={currentUser.id}
                   value={images} onChange={setImages} />
@@ -143,8 +144,21 @@ export default function BoatFormPage() {
                 <LoadingState large label="Loading photos" />
               )}
             </div>
+          )}
+        </div>
 
-            <div className="mt-6 rounded-2xl border border-lake-100 bg-white p-5 sm:p-6">
+        {editing && boat && (
+          // After the form in the source, so on a phone it still comes after the
+          // form and photos as before; on lg it moves up beside them and follows
+          // the scroll, keeping the submit step in reach of a long form.
+          <div className={`${portalCard} min-w-0 p-5 lg:sticky lg:top-24`}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-[13px] font-bold uppercase tracking-[0.06em] text-lake-700">Review status</h2>
+              <span className={`rounded-full px-2.5 py-1 text-[13px] font-semibold leading-none ${BOAT_STATUS_CHIP[boat.status].className}`}>
+                {BOAT_STATUS_CHIP[boat.status].label}
+              </span>
+            </div>
+            <div className="mt-3 empty:hidden">
               {boat.status === 'pending' && (
                 <p className="flex items-start gap-2 text-base leading-normal text-amber-800">
                   <CheckCircle2 size={20} className="mt-0.5 shrink-0" /> Submitted. An administrator is reviewing this boat.
@@ -164,7 +178,7 @@ export default function BoatFormPage() {
                     <p className="mt-2 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{submitError}</p>
                   )}
                   <button onClick={submitForReview} disabled={submitting || images.length === 0}
-                    className="mt-3 inline-flex items-center gap-2 rounded-lg bg-lake-700 px-5 py-2.5 text-base font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
+                    className={`${portalButtonPrimary} mt-3 w-full`}>
                     <Send size={16} /> {submitting ? 'Submitting' : 'Submit for review'}
                   </button>
                   {images.length === 0 && (
@@ -179,9 +193,9 @@ export default function BoatFormPage() {
                 </p>
               )}
             </div>
-          </>
+          </div>
         )}
       </div>
-    </PageTransition>
+    </OwnerPortalPage>
   );
 }
