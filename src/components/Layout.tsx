@@ -133,7 +133,15 @@ export default function Layout({ children }: { children: ReactNode }) {
   const panelTransition = { duration: reduceMotion ? 0 : 0.24, ease: 'easeOut' as const };
 
   return (
-    <div className="min-h-svh flex flex-col bg-lake-50">
+    // `isolate` makes the root a stacking context, so the -z-10 page layers below
+    // paint over its lake-50 fill but under everything else on the page.
+    <div className="relative isolate min-h-svh flex flex-col bg-lake-50">
+      {/* The page background is never a flat fill: a faint water texture over
+          lake-50, deepening to a lake-100 tint at the foot of the page. At 5%
+          lake-600 the texture lines leave lake-600 text at 5.3:1 (6.3:1 on plain
+          lake-50), and the tint stays paler than lake-100, where it is 5.2:1. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-linear-to-b from-lake-50 via-lake-50 to-lake-100/70" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 water-texture bg-lake-600/5" />
       <header className="sticky top-0 z-40 border-b border-lake-100 bg-white">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6 lg:h-[72px] lg:gap-6">
           <NavLink
@@ -311,7 +319,13 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       <main className="flex-1">{children}</main>
 
-      <footer className="bg-lake-950 text-lake-200">
+      {/* Navy with depth rather than a flat fill: a lake-800 glow from the top
+          right and the shared water texture in white at 6%. The lightest point
+          the two reach is about lake-800 plus 6% white, where lake-200 is still
+          5.8:1 and white 12.7:1. */}
+      <footer className="relative isolate overflow-hidden bg-lake-950 text-lake-200">
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_90%_at_100%_0%,var(--color-lake-800),transparent)]" />
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 water-texture bg-white/6" />
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-14">
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-12">
             <div className="sm:col-span-2 lg:col-span-1">

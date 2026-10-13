@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Anchor, MapPin, Star, UserCheck } from 'lucide-react';
 import PortalPage from '../components/portal/PortalPage';
+import { portalPhotos } from '../data/photos';
 import PortalSection from '../components/portal/PortalSection';
 import { portalCard, portalButtonPrimary, portalButtonSecondary } from '../components/portal/styles';
 import StatusBadge from '../components/StatusBadge';
@@ -33,6 +34,7 @@ export default function TouristTripsPage() {
     <PortalPage
       eyebrow="Your account"
       icon={Anchor}
+      photo={portalPhotos.trips}
       title="My trips"
       subtitle="Your booking requests and their status."
       breadcrumbs={[{ label: 'Home', to: '/' }, { label: 'My trips' }]}

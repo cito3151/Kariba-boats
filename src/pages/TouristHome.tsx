@@ -10,7 +10,7 @@ import { useAsync } from '../hooks/useAsync';
 import BoatTypeTiles from '../components/landing/BoatTypeTiles';
 import DepartureLocations from '../components/landing/DepartureLocations';
 import EditorialBand from '../components/landing/EditorialBand';
-import { heroImage } from '../data/photos';
+import { heroPhoto } from '../data/photos';
 import * as boats from '../services/boats.service';
 import * as imagesSvc from '../services/images.service';
 import type { BoatKind } from '../services/boats.service';
@@ -95,17 +95,37 @@ export default function TouristHome() {
 
   return (
     <PageTransition>
-      <section ref={heroRef} className="relative overflow-hidden text-white min-h-[600px] sm:min-h-[680px] lg:min-h-[min(84svh,780px)]">
-        <motion.img
-          src={heroImage}
-          alt="A kapenta fishing boat out on Lake Kariba, with the hills of the far shore behind"
-          style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
-          className="absolute inset-0 h-full w-full object-cover object-[36%_32%] sm:object-[center_32%] 2xl:object-[center_56%]"
-        />
-        {/* The headline is centred over the sky, so the scrim runs top-down: dense
-            enough behind the type to carry white text, clear by the waterline so the
-            boat stays the subject of the photograph. */}
-        <div className="absolute inset-0 bg-gradient-to-b from-lake-950/70 via-lake-950/35 to-lake-950/10" />
+      {/* Navy under the photograph, so the white headline is legible before the
+          image arrives and the photo fades towards navy, not page white, on scroll. */}
+      <section ref={heroRef} className="relative overflow-hidden bg-lake-950 text-white min-h-[600px] sm:min-h-[680px] lg:min-h-[min(84svh,780px)]">
+        {/* Decorative: the headline says what the page is. Art-directed, because a
+            phone crops the landscape frame to its middle third, which put the rear
+            houseboat right behind the subtitle; the portrait frame of the same scene
+            keeps all three boats below the type. From 640px the landscape frame
+            shows its top edge, so the boats sit low and clear of the copy. From
+            1024px the hero is wide and short (about 1.6:1 to 2.1:1 between a
+            1024x768 and a 1280x720 screen), the booking bar overlaps its foot, and
+            a top-anchored crop put the front houseboat under the bar; anchoring at
+            30% keeps the boats between the subtitle and the bar from 1024 through
+            1150, 1280 and 1440px. */}
+        <picture aria-hidden>
+          <source media="(max-width: 639px)" srcSet={heroPhoto.portrait.srcSet} sizes="100vw" />
+          <motion.img
+            src={heroPhoto.landscape.src}
+            srcSet={heroPhoto.landscape.srcSet}
+            sizes="100vw"
+            alt=""
+            fetchPriority="high"
+            style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
+            className="absolute inset-0 h-full w-full object-cover object-center sm:object-[52%_0%] lg:object-[52%_30%]"
+          />
+        </picture>
+        {/* The headline is centred over open water, which is pale, so the scrim
+            runs top-down and stays dense well past the subtitle: 82% navy at the
+            top, 62% by the subtitle, then clearing by the waterline so the boats
+            stay the subject. Measured on this photo at 375, 768, 1440 and 1920px,
+            the subtitle is 4.8:1 or better and the headline 6.7:1 or better. */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(13_37_50/0.82),rgb(13_37_50/0.62)_45%,rgb(13_37_50/0.2)_75%,rgb(13_37_50/0.1))]" />
 
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6 pt-20 sm:pt-24 lg:pt-28 text-center">
           {/* Set the way boat and cruise booking sites set theirs: one bold sans,
@@ -139,7 +159,7 @@ export default function TouristHome() {
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.8fr_1.2fr_auto_auto] lg:items-stretch">
             <label className="block rounded-md px-4 py-3 hover:bg-lake-50 focus-within:bg-lake-50">
-              <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-lake-500">Boat type</span>
+              <span className="block text-xs font-bold uppercase tracking-[0.08em] text-lake-600">Boat type</span>
               <select
                 value={boatType}
                 onChange={(e) => setBoatType(e.target.value as BoatKind | 'all')}
@@ -152,7 +172,7 @@ export default function TouristHome() {
               </select>
             </label>
             <label className="block rounded-md px-4 py-3 hover:bg-lake-50 focus-within:bg-lake-50 lg:border-l lg:border-lake-100">
-              <span className="block text-[11px] font-bold uppercase tracking-[0.08em] text-lake-500">Guests</span>
+              <span className="block text-xs font-bold uppercase tracking-[0.08em] text-lake-600">Guests</span>
               <span className="mt-1 flex items-center gap-2">
                 <Users size={15} className="text-lake-400" aria-hidden />
                 <input
@@ -163,7 +183,7 @@ export default function TouristHome() {
               </span>
             </label>
             <label className="block rounded-md px-4 py-3 hover:bg-lake-50 focus-within:bg-lake-50 lg:border-l lg:border-lake-100">
-              <span className="flex items-baseline justify-between text-[11px] font-bold uppercase tracking-[0.08em] text-lake-500">
+              <span className="flex items-baseline justify-between text-xs font-bold uppercase tracking-[0.08em] text-lake-600">
                 Max price
                 <span className="text-[13px] font-semibold normal-case tracking-normal tabular-nums text-lake-950">
                   ${maxPrice}
@@ -295,12 +315,12 @@ export default function TouristHome() {
         )}
         {error && <ErrorState message={error} onRetry={reload} />}
         {!loading && !error && (data ?? []).length === 0 && (
-          <div className="rounded-xl border border-dashed border-lake-200 py-16 text-center text-lake-500">
+          <div className="rounded-xl border border-dashed border-lake-200 py-16 text-center text-lake-600">
             No boats are listed yet. Check back soon.
           </div>
         )}
         {!loading && !error && (data ?? []).length > 0 && sorted.length === 0 && (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-lake-200 py-16 text-center text-lake-500">
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-lake-200 py-16 text-center text-lake-600">
             <Anchor size={22} className="text-lake-300" />
             <p>No boats match those filters.</p>
             <button onClick={resetFilters}

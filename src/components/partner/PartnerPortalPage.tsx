@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import PortalPage from '../portal/PortalPage';
+import { portalPhotos } from '../../data/photos';
 
 /**
  * The frame shared by the hotel and travel agency portals: PortalPage with the
@@ -23,6 +24,7 @@ export default function PartnerPortalPage({
     <PortalPage
       eyebrow={eyebrow}
       icon={icon}
+      photo={portalPhotos.partner}
       title={title}
       subtitle={subtitle}
       actions={actions}

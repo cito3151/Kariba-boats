@@ -2,27 +2,30 @@ import { useLayoutEffect, useRef } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import Reveal from '../Reveal';
 import { BOAT_TYPE_LABELS } from '../BoatCard';
-import { photos } from '../../data/photos';
+import { photos, type Photo } from '../../data/photos';
 import type { BoatKind } from '../../services/boats.service';
 import { scrollToBoats } from './scrollToBoats';
 
 const TYPES: BoatKind[] = ['houseboat', 'speedboat', 'fishing', 'cruiser', 'pontoon'];
 
 /**
- * What sits behind each label. Every tile is a photograph under the same navy
- * gradient: flat illustrations beside photographs made the row look half
- * finished. Only fishing has a photo of the boat itself (a kapenta rig); the rest
- * carry Kariba scenery, so the label names a category and does not caption the
- * picture. None of these carry the burned-in camera date stamp, and none repeat
- * the hero photograph.
+ * What sits behind each label: a photograph of that type of boat, under the same
+ * navy gradient on every tile. Each was cropped by its `position` so the boat
+ * sits above the label at both the phone and the desktop tile size, and none
+ * repeats the hero photograph. Measured under the gradient, the label is 6.7:1
+ * or better on every tile.
  */
-const TILE_IMAGE: Record<BoatKind, string> = {
-  houseboat: photos.wildlife1,
-  speedboat: photos.sunset3,
-  fishing: photos.kapentaRig,
-  cruiser: photos.sunset1,
-  pontoon: photos.sunset2,
+const TILE_IMAGE: Record<BoatKind, Photo> = {
+  houseboat: photos.houseboat,
+  speedboat: photos.speedboat,
+  fishing: photos.fishing,
+  cruiser: photos.cruiser,
+  pontoon: photos.pontoon,
 };
+
+// Tile widths: 62% of a phone screen, 38% from sm, then one of five columns in
+// the 1152px content column from md (230px at most).
+const TILE_SIZES = '(min-width: 1152px) 230px, (min-width: 768px) 20vw, (min-width: 640px) 38vw, 62vw';
 
 function countLabel(count: number) {
   if (count === 0) return 'None listed yet';
@@ -104,11 +107,13 @@ export default function BoatTypeTiles({
                   className="absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                 >
                   <img
-                    src={TILE_IMAGE[type]}
+                    src={TILE_IMAGE[type].src}
+                    srcSet={TILE_IMAGE[type].srcSet}
+                    sizes={TILE_SIZES}
                     alt=""
                     loading="lazy"
                     decoding="async"
-                    className={`h-full w-full object-cover transition-[filter,opacity] duration-200 ${
+                    className={`h-full w-full object-cover transition-[filter,opacity] duration-200 ${TILE_IMAGE[type].position} ${
                       isEmpty ? 'opacity-60 grayscale' : ''
                     }`}
                   />

@@ -54,7 +54,7 @@ export default function ResetPassword() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
+                className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-base outline-none focus:border-lake-400"
                 placeholder="At least 6 characters"
               />
             </div>
@@ -65,7 +65,7 @@ export default function ResetPassword() {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
+                className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-base outline-none focus:border-lake-400"
                 placeholder="Re-enter new password"
               />
             </div>

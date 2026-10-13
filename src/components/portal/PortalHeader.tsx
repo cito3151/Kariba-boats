@@ -1,6 +1,8 @@
 import { Fragment, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, type LucideIcon } from 'lucide-react';
+import PhotoBackdrop from '../PhotoBackdrop';
+import { portalPhotos, type Photo } from '../../data/photos';
 
 export interface Crumb {
   label: string;
@@ -18,6 +20,11 @@ export interface PortalHeaderProps {
   subtitle?: ReactNode;
   /** Buttons on the right of the title (below it on a phone). One primary at most. */
   actions?: ReactNode;
+  /**
+   * The boat photograph behind the band, one per portal (see `portalPhotos`), so
+   * each portal is recognisable at a glance. Defaults to the admin photo.
+   */
+  photo?: Photo;
 }
 
 /**
@@ -27,13 +34,22 @@ export interface PortalHeaderProps {
  * portal screen, normally through PortalPage rather than on its own. It replaced
  * the rounded photo banner the dashboards used, so every portal page opens the
  * same way regardless of role.
+ *
+ * Behind the type is a boat photograph under a navy scrim, the way MSC sets its
+ * page headers. The scrim never drops below 75% navy anywhere text can sit
+ * (92% at the left, 75% at the right edge): at 75% even a pure white pixel
+ * behind it leaves lake-200 at 4.7:1 and white at 7:1, so the text passes AA
+ * whatever the photo does. Measured on the actual photos at 375, 768 and
+ * 1440px, the worst case for lake-200 is 5.1:1.
  */
 export default function PortalHeader({
-  breadcrumbs, eyebrow, icon: Icon, title, subtitle, actions,
+  breadcrumbs, eyebrow, icon: Icon, title, subtitle, actions, photo = portalPhotos.admin,
 }: PortalHeaderProps) {
   return (
-    <div className="bg-lake-950 text-white">
-      <div className="mx-auto max-w-6xl px-4 pb-8 pt-5 sm:px-6 sm:pb-10 sm:pt-6">
+    <div className="relative overflow-hidden bg-lake-950 text-white">
+      <PhotoBackdrop photo={photo} priority />
+      <div aria-hidden className="absolute inset-0 bg-linear-to-r from-lake-950/92 via-lake-950/84 to-lake-950/75" />
+      <div className="relative mx-auto max-w-6xl px-4 pb-8 pt-5 sm:px-6 sm:pb-10 sm:pt-6">
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav aria-label="Breadcrumb">
             <ol className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-sm">

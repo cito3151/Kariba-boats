@@ -166,7 +166,7 @@ export default function Signup() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
+              className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-base outline-none focus:border-lake-400"
               placeholder="Your name"
             />
           </div>
@@ -178,7 +178,7 @@ export default function Signup() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
+              className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-base outline-none focus:border-lake-400"
               placeholder="you@example.com"
             />
           </div>
@@ -190,7 +190,7 @@ export default function Signup() {
                 required
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
+                className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-base outline-none focus:border-lake-400"
                 placeholder={role === 'hotel' ? 'e.g. Lake Kariba Lodge' : role === 'agency' ? 'e.g. Zambezi Travel' : 'e.g. Zambezi Houseboats'}
               />
             </div>
@@ -205,7 +205,7 @@ export default function Signup() {
                 required={role === 'owner' || role === 'agency'}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
+                className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-base outline-none focus:border-lake-400"
                 placeholder="+263 77 000 0000"
               />
             </div>
@@ -219,7 +219,7 @@ export default function Signup() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
+                className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-base outline-none focus:border-lake-400"
                 placeholder="At least 6 characters"
               />
             </div>
@@ -230,7 +230,7 @@ export default function Signup() {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
+                className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-base outline-none focus:border-lake-400"
                 placeholder="Re-enter password"
               />
             </div>

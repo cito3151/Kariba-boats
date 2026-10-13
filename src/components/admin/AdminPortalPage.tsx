@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import PortalPage from '../portal/PortalPage';
+import { portalPhotos } from '../../data/photos';
 
 /**
  * The admin panel's frame: PortalPage with the admin eyebrow and breadcrumb root
@@ -20,6 +21,7 @@ export default function AdminPortalPage({
     <PortalPage
       eyebrow="Admin panel"
       icon={ShieldCheck}
+      photo={portalPhotos.admin}
       title={title}
       subtitle={subtitle}
       actions={actions}

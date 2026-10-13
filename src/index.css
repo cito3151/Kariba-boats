@@ -34,6 +34,28 @@
   --font-display: 'Figtree', 'Segoe UI', system-ui, Roboto, sans-serif;
 }
 
+/* The one texture used behind section and page backgrounds: three rows of slow
+   water ripples on a 480x120 tile, alternating in phase so the rows do not read
+   as stripes. Every curve leaves the tile's right edge at the angle it enters the
+   left, so it repeats seamlessly. Used as a mask, not a background image, so one
+   SVG serves every surface: the colour and strength come from the background
+   colour of the element the `water-texture` utility is put on, e.g.
+   `water-texture bg-white/6` on navy or `water-texture bg-lake-700/8` on a pale
+   band. Put it on its own aria-hidden layer, never on an element with content,
+   which the mask would cut out too. */
+:root {
+  --pattern-water: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='120' viewBox='0 0 480 120'%3E%3Cg fill='none' stroke='black' stroke-width='1.25'%3E%3Cpath d='M0 20C60 8 180 8 240 20S420 32 480 20'/%3E%3Cpath d='M0 60C80 76 160 76 240 60S400 44 480 60'/%3E%3Cpath d='M0 100C60 90 180 90 240 100S420 110 480 100'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+@utility water-texture {
+  -webkit-mask-image: var(--pattern-water);
+  mask-image: var(--pattern-water);
+  -webkit-mask-size: 480px 120px;
+  mask-size: 480px 120px;
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
 html {
   scroll-behavior: smooth;
 }

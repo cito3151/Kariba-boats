@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
-import { heroImage } from '../data/photos';
+import { authPhoto } from '../data/photos';
 import BrandMark from './BrandMark';
+import PhotoBackdrop from './PhotoBackdrop';
 
 export default function AuthCard({
   title,
@@ -16,9 +17,14 @@ export default function AuthCard({
   wide?: boolean;
 }) {
   return (
-    <div className="relative min-h-svh flex items-center justify-center px-4 py-10 overflow-hidden">
-      <img src={heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-b from-lake-950/90 via-lake-950/75 to-lake-950/90" />
+    <div className="relative min-h-svh flex items-center justify-center px-4 py-10 overflow-hidden bg-lake-950">
+      {/* A houseboat off a red-earth shore. No text sits on the photograph: the
+          logo, heading and form are all on the white card. So the scrim only has
+          to quieten the photo enough that the card reads as the subject: lighter
+          than a header scrim, so the boat stays visible beside the card on wider
+          screens, and densest at the foot where the card's shadow falls. */}
+      <PhotoBackdrop photo={authPhoto} priority />
+      <div aria-hidden className="absolute inset-0 bg-linear-to-b from-lake-950/55 via-lake-950/40 to-lake-950/70" />
 
       <motion.div
         initial={{ opacity: 0, y: 24 }}

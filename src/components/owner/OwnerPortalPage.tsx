@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Anchor, Building2, CalendarDays, Gauge, LayoutGrid } from 'lucide-react';
 import PortalPage from '../portal/PortalPage';
+import { portalPhotos } from '../../data/photos';
 import type { Crumb } from '../portal/PortalHeader';
 import type { PortalTab } from '../portal/PortalTabs';
 
@@ -37,6 +38,7 @@ export default function OwnerPortalPage({
     <PortalPage
       eyebrow="Boat owner portal"
       icon={Anchor}
+      photo={portalPhotos.owner}
       title={title}
       subtitle={subtitle}
       actions={actions}

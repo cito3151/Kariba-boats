@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { MapPin } from 'lucide-react';
 import Reveal from '../Reveal';
+import PhotoBackdrop from '../PhotoBackdrop';
+import { photos } from '../../data/photos';
 
 interface Group {
   key: string;
@@ -12,6 +14,14 @@ interface Group {
  * Where listed boats depart from. Everything shown comes from the `location`
  * field on the live listings: names are grouped ignoring case and extra
  * spaces, and nothing is added or described beyond the name and the count.
+ *
+ * Set as a photo band, the way MSC sets its destination blocks: a houseboat on
+ * Kariba's own shore under a navy scrim, with each departure point on a white
+ * card. The photo sits behind the whole band rather than one per card, because a
+ * stock photo beside a place name would read as a picture of that place. The
+ * scrim is the portal headers' (92% navy at the left, 75% at the right), so the
+ * heading is 7:1 or better and the lake-100 subtitle 5.7:1 or better whatever
+ * the photo does; the cards carry their own text on white.
  */
 export default function DepartureLocations({ locations }: { locations: string[] }) {
   const groups = useMemo(() => {
@@ -30,32 +40,36 @@ export default function DepartureLocations({ locations }: { locations: string[] 
   if (groups.length === 0) return null;
 
   return (
-    <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6" aria-labelledby="departures-heading">
-      <Reveal>
-        <h2
-          id="departures-heading"
-          className="text-2xl font-extrabold uppercase tracking-[0.04em] text-lake-950"
-        >
-          Where trips depart
-        </h2>
-        <p className="mt-1 text-sm text-lake-600">The departure points of the boats listed now.</p>
-        <ul className="mt-6 grid grid-cols-1 gap-x-10 border-t-2 border-lake-950 sm:grid-cols-2 lg:grid-cols-3">
-          {groups.map((g) => (
-            <li
-              key={g.key}
-              className="flex items-center justify-between gap-3 border-b border-lake-100 py-3"
-            >
-              <span className="flex min-w-0 items-center gap-2 text-[15px] font-bold text-lake-950">
-                <MapPin size={15} className="shrink-0 text-lake-400" aria-hidden />
-                <span className="truncate">{g.name}</span>
-              </span>
-              <span className="shrink-0 text-sm tabular-nums text-lake-600">
-                {g.count} {g.count === 1 ? 'boat' : 'boats'}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </Reveal>
+    <section className="relative overflow-hidden bg-lake-950" aria-labelledby="departures-heading">
+      <PhotoBackdrop photo={photos.karibaShore} />
+      <div aria-hidden className="absolute inset-0 bg-linear-to-r from-lake-950/92 via-lake-950/84 to-lake-950/75" />
+      <div className="relative mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
+        <Reveal>
+          <h2
+            id="departures-heading"
+            className="text-2xl font-extrabold uppercase tracking-[0.04em] text-white"
+          >
+            Where trips depart
+          </h2>
+          <p className="mt-1 text-[15px] text-lake-100">The departure points of the boats listed now.</p>
+          <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {groups.map((g) => (
+              <li
+                key={g.key}
+                className="flex items-center justify-between gap-3 rounded-md bg-white px-4 py-3.5 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)]"
+              >
+                <span className="flex min-w-0 items-center gap-2 text-[15px] font-bold text-lake-950">
+                  <MapPin size={15} className="shrink-0 text-sunset-600" aria-hidden />
+                  <span className="truncate">{g.name}</span>
+                </span>
+                <span className="shrink-0 text-sm tabular-nums text-lake-600">
+                  {g.count} {g.count === 1 ? 'boat' : 'boats'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
+      </div>
     </section>
   );
 }
