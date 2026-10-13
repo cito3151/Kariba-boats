@@ -122,11 +122,11 @@ export default function OwnerDashboard() {
             <motion.div key={n.id} layout
               initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="mt-4 flex items-start justify-between gap-3 rounded-xl bg-sunset-50 px-4 py-3">
-              <p className="flex items-start gap-2 text-sm text-sunset-800">
-                <Bell size={15} className="mt-0.5 shrink-0" /> {n.message}
+              <p className="flex items-start gap-2 text-base leading-normal text-sunset-800">
+                <Bell size={18} className="mt-1 shrink-0" /> {n.message}
               </p>
-              <button onClick={() => dismissNotif(n.id)} className="shrink-0 text-sunset-500 hover:text-sunset-700">
-                <X size={16} />
+              <button onClick={() => dismissNotif(n.id)} aria-label="Dismiss notification" className="shrink-0 p-1 text-sunset-700 hover:text-sunset-900">
+                <X size={18} />
               </button>
             </motion.div>
           ))}
@@ -143,56 +143,56 @@ export default function OwnerDashboard() {
             active={filter === 'attention'} onClick={() => setFilter(filter === 'attention' ? 'all' : 'attention')} />
         </div>
 
-        <div className="mt-6 flex items-center justify-between">
-          <h2 className="font-display text-xl font-medium text-lake-950">Your boats</h2>
-          <div className="flex items-center gap-2">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-xl font-bold tracking-[-0.015em] text-lake-950">Your boats</h2>
+          <div className="flex flex-wrap items-center gap-2">
             <Link to="/owner/bookings"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-medium text-lake-700 hover:bg-lake-50">
-              <CalendarDays size={15} /> Bookings
+              className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3.5 py-2.5 text-sm font-semibold text-lake-700 hover:bg-lake-50">
+              <CalendarDays size={16} /> Bookings
             </Link>
             <Link to="/owner/maintenance"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-medium text-lake-700 hover:bg-lake-50">
-              <Gauge size={15} /> Maintenance
+              className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3.5 py-2.5 text-sm font-semibold text-lake-700 hover:bg-lake-50">
+              <Gauge size={16} /> Maintenance
             </Link>
             <Link to="/owner/company"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-medium text-lake-700 hover:bg-lake-50">
-              <Building2 size={15} /> Company
+              className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3.5 py-2.5 text-sm font-semibold text-lake-700 hover:bg-lake-50">
+              <Building2 size={16} /> Company
             </Link>
             <Link to="/owner/boats/new"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-sunset-500 px-3 py-2 text-sm font-semibold text-white hover:bg-sunset-600">
-              <Plus size={15} /> Register a boat
+              className="inline-flex items-center gap-1.5 rounded-lg bg-sunset-500 px-3.5 py-2.5 text-sm font-semibold text-lake-950 hover:bg-sunset-400">
+              <Plus size={16} /> Register a boat
             </Link>
           </div>
         </div>
 
         {actionError && (
-          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</p>
+          <p className="mt-3 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{actionError}</p>
         )}
 
         <div className="mt-4">
-          {loading && <LoadingState label="Loading your boats" />}
-          {error && <ErrorState message={error} onRetry={reload} />}
+          {loading && <LoadingState large label="Loading your boats" />}
+          {error && <ErrorState large message={error} onRetry={reload} />}
           {!loading && !error && list.length === 0 && (
-            <EmptyState
+            <EmptyState large
               title="No boats yet"
               hint="Register your first boat to start taking bookings on Kariba Lake Connect."
               action={
                 <Link to="/owner/boats/new"
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-sunset-500 px-4 py-2 text-sm font-semibold text-white hover:bg-sunset-600">
-                  <Plus size={15} /> Register your first boat
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-sunset-500 px-4 py-2.5 text-sm font-semibold text-lake-950 hover:bg-sunset-400">
+                  <Plus size={16} /> Register your first boat
                 </Link>
               }
             />
           )}
 
           {!loading && !error && list.length > 0 && filter !== 'all' && (
-            <p className="mb-3 text-sm text-lake-500">
+            <p className="mb-3 text-base text-lake-700">
               Showing {visible.length} {filter === 'live' ? 'live' : filter === 'pending' ? 'awaiting review' : 'needing maintenance'} boat{visible.length !== 1 ? 's' : ''}.
-              <button onClick={() => setFilter('all')} className="ml-2 font-semibold text-lake-700 hover:text-lake-900">Show all</button>
+              <button onClick={() => setFilter('all')} className="ml-2 font-semibold text-lake-800 underline underline-offset-2 hover:text-lake-950">Show all</button>
             </p>
           )}
           {!loading && !error && list.length > 0 && visible.length === 0 && (
-            <p className="rounded-xl border border-dashed border-lake-200 py-10 text-center text-sm text-lake-500">
+            <p className="rounded-xl border border-dashed border-lake-200 py-10 text-center text-base text-lake-600">
               No boats match this filter.
             </p>
           )}
@@ -208,46 +208,46 @@ export default function OwnerDashboard() {
                     </div>
                     <div className="p-4">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold text-lake-950">{boat.name}</h3>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_CHIP[boat.status].className}`}>
+                        <h3 className="min-w-0 break-words text-[1.0625rem] font-semibold leading-snug text-lake-950">{boat.name}</h3>
+                        <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${STATUS_CHIP[boat.status].className}`}>
                           {STATUS_CHIP[boat.status].label}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-lake-500">{boat.location}</p>
+                      <p className="mt-1 text-[15px] leading-snug text-lake-600">{boat.location}</p>
 
-                      <div className="mt-2 flex flex-wrap gap-1.5">
+                      <div className="mt-2.5 flex flex-wrap gap-1.5">
                         {maintChip && (
-                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${maintChip.className}`}>
+                          <span className={`rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${maintChip.className}`}>
                             {maintChip.label}
                           </span>
                         )}
                         {boat.pendingChanges && (
-                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[13px] font-semibold text-amber-800">
                             Changes awaiting review
                           </span>
                         )}
                       </div>
 
                       {boat.status === 'rejected' && boat.rejectionReason && (
-                        <p className="mt-2 text-xs text-red-600">{boat.rejectionReason}</p>
+                        <p className="mt-2 text-[15px] leading-normal text-red-700">{boat.rejectionReason}</p>
                       )}
 
-                      <div className="mt-3 flex flex-wrap gap-1.5">
+                      <div className="mt-3.5 flex flex-wrap gap-2">
                         <button onClick={() => navigate(`/owner/boats/${boat.id}/edit`)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-lake-200 px-2.5 py-1.5 text-xs font-medium text-lake-700 hover:bg-lake-50">
-                          <Pencil size={13} /> Edit
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-semibold text-lake-700 hover:bg-lake-50">
+                          <Pencil size={15} /> Edit
                         </button>
                         <Link to="/owner/maintenance"
-                          className="inline-flex items-center gap-1 rounded-lg border border-lake-200 px-2.5 py-1.5 text-xs font-medium text-lake-700 hover:bg-lake-50">
-                          <Gauge size={13} /> Hours
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-semibold text-lake-700 hover:bg-lake-50">
+                          <Gauge size={15} /> Hours
                         </Link>
                         <button onClick={() => toggleActive(boat)} disabled={busyId === boat.id}
-                          className="inline-flex items-center gap-1 rounded-lg border border-lake-200 px-2.5 py-1.5 text-xs font-medium text-lake-700 hover:bg-lake-50 disabled:opacity-50">
-                          {boat.isActive ? <><EyeOff size={13} /> Unavailable</> : <><Eye size={13} /> Available</>}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-semibold text-lake-700 hover:bg-lake-50 disabled:opacity-50">
+                          {boat.isActive ? <><EyeOff size={15} /> Unavailable</> : <><Eye size={15} /> Available</>}
                         </button>
                         <button onClick={() => remove(boat)} disabled={busyId === boat.id}
-                          className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">
-                          <Trash2 size={13} /> Delete
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
+                          <Trash2 size={15} /> Delete
                         </button>
                       </div>
                     </div>

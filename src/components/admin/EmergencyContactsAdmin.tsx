@@ -9,7 +9,7 @@ import {
   type EmergencyContact,
 } from '../../services/emergency.service';
 
-const inputClass = 'rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400';
+const inputClass = 'rounded-lg border border-lake-200 bg-lake-50 px-3 py-2.5 text-base outline-none focus:border-lake-500';
 
 function Row({ contact, index, onSaved }: { contact: EmergencyContact; index: number; onSaved: () => void }) {
   const [name, setName] = useState(contact.name);
@@ -34,16 +34,16 @@ function Row({ contact, index, onSaved }: { contact: EmergencyContact; index: nu
         <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Role (e.g. Lake rescue)" className={inputClass} />
         <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" className={inputClass} />
       </div>
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm font-medium text-red-700">{error}</p>}
       <div className="mt-2 flex gap-2">
         <button disabled={busy || !dirty || !name.trim() || !role.trim() || !phone.trim()}
           onClick={() => run(() => updateEmergencyContact(contact.id, { name: name.trim(), role: role.trim(), phone: phone.trim(), sortOrder: index }))}
-          className="rounded-lg bg-lake-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
+          className="rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
           {busy ? 'Saving' : 'Save'}
         </button>
         <button disabled={busy} onClick={() => run(() => deleteEmergencyContact(contact.id))}
-          className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">
-          <Trash2 size={13} /> Remove
+          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
+          <Trash2 size={15} /> Remove
         </button>
       </div>
     </motion.div>
@@ -70,28 +70,28 @@ export default function EmergencyContactsAdmin() {
     finally { setBusy(false); }
   };
 
-  if (loading) return <LoadingState label="Loading emergency contacts" />;
-  if (error) return <ErrorState message={error} onRetry={reload} />;
+  if (loading) return <LoadingState large label="Loading emergency contacts" />;
+  if (error) return <ErrorState large message={error} onRetry={reload} />;
 
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-lake-100 bg-lake-50/60 p-4">
-        <p className="text-sm font-semibold text-lake-800">Add an emergency contact</p>
-        <p className="mt-1 text-xs text-lake-500">These show to tourists and hotels on their trips and on each boat page.</p>
+        <p className="text-lg font-bold tracking-[-0.01em] text-lake-900">Add an emergency contact</p>
+        <p className="mt-1 text-[15px] leading-normal text-lake-700">These show to tourists and hotels on their trips and on each boat page.</p>
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className={inputClass} />
           <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Role (e.g. Lake rescue)" className={inputClass} />
           <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" className={inputClass} />
         </div>
-        {addError && <p className="mt-2 text-xs text-red-600">{addError}</p>}
+        {addError && <p className="mt-2 text-sm font-medium text-red-700">{addError}</p>}
         <button onClick={add} disabled={busy}
-          className="mt-3 inline-flex items-center gap-1 rounded-lg bg-sunset-500 px-4 py-2 text-xs font-semibold text-white hover:bg-sunset-600 disabled:opacity-50">
-          <Plus size={14} /> Add contact
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-sunset-500 px-4 py-2.5 text-sm font-semibold text-lake-950 hover:bg-sunset-400 disabled:opacity-50">
+          <Plus size={16} /> Add contact
         </button>
       </div>
 
       {contacts.length === 0 ? (
-        <EmptyState title="No emergency contacts yet" hint="Add the real lake rescue, medical, and platform contacts above." />
+        <EmptyState large title="No emergency contacts yet" hint="Add the real lake rescue, medical, and platform contacts above." />
       ) : (
         <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
           {contacts.map((c, i) => <Row key={c.id} contact={c} index={i} onSaved={reload} />)}

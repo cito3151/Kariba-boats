@@ -67,45 +67,45 @@ export default function AgencyDashboard() {
         </div>
 
         <div className="mt-8">
-          <h2 className="font-semibold text-lake-950">Search available boats</h2>
+          <h2 className="text-xl font-bold tracking-[-0.015em] text-lake-950">Search available boats</h2>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by boat name or location..."
-            className="mt-2 w-full sm:w-96 rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
+            className="mt-3 w-full sm:w-96 rounded-lg border border-lake-200 bg-lake-50 px-3.5 py-3 text-base text-lake-950 outline-none focus:border-lake-500"
           />
 
-          {loading && <LoadingState label="Loading boats" />}
-          {error && <ErrorState message={error} onRetry={reload} />}
+          {loading && <LoadingState large label="Loading boats" />}
+          {error && <ErrorState large message={error} onRetry={reload} />}
           {!loading && !error && (
             <motion.div variants={staggerContainer} initial="hidden" animate="show"
               className="mt-4 divide-y divide-lake-100 rounded-2xl border border-lake-100 bg-white overflow-hidden">
               {filteredBoats.length === 0 && (
-                <div className="p-6"><EmptyState title="No boats found" hint="No approved boats match your search yet." /></div>
+                <div className="p-6"><EmptyState large title="No boats found" hint="No approved boats match your search yet." /></div>
               )}
               {filteredBoats.map((boat) => {
                 const price = priceView(boat);
                 return (
-                  <motion.div variants={staggerItem} key={boat.id} className="flex items-center gap-4 p-3 sm:p-4 transition-colors hover:bg-lake-50">
+                  <motion.div variants={staggerItem} key={boat.id} className="flex flex-wrap items-center gap-x-4 gap-y-3 p-3 sm:p-4 transition-colors hover:bg-lake-50">
                     <BoatImage src={`illustration:${boat.boatType}`} className="h-14 w-20 rounded-lg shrink-0" showBadge={false} />
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-[10rem] flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-lake-950 truncate">{boat.name}</p>
-                        {boat.operatorVerified && <ShieldCheck size={13} className="text-lake-600 shrink-0" />}
+                        <p className="truncate text-base font-semibold text-lake-950">{boat.name}</p>
+                        {boat.operatorVerified && <ShieldCheck size={16} className="text-lake-600 shrink-0" />}
                       </div>
-                      <p className="text-xs text-lake-500">{boat.location}</p>
+                      <p className="mt-0.5 text-[15px] leading-snug text-lake-600">{boat.location}</p>
                     </div>
                     {price && (
-                      <div className="text-right hidden sm:block">
-                        <p className="text-sm font-semibold text-lake-950">${price.amount}</p>
-                        <p className="text-xs text-lake-500">/{price.unit}</p>
+                      <div className="hidden text-right sm:block">
+                        <p className="text-base font-semibold tabular-nums text-lake-950">${price.amount}</p>
+                        <p className="text-sm text-lake-600">/{price.unit}</p>
                       </div>
                     )}
                     <button
                       onClick={() => setBookingBoat(boat)}
                       disabled={!agencyId || !verified}
                       title={agencyId && verified ? '' : 'Your agency account must be verified before you can book for clients'}
-                      className="shrink-0 rounded-lg bg-lake-700 px-3 py-2 text-xs font-semibold text-white hover:bg-lake-800 transition-colors disabled:opacity-50"
+                      className="shrink-0 rounded-lg bg-lake-700 px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 transition-colors disabled:opacity-50"
                     >
                       Book for client
                     </button>
@@ -117,20 +117,20 @@ export default function AgencyDashboard() {
         </div>
 
         <div className="mt-10">
-          <h2 className="font-semibold text-lake-950">Your client bookings</h2>
-          <div className="mt-3 space-y-2">
+          <h2 className="text-xl font-bold tracking-[-0.015em] text-lake-950">Your client bookings</h2>
+          <div className="mt-4 space-y-2.5">
             <AnimatePresence>
               {(agencyBookings ?? []).length === 0 && (
-                <p className="text-sm text-lake-500">No bookings made yet.</p>
+                <p className="text-base text-lake-700">No bookings made yet.</p>
               )}
               {(agencyBookings ?? []).map((b) => (
                 <motion.div key={b.id} layout initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-lake-100 bg-white p-3">
-                  <div>
-                    <p className="text-sm font-medium text-lake-950">
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-lake-100 bg-white px-4 py-3.5">
+                  <div className="min-w-0">
+                    <p className="break-words text-base font-semibold text-lake-950">
                       {b.guestName} → {boatsById.get(b.boatId)?.name ?? 'Boat'}
                     </p>
-                    <p className="text-xs text-lake-500">
+                    <p className="mt-0.5 break-words text-[15px] leading-normal tabular-nums text-lake-700">
                       {b.startDate} · {b.groupSize} guests · ${b.priceTotal}
                       {b.captainName ? ` · Captain ${b.captainName}` : ''}
                     </p>

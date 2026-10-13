@@ -45,22 +45,22 @@ export default function ImageUploader({
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <label className="text-xs font-medium text-lake-500">Photos ({value.length} of 10)</label>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <label className="text-lg font-bold tracking-[-0.01em] text-lake-900">Photos <span className="text-base font-medium tabular-nums text-lake-700">({value.length} of 10)</span></label>
         <button type="button" disabled={busy || value.length >= 10}
           onClick={() => inputRef.current?.click()}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-lake-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
-          {busy ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-lake-700 px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
+          {busy ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
           Add photos
         </button>
       </div>
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple
         className="hidden" onChange={(e) => handleFiles(e.target.files)} />
 
-      {error && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
+      {error && <p className="mt-2 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{error}</p>}
 
       {value.length === 0 ? (
-        <p className="mt-3 rounded-xl border border-dashed border-lake-200 py-8 text-center text-sm text-lake-500">
+        <p className="mt-3 rounded-xl border border-dashed border-lake-200 py-8 px-4 text-center text-base leading-normal text-lake-700">
           At least one photo is required before you can submit this boat for review.
         </p>
       ) : (
@@ -74,7 +74,7 @@ export default function ImageUploader({
                 <img src={images.publicImageUrl(img.storagePath)} alt=""
                   className="h-full w-full object-cover" />
                 {img.isPrimary && (
-                  <span className="absolute top-1 left-1 rounded-full bg-sunset-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                  <span className="absolute top-1.5 left-1.5 rounded-full bg-sunset-700 px-2 py-0.5 text-xs font-semibold text-white">
                     Cover
                   </span>
                 )}

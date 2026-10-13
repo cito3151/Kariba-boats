@@ -12,7 +12,7 @@ const config: Record<BookingStatus, { label: string; className: string }> = {
 export default function StatusBadge({ status }: { status: BookingStatus }) {
   const c = config[status];
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${c.className}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[13px] font-semibold leading-none ${c.className}`}>
       {c.label}
     </span>
   );

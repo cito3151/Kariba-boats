@@ -75,72 +75,72 @@ function DocumentRow({ doc, onReviewed }: { doc: CompanyDocument; onReviewed: ()
     : doc.label || 'Unclassified document';
 
   return (
-    <li className="rounded-lg border border-lake-100 bg-lake-50 p-3">
+    <li className="rounded-lg border border-lake-100 bg-lake-50 p-3.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-lake-950">{kindLabel}</p>
-          <p className="truncate text-xs text-lake-500">{doc.fileName}</p>
+          <p className="text-base font-semibold text-lake-950">{kindLabel}</p>
+          <p className="truncate text-[15px] text-lake-700">{doc.fileName}</p>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${DOC_CHIP[doc.reviewStatus]}`}>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${DOC_CHIP[doc.reviewStatus]}`}>
             {doc.reviewStatus}
           </span>
           <button onClick={view}
-            className="inline-flex items-center gap-1 rounded-md border border-lake-200 bg-white px-2 py-1 text-xs text-lake-700 hover:bg-lake-50">
-            <Eye size={13} /> View
+            className="inline-flex items-center gap-1.5 rounded-md border border-lake-200 bg-white px-3 py-2 text-sm font-semibold text-lake-700 hover:bg-lake-50">
+            <Eye size={15} /> View
           </button>
           {/* Hidden while the note panel is open: otherwise this Reject becomes a
               second live submit once a note exists, and the card carries two
               controls with the same label in different places. */}
           {!rejecting && doc.reviewStatus !== 'approved' && (
             <button onClick={() => act('approved')} disabled={busy}
-              className="inline-flex items-center gap-1 rounded-md bg-lake-700 px-2 py-1 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
-              <Check size={13} /> Approve
+              className="inline-flex items-center gap-1.5 rounded-md bg-lake-700 px-3 py-2 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
+              <Check size={15} /> Approve
             </button>
           )}
           {!rejecting && doc.reviewStatus !== 'rejected' && (
             <button ref={rejectRef} onClick={() => act('rejected')} disabled={busy}
-              className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-2 py-1 text-xs text-red-700 hover:bg-red-50 disabled:opacity-50">
-              <X size={13} /> Reject
+              className="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
+              <X size={15} /> Reject
             </button>
           )}
         </div>
       </div>
 
       {doc.reviewStatus === 'rejected' && doc.reviewNote && !rejecting && (
-        <p className="mt-2 text-xs text-red-700">Reason given: {doc.reviewNote}</p>
+        <p className="mt-2 text-[15px] leading-normal text-red-700">Reason given: {doc.reviewNote}</p>
       )}
 
       {rejecting && (
         <div className="mt-2">
-          <label htmlFor={`note-${doc.id}`} className="text-xs font-medium text-lake-600">
+          <label htmlFor={`note-${doc.id}`} className="block text-sm font-medium text-lake-700">
             Tell the operator what to fix
           </label>
-          <div className="mt-1 flex flex-wrap gap-2">
+          <div className="mt-1.5 flex flex-wrap gap-2">
             <input
               ref={noteRef}
               id={`note-${doc.id}`} value={note} onChange={(e) => setNote(e.target.value)}
               placeholder="For example: the scan is cut off at the bottom"
-              className="w-full min-w-0 flex-1 rounded-lg border border-lake-200 bg-white px-3 py-2 text-sm text-lake-950 outline-none focus:border-lake-400 sm:w-auto"
+              className="w-full min-w-0 flex-1 rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base text-lake-950 outline-none focus:border-lake-500 sm:w-auto"
             />
             <button onClick={() => act('rejected')} disabled={busy || !note.trim()}
-              className="shrink-0 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50">
+              className="shrink-0 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50">
               Confirm rejection
             </button>
             <button onClick={cancelReject} disabled={busy}
-              className="shrink-0 rounded-lg border border-lake-200 px-3 py-2 text-sm font-medium text-lake-600 hover:bg-lake-50 disabled:opacity-50">
+              className="shrink-0 rounded-lg border border-lake-200 px-3 py-2.5 text-sm font-semibold text-lake-700 hover:bg-lake-50 disabled:opacity-50">
               Cancel
             </button>
           </div>
           {/* A disabled button is out of the tab order and fires no tooltip, so the
               reason it is unavailable belongs on the page. */}
           {!note.trim() && (
-            <p className="mt-1 text-xs text-lake-600">Write what needs fixing before you can reject this document.</p>
+            <p className="mt-1.5 text-[15px] text-lake-700">Write what needs fixing before you can reject this document.</p>
           )}
         </div>
       )}
 
-      {error && <p role="alert" className="mt-2 text-xs text-red-700">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-[15px] font-medium text-red-700">{error}</p>}
     </li>
   );
 }
@@ -167,24 +167,24 @@ function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChan
   return (
     <div className="rounded-2xl border border-lake-100 bg-white p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex items-start gap-2">
-          <Building2 size={18} className="mt-0.5 text-lake-600" />
-          <div>
-            <h3 className="font-semibold text-lake-950">{company.name}</h3>
-            <p className="text-xs text-lake-500">
+        <div className="flex min-w-0 items-start gap-2">
+          <Building2 size={20} className="mt-0.5 shrink-0 text-lake-600" />
+          <div className="min-w-0">
+            <h3 className="break-words text-[1.0625rem] font-semibold leading-snug text-lake-950">{company.name}</h3>
+            <p className="mt-0.5 break-words text-[15px] leading-normal text-lake-700">
               {company.registrationNumber ? `Reg ${company.registrationNumber}` : 'No registration number given'}
               {company.contactEmail ? ` · ${company.contactEmail}` : ''}
             </p>
           </div>
         </div>
-        <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_CHIP[company.verificationStatus]}`}>
+        <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${STATUS_CHIP[company.verificationStatus]}`}>
           {company.verificationStatus}
         </span>
       </div>
 
       {company.missingKinds.length > 0 && (
-        <p className="mt-3 flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+        <p className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3.5 py-2.5 text-[15px] leading-normal text-amber-900">
+          <AlertTriangle size={17} className="mt-0.5 shrink-0" />
           <span>
             Still missing: {company.missingKinds.map((k) => companies.DOCUMENT_LABELS[k]).join(', ')}
           </span>
@@ -192,7 +192,7 @@ function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChan
       )}
 
       {company.documents.length === 0 ? (
-        <p className="mt-3 rounded-lg bg-lake-50 px-3 py-2 text-sm text-lake-600">
+        <p className="mt-3 rounded-lg bg-lake-50 px-3.5 py-2.5 text-[15px] leading-normal text-lake-700">
           This company has not uploaded any documents yet.
         </p>
       ) : (
@@ -204,38 +204,38 @@ function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChan
       )}
 
       <div className="mt-4 border-t border-lake-100 pt-3">
-        <label htmlFor={`company-note-${company.id}`} className="text-xs font-medium text-lake-600">
+        <label htmlFor={`company-note-${company.id}`} className="block text-sm font-medium text-lake-700">
           Note to the operator (optional for verify, expected for reject)
         </label>
         <input
           id={`company-note-${company.id}`} value={note} onChange={(e) => setNote(e.target.value)}
           placeholder="Visible to the operator on their company page"
-          className="mt-1 w-full rounded-lg border border-lake-200 bg-white px-3 py-2 text-sm text-lake-950 outline-none focus:border-lake-400"
+          className="mt-1 w-full rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base text-lake-950 outline-none focus:border-lake-500"
         />
         {error && (
-          <p role="alert" className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+          <p role="alert" className="mt-2 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{error}</p>
         )}
         <div className="mt-3 flex flex-wrap gap-2">
           {/* Mirrors admin_review_company's gate exactly, so the button is never
               offered for a decision the database will refuse. */}
           <button onClick={() => decide('verified')} disabled={busy || company.awaitingApproval.length > 0}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-lake-700 px-3 py-2 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
-            <ShieldCheck size={15} /> Verify company
+            className="inline-flex items-center gap-1.5 rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
+            <ShieldCheck size={16} /> Verify company
           </button>
           {company.awaitingApproval.length > 0 && (
-            <p className="w-full text-xs text-lake-600">
+            <p className="w-full text-[15px] leading-normal text-lake-700">
               Every proof must be approved before this company can be verified. Outstanding:{' '}
               {company.awaitingApproval.map((k) => companies.DOCUMENT_LABELS[k]).join(', ')}.
             </p>
           )}
           <button onClick={() => decide('rejected')} disabled={busy || !note.trim()}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
-            <ShieldAlert size={15} /> Reject company
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
+            <ShieldAlert size={16} /> Reject company
           </button>
           {/* A title on a disabled button reaches nobody: it is out of the tab order
               and does not reliably fire a tooltip. */}
           {!note.trim() && (
-            <p className="w-full text-xs text-lake-600">Add a note above before rejecting this company.</p>
+            <p className="w-full text-[15px] leading-normal text-lake-700">Add a note above before rejecting this company.</p>
           )}
         </div>
       </div>
@@ -250,12 +250,12 @@ export default function CompanyVerification({ onReviewed }: { onReviewed?: () =>
   // to be told when a decision lands or it keeps its pre-review number.
   const refresh = () => { reload(); onReviewed?.(); };
 
-  if (loading) return <LoadingState label="Loading companies" />;
-  if (error) return <ErrorState message={error} onRetry={reload} />;
+  if (loading) return <LoadingState large label="Loading companies" />;
+  if (error) return <ErrorState large message={error} onRetry={reload} />;
 
   const list = data ?? [];
   if (list.length === 0) {
-    return <EmptyState title="No companies yet" hint="Operator companies appear here once owners sign up." />;
+    return <EmptyState large title="No companies yet" hint="Operator companies appear here once owners sign up." />;
   }
 
   // Anything awaiting a decision floats to the top of the queue.

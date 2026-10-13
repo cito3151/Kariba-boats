@@ -13,7 +13,7 @@ export default function DashboardBanner({
   icon: LucideIcon;
 }) {
   return (
-    <div className="relative h-40 sm:h-52 overflow-hidden rounded-2xl">
+    <div className="relative flex min-h-40 items-end sm:min-h-52 overflow-hidden rounded-2xl">
       <motion.img
         src={image}
         alt=""
@@ -27,12 +27,12 @@ export default function DashboardBanner({
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
-        className="absolute bottom-0 left-0 p-4 sm:p-6 text-white"
+        className="relative min-w-0 p-4 pt-16 sm:p-6 sm:pt-20 text-white"
       >
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-sunset-300 flex items-center gap-1.5">
-          <Icon size={14} /> {eyebrow}
+        <p className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.06em] text-sunset-300">
+          <Icon size={15} /> {eyebrow}
         </p>
-        <h1 className="mt-1 font-display text-2xl sm:text-4xl font-medium">{title}</h1>
+        <h1 className="mt-1.5 break-words font-display text-[1.75rem] font-bold leading-tight tracking-[-0.02em] sm:text-[2rem]">{title}</h1>
       </motion.div>
     </div>
   );

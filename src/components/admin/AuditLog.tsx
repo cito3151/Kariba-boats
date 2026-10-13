@@ -24,16 +24,16 @@ function scalar(v: unknown): string {
 
 function ChangeDetails({ entry }: { entry: AuditEntry }) {
   const changed = entry.changed;
-  if (!changed) return <p className="text-xs text-lake-400">No details.</p>;
+  if (!changed) return <p className="text-[15px] text-lake-700">No details.</p>;
 
   if (entry.action === 'update') {
     return (
-      <ul className="space-y-0.5 text-xs text-lake-600">
+      <ul className="space-y-1 text-[15px] leading-normal text-lake-700">
         {Object.entries(changed).map(([field, val]) => {
           const diff = val as { old?: unknown; new?: unknown };
           return (
-            <li key={field}>
-              <span className="font-medium text-lake-800">{field}</span>: {scalar(diff.old)}
+            <li key={field} className="break-words">
+              <span className="font-semibold text-lake-900">{field}</span>: {scalar(diff.old)}
               {' -> '}{scalar(diff.new)}
             </li>
           );
@@ -42,11 +42,11 @@ function ChangeDetails({ entry }: { entry: AuditEntry }) {
     );
   }
   return (
-    <ul className="space-y-0.5 text-xs text-lake-600">
+    <ul className="space-y-1 text-[15px] leading-normal text-lake-700">
       {Object.entries(changed)
         .filter(([, v]) => v !== null && v !== undefined && v !== '')
         .map(([k, v]) => (
-          <li key={k}><span className="font-medium text-lake-800">{k}</span>: {scalar(v)}</li>
+          <li key={k} className="break-words"><span className="font-semibold text-lake-900">{k}</span>: {scalar(v)}</li>
         ))}
     </ul>
   );
@@ -55,22 +55,22 @@ function ChangeDetails({ entry }: { entry: AuditEntry }) {
 function Row({ entry }: { entry: AuditEntry }) {
   const [open, setOpen] = useState(false);
   return (
-    <motion.div variants={staggerItem} className="rounded-xl border border-lake-100 bg-white p-3 transition-shadow hover:shadow-md">
+    <motion.div variants={staggerItem} className="rounded-xl border border-lake-100 bg-white px-4 py-3.5 transition-shadow hover:shadow-md">
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center justify-between gap-3 text-left">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${ACTION_CHIP[entry.action]}`}>{entry.action}</span>
-            <span className="text-sm font-medium text-lake-950">{entry.entityType}</span>
-            {entry.label && <span className="truncate text-sm text-lake-600">{entry.label}</span>}
+            <span className={`rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${ACTION_CHIP[entry.action]}`}>{entry.action}</span>
+            <span className="text-base font-semibold text-lake-950">{entry.entityType}</span>
+            {entry.label && <span className="min-w-0 truncate text-base text-lake-700">{entry.label}</span>}
           </div>
-          <p className="mt-0.5 text-xs text-lake-500">
+          <p className="mt-1 break-words text-sm text-lake-700">
             {new Date(entry.createdAt).toLocaleString()} · {entry.actorEmail || 'system'}
             {entry.actorRole ? ` (${entry.actorRole})` : ''}
           </p>
         </div>
-        {open ? <ChevronUp size={16} className="shrink-0 text-lake-400" /> : <ChevronDown size={16} className="shrink-0 text-lake-400" />}
+        {open ? <ChevronUp size={18} className="shrink-0 text-lake-600" /> : <ChevronDown size={18} className="shrink-0 text-lake-600" />}
       </button>
-      {open && <div className="mt-2 border-t border-lake-100 pt-2"><ChangeDetails entry={entry} /></div>}
+      {open && <div className="mt-3 border-t border-lake-100 pt-3"><ChangeDetails entry={entry} /></div>}
     </motion.div>
   );
 }
@@ -89,21 +89,21 @@ export default function AuditLog() {
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
         <select value={entityType} onChange={(e) => setEntityType(e.target.value)}
-          className="rounded-lg border border-lake-100 bg-lake-50 px-3 py-1.5 text-sm outline-none focus:border-lake-400">
+          className="rounded-lg border border-lake-200 bg-lake-50 px-3 py-2.5 text-base outline-none focus:border-lake-500">
           <option value="">All entities</option>
           {ENTITY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
         <select value={action} onChange={(e) => setAction(e.target.value)}
-          className="rounded-lg border border-lake-100 bg-lake-50 px-3 py-1.5 text-sm outline-none focus:border-lake-400">
+          className="rounded-lg border border-lake-200 bg-lake-50 px-3 py-2.5 text-base outline-none focus:border-lake-500">
           <option value="">All actions</option>
           {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
       </div>
 
-      {loading && <LoadingState label="Loading activity" />}
-      {error && <ErrorState message={error} onRetry={reload} />}
+      {loading && <LoadingState large label="Loading activity" />}
+      {error && <ErrorState large message={error} onRetry={reload} />}
       {!loading && !error && rows.length === 0 && (
-        <EmptyState title="No activity yet" hint="Changes across the platform will appear here as they happen." />
+        <EmptyState large title="No activity yet" hint="Changes across the platform will appear here as they happen." />
       )}
       <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
         {rows.map((e) => <Row key={e.id} entry={e} />)}

@@ -36,24 +36,24 @@ const STATUS_CHIP: Record<BoatStatus, string> = {
 };
 
 function BoatList({ boats: list }: { boats: OwnerBoat[] }) {
-  if (list.length === 0) return <EmptyState title="No boats here" hint="Nothing matches this filter yet." />;
+  if (list.length === 0) return <EmptyState large title="No boats here" hint="Nothing matches this filter yet." />;
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
       {list.map((b) => (
         <motion.div variants={staggerItem} key={b.id}
           className="rounded-2xl border border-lake-100 bg-white p-4 transition-shadow hover:shadow-md">
           <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <h3 className="font-semibold text-lake-950">{b.name}</h3>
-              <p className="text-xs text-lake-500">
+            <div className="min-w-0">
+              <h3 className="break-words text-[1.0625rem] font-semibold leading-snug text-lake-950">{b.name}</h3>
+              <p className="mt-1 text-[15px] leading-normal text-lake-600">
                 {BOAT_TYPE_LABELS[b.boatType]} · up to {b.capacity} guests · {b.location}
               </p>
             </div>
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_CHIP[b.status]}`}>
+            <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${STATUS_CHIP[b.status]}`}>
               {b.status}
             </span>
           </div>
-          <div className="mt-2 grid gap-1 text-xs text-lake-600 sm:grid-cols-2">
+          <div className="mt-3 grid gap-1.5 text-[15px] leading-normal text-lake-700 sm:grid-cols-2">
             <p>Price: {b.pricePerDay != null ? `$${b.pricePerDay}/day` : ''}{b.pricePerHour != null ? ` $${b.pricePerHour}/hour` : ''}</p>
             <p>Maintenance: {b.maintenanceStatus}</p>
             <p>Registration: {b.registrationNumber || 'Not provided'}</p>
@@ -61,7 +61,7 @@ function BoatList({ boats: list }: { boats: OwnerBoat[] }) {
             <p className="sm:col-span-2">Safety: {b.safetyEquipment.length ? b.safetyEquipment.join(', ') : 'None listed'}</p>
           </div>
           {b.status === 'approved' && (
-            <Link to={`/boats/${b.id}`} className="mt-2 inline-block text-xs font-semibold text-lake-700 hover:text-lake-900">
+            <Link to={`/boats/${b.id}`} className="mt-3 inline-block py-1 text-[15px] font-semibold text-lake-700 underline underline-offset-2 hover:text-lake-900">
               View public listing
             </Link>
           )}
@@ -123,20 +123,20 @@ export default function AdminDashboard() {
 
         <div className="mt-8">
           {view === 'queue' && <ApprovalQueue />}
-          {view === 'bookings' && (<><h2 className="mb-3 font-semibold text-lake-950">All bookings</h2><AdminBookings /></>)}
-          {view === 'users' && (<><h2 className="mb-3 font-semibold text-lake-950">Owner and hotel verification</h2><UserVerification /></>)}
-          {view === 'companies' && (<><h2 className="mb-3 font-semibold text-lake-950">Company ownership verification</h2><CompanyVerification onReviewed={reloadCompanyCount} /></>)}
-          {view === 'roles' && isSuper && (<><h2 className="mb-3 font-semibold text-lake-950">Admins and roles</h2><RoleManagement /></>)}
-          {view === 'audit' && (<><h2 className="mb-3 font-semibold text-lake-950">Activity log</h2><AuditLog /></>)}
-          {view === 'legal' && isSuper && (<><h2 className="mb-3 font-semibold text-lake-950">Legal documents</h2><LegalDocuments /></>)}
-          {view === 'emergency' && (<><h2 className="mb-3 font-semibold text-lake-950">Emergency contacts</h2><EmergencyContactsAdmin /></>)}
+          {view === 'bookings' && (<><h2 className="mb-4 text-xl font-bold tracking-[-0.015em] text-lake-950">All bookings</h2><AdminBookings /></>)}
+          {view === 'users' && (<><h2 className="mb-4 text-xl font-bold tracking-[-0.015em] text-lake-950">Owner and hotel verification</h2><UserVerification /></>)}
+          {view === 'companies' && (<><h2 className="mb-4 text-xl font-bold tracking-[-0.015em] text-lake-950">Company ownership verification</h2><CompanyVerification onReviewed={reloadCompanyCount} /></>)}
+          {view === 'roles' && isSuper && (<><h2 className="mb-4 text-xl font-bold tracking-[-0.015em] text-lake-950">Admins and roles</h2><RoleManagement /></>)}
+          {view === 'audit' && (<><h2 className="mb-4 text-xl font-bold tracking-[-0.015em] text-lake-950">Activity log</h2><AuditLog /></>)}
+          {view === 'legal' && isSuper && (<><h2 className="mb-4 text-xl font-bold tracking-[-0.015em] text-lake-950">Legal documents</h2><LegalDocuments /></>)}
+          {view === 'emergency' && (<><h2 className="mb-4 text-xl font-bold tracking-[-0.015em] text-lake-950">Emergency contacts</h2><EmergencyContactsAdmin /></>)}
           {(view === 'all' || view === 'live' || view === 'attention') && (
             <>
-              <h2 className="mb-3 font-semibold text-lake-950">
+              <h2 className="mb-4 text-xl font-bold tracking-[-0.015em] text-lake-950">
                 {view === 'all' ? 'All boats' : view === 'live' ? 'Live boats' : 'Boats needing maintenance'}
               </h2>
-              {loading && <LoadingState label="Loading boats" />}
-              {error && <ErrorState message={error} onRetry={reload} />}
+              {loading && <LoadingState large label="Loading boats" />}
+              {error && <ErrorState large message={error} onRetry={reload} />}
               {!loading && !error && (
                 <BoatList boats={
                   view === 'all' ? list

@@ -14,23 +14,23 @@ export default function VerificationBanner() {
 
   if (currentUser.verificationStatus === 'rejected') {
     return (
-      <div className="mb-4 flex items-start gap-2 rounded-xl bg-red-50 p-4 text-sm text-red-700">
-        <ShieldAlert size={18} className="mt-0.5 shrink-0" />
+      <div className="mb-4 flex items-start gap-3 rounded-xl bg-red-50 p-4 text-[15px] leading-normal text-red-700">
+        <ShieldAlert size={20} className="mt-0.5 shrink-0" />
         <div>
-          <p className="font-semibold">Your account was not approved</p>
+          <p className="text-base font-semibold">Your account was not approved</p>
           {currentUser.verificationNote && <p>{currentUser.verificationNote}</p>}
-          <p className="mt-1 text-xs">You cannot {target} until an administrator approves your account.</p>
+          <p className="mt-1">You cannot {target} until an administrator approves your account.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mb-4 flex items-start gap-2 rounded-xl bg-lake-50 p-4 text-sm text-lake-700">
-      <Clock size={18} className="mt-0.5 shrink-0 text-lake-500" />
+    <div className="mb-4 flex items-start gap-3 rounded-xl bg-lake-50 p-4 text-[15px] leading-normal text-lake-700">
+      <Clock size={20} className="mt-0.5 shrink-0 text-lake-600" />
       <div>
-        <p className="font-semibold">Your account is under review</p>
-        <p className="text-xs">
+        <p className="text-base font-semibold">Your account is under review</p>
+        <p>
           You can set everything up now, but you cannot {target} until an administrator verifies your account.
         </p>
       </div>

@@ -22,29 +22,31 @@ export default function PendingChangesDiff({ boat }: { boat: OwnerBoat }) {
   const keys = Object.keys(boat.pendingChanges);
   return (
     <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
-      <p className="text-xs font-semibold text-amber-900">
+      <p className="text-[15px] font-semibold leading-normal text-amber-900">
         Proposed changes, live listing still shows the approved values
       </p>
-      <table className="mt-2 w-full text-xs">
+      <div className="mt-2 overflow-x-auto">
+      <table className="w-full min-w-[28rem] text-[15px] leading-snug">
         <thead>
           <tr className="text-left text-amber-800">
-            <th className="py-1 font-medium">Field</th>
-            <th className="py-1 font-medium">Currently live</th>
-            <th className="py-1 font-medium">Proposed</th>
+            <th className="py-1.5 pr-3 text-[13px] font-semibold uppercase tracking-[0.05em]">Field</th>
+            <th className="py-1.5 pr-3 text-[13px] font-semibold uppercase tracking-[0.05em]">Currently live</th>
+            <th className="py-1.5 text-[13px] font-semibold uppercase tracking-[0.05em]">Proposed</th>
           </tr>
         </thead>
         <tbody>
           {keys.map((k) => (
             <tr key={k} className="border-t border-amber-200">
-              <td className="py-1 pr-2 font-medium text-lake-800">{LABELS[k] ?? k}</td>
-              <td className="py-1 pr-2 text-lake-600">{show(CURRENT[k]?.(boat))}</td>
-              <td className="py-1 font-semibold text-lake-950">
+              <td className="py-2 pr-3 align-top font-semibold text-lake-900">{LABELS[k] ?? k}</td>
+              <td className="py-2 pr-3 align-top text-lake-700">{show(CURRENT[k]?.(boat))}</td>
+              <td className="py-2 align-top font-semibold text-lake-950">
                 {show((boat.pendingChanges as Record<string, unknown>)[k])}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

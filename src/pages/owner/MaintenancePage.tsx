@@ -20,24 +20,24 @@ function BoatHistory({ boatId }: { boatId: string }) {
   return (
     <div className="mt-2 rounded-xl border border-lake-100 bg-white">
       <button onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-medium text-lake-700">
+        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left text-base font-semibold text-lake-800">
         Service history and hours log
         {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
       </button>
       {open && (
         <div className="border-t border-lake-100 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-lake-400">Maintenance records</p>
+          <p className="text-[13px] font-semibold uppercase tracking-[0.05em] text-lake-700">Maintenance records</p>
           {(records ?? []).length === 0 ? (
-            <p className="mt-1 text-sm text-lake-500">No maintenance recorded yet.</p>
+            <p className="mt-1.5 text-base text-lake-700">No maintenance recorded yet.</p>
           ) : (
             <ul className="mt-2 space-y-2">
               {(records ?? []).map((r) => (
-                <li key={r.id} className="rounded-lg bg-lake-50 px-3 py-2 text-sm">
-                  <div className="flex justify-between gap-2">
-                    <span className="font-medium text-lake-800">{r.description}</span>
-                    <span className="tabular-nums text-lake-500">{r.performedAt}</span>
+                <li key={r.id} className="rounded-lg bg-lake-50 px-3.5 py-2.5 text-base">
+                  <div className="flex flex-wrap justify-between gap-x-3 gap-y-0.5">
+                    <span className="min-w-0 break-words font-semibold text-lake-900">{r.description}</span>
+                    <span className="tabular-nums text-lake-700">{r.performedAt}</span>
                   </div>
-                  <p className="text-xs text-lake-500">
+                  <p className="mt-0.5 text-[15px] text-lake-700">
                     At {r.hoursAtService.toFixed(1)} hours
                     {r.serviceProvider ? `, ${r.serviceProvider}` : ''}
                     {r.cost != null ? `, $${r.cost.toFixed(2)}` : ''}
@@ -47,17 +47,17 @@ function BoatHistory({ boatId }: { boatId: string }) {
             </ul>
           )}
 
-          <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-lake-400">Hours log</p>
+          <p className="mt-5 text-[13px] font-semibold uppercase tracking-[0.05em] text-lake-700">Hours log</p>
           {(hours ?? []).length === 0 ? (
-            <p className="mt-1 text-sm text-lake-500">No hours logged yet.</p>
+            <p className="mt-1.5 text-base text-lake-700">No hours logged yet.</p>
           ) : (
-            <ul className="mt-2 space-y-1">
+            <ul className="mt-2 space-y-1.5">
               {(hours ?? []).map((h) => (
-                <li key={h.id} className="flex justify-between gap-2 text-sm">
-                  <span className="text-lake-700">
-                    +{h.hours.toFixed(1)} h{h.note ? <span className="text-lake-400">, {h.note}</span> : ''}
+                <li key={h.id} className="flex flex-wrap justify-between gap-x-3 gap-y-0.5 text-base">
+                  <span className="min-w-0 break-words text-lake-800">
+                    <span className="font-semibold tabular-nums">+{h.hours.toFixed(1)} h</span>{h.note ? <span className="text-lake-700">, {h.note}</span> : ''}
                   </span>
-                  <span className="tabular-nums text-lake-500">total {h.readingAfter.toFixed(1)}</span>
+                  <span className="tabular-nums text-lake-700">total {h.readingAfter.toFixed(1)}</span>
                 </li>
               ))}
             </ul>
@@ -80,20 +80,20 @@ export default function MaintenancePage() {
   return (
     <PageTransition>
       <div className="mx-auto max-w-3xl px-4 sm:px-6 py-6">
-        <Link to="/owner" className="inline-flex items-center gap-1.5 text-sm text-lake-600 hover:text-lake-900">
-          <ArrowLeft size={15} /> Back to your boats
+        <Link to="/owner" className="inline-flex items-center gap-1.5 py-1 text-[15px] font-medium text-lake-700 hover:text-lake-900">
+          <ArrowLeft size={16} /> Back to your boats
         </Link>
-        <h1 className="mt-3 font-display text-2xl font-medium text-lake-950">Maintenance</h1>
-        <p className="mt-1 text-sm text-lake-500">
+        <h1 className="mt-3 font-display text-[1.75rem] font-bold leading-tight tracking-[-0.02em] text-lake-950 sm:text-[2rem]">Maintenance</h1>
+        <p className="mt-2 text-base leading-normal text-lake-700">
           Log operating hours after each trip. Boats that go overdue are hidden from tourist search
           until you record a service.
         </p>
 
         <div className="mt-6 space-y-6">
-          {loading && <LoadingState label="Loading maintenance" />}
-          {error && <ErrorState message={error} onRetry={reload} />}
+          {loading && <LoadingState large label="Loading maintenance" />}
+          {error && <ErrorState large message={error} onRetry={reload} />}
           {!loading && !error && sorted.length === 0 && (
-            <EmptyState title="No boats yet" hint="Register a boat to start tracking its hours." />
+            <EmptyState large title="No boats yet" hint="Register a boat to start tracking its hours." />
           )}
           {sorted.map((boat: OwnerBoat) => (
             <div key={boat.id}>

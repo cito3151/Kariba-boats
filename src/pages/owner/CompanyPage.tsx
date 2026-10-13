@@ -95,17 +95,17 @@ function DocumentSlot({
   return (
     <div className="rounded-2xl border border-lake-100 bg-white p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h3 className="font-semibold text-lake-950">{label}</h3>
-          <p className="mt-0.5 text-xs text-lake-500">{hint}</p>
+        <div className="min-w-0">
+          <h3 className="text-[1.0625rem] font-semibold leading-snug text-lake-950">{label}</h3>
+          <p className="mt-1 text-[15px] leading-normal text-lake-700">{hint}</p>
         </div>
         {best ? (
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${DOC_STATUS_CHIP[best.reviewStatus]}`}>
+          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${DOC_STATUS_CHIP[best.reviewStatus]}`}>
             {best.reviewStatus === 'approved' ? 'Approved'
               : best.reviewStatus === 'rejected' ? 'Rejected' : 'Awaiting review'}
           </span>
         ) : (
-          <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600">
+          <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-0.5 text-[13px] font-semibold text-gray-700">
             Not uploaded
           </span>
         )}
@@ -114,22 +114,22 @@ function DocumentSlot({
       {mine.length > 0 && (
         <ul className="mt-3 space-y-2">
           {mine.map((doc) => (
-            <li key={doc.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-lake-50 px-3 py-2">
+            <li key={doc.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-lake-50 px-3.5 py-2.5">
               <div className="min-w-0">
-                <p className="truncate text-sm text-lake-900">{doc.fileName}</p>
+                <p className="truncate text-base font-medium text-lake-900">{doc.fileName}</p>
                 {doc.reviewStatus === 'rejected' && doc.reviewNote && (
-                  <p className="text-xs text-red-700">Administrator: {doc.reviewNote}</p>
+                  <p className="text-[15px] leading-normal text-red-700">Administrator: {doc.reviewNote}</p>
                 )}
               </div>
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="flex shrink-0 items-center gap-2">
                 <button onClick={() => view(doc)}
-                  className="inline-flex items-center gap-1 rounded-md border border-lake-200 px-2 py-1 text-xs text-lake-700 hover:bg-white">
-                  <Eye size={13} /> View
+                  className="inline-flex items-center gap-1 rounded-md border border-lake-200 px-3 py-2 text-sm font-semibold text-lake-700 hover:bg-white">
+                  <Eye size={15} /> View
                 </button>
                 {doc.reviewStatus !== 'approved' && (
                   <button onClick={() => remove(doc)} disabled={busy}
-                    className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50 disabled:opacity-50">
-                    <Trash2 size={13} /> Remove
+                    className="inline-flex items-center gap-1 rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
+                    <Trash2 size={15} /> Remove
                   </button>
                 )}
               </div>
@@ -146,9 +146,9 @@ function DocumentSlot({
         type="button" onClick={() => fileRef.current?.click()} disabled={busy}
         aria-label={`${uploadLabel} for ${label}`}
         aria-describedby={`upload-hint-${kind}`}
-        className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-medium text-lake-700 outline-none hover:bg-lake-50 focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 disabled:opacity-50"
+        className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3.5 py-2.5 text-sm font-semibold text-lake-700 outline-none hover:bg-lake-50 focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 disabled:opacity-50"
       >
-        <Upload size={15} />
+        <Upload size={16} />
         {uploadLabel}
       </button>
       <input
@@ -156,10 +156,10 @@ function DocumentSlot({
         accept="application/pdf,image/jpeg,image/png"
         onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = ''; }}
       />
-      <p id={`upload-hint-${kind}`} className="mt-1 text-[11px] text-lake-400">PDF, JPEG or PNG, up to 10 MB.</p>
+      <p id={`upload-hint-${kind}`} className="mt-2 text-sm text-lake-700">PDF, JPEG or PNG, up to 10 MB.</p>
 
       {error && (
-        <p role="alert" className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>
+        <p role="alert" className="mt-2 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{error}</p>
       )}
     </div>
   );
@@ -187,46 +187,46 @@ function CompanyDetails({ company, onSaved }: { company: Company; onSaved: () =>
     }
   };
 
-  const field = 'mt-1 w-full rounded-lg border border-lake-200 bg-white px-3 py-2 text-sm text-lake-950 outline-none focus:border-lake-400';
+  const field = 'mt-1.5 w-full rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base text-lake-950 outline-none focus:border-lake-500';
 
   return (
     <div className="rounded-2xl border border-lake-100 bg-white p-4">
-      <h2 className="font-semibold text-lake-950">Company details</h2>
+      <h2 className="text-lg font-bold tracking-[-0.01em] text-lake-950">Company details</h2>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor="company-name" className="text-xs font-medium text-lake-600">Registered company name</label>
+          <label htmlFor="company-name" className="block text-sm font-medium text-lake-700">Registered company name</label>
           <input id="company-name" value={name} onChange={(e) => setName(e.target.value)} className={field} />
         </div>
         <div>
-          <label htmlFor="company-reg" className="text-xs font-medium text-lake-600">Registration number</label>
+          <label htmlFor="company-reg" className="block text-sm font-medium text-lake-700">Registration number</label>
           <input id="company-reg" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} className={field} />
         </div>
         <div>
-          <label htmlFor="company-email" className="text-xs font-medium text-lake-600">Contact email</label>
+          <label htmlFor="company-email" className="block text-sm font-medium text-lake-700">Contact email</label>
           <input id="company-email" type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className={field} />
         </div>
         <div>
-          <label htmlFor="company-phone" className="text-xs font-medium text-lake-600">Contact phone</label>
+          <label htmlFor="company-phone" className="block text-sm font-medium text-lake-700">Contact phone</label>
           <input id="company-phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className={field} />
         </div>
       </div>
       {error && (
-        <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{error}</p>
       )}
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <button onClick={save} disabled={saving || !name.trim()}
-          className="rounded-lg bg-lake-700 px-4 py-2 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
+          className="rounded-lg bg-lake-700 px-5 py-2.5 text-base font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
           {saving ? 'Saving' : 'Save details'}
         </button>
         {saved && (
-          <span className="inline-flex items-center gap-1 text-sm text-lake-600">
-            <CheckCircle2 size={15} /> Saved
+          <span className="inline-flex items-center gap-1.5 text-base font-medium text-lake-700">
+            <CheckCircle2 size={18} /> Saved
           </span>
         )}
         {/* A disabled button is skipped by the tab order and fires no tooltip, so
             the reason it is unavailable has to be on the page. */}
         {!name.trim() && (
-          <p className="w-full text-xs text-lake-600">Enter the registered company name before saving.</p>
+          <p className="w-full text-[15px] text-lake-700">Enter the registered company name before saving.</p>
         )}
       </div>
     </div>
@@ -254,20 +254,20 @@ export default function CompanyPage() {
   return (
     <PageTransition>
       <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8">
-        <Link to="/owner" className="inline-flex items-center gap-1.5 text-sm text-lake-600 hover:text-lake-800">
-          <ArrowLeft size={15} /> Back to your boats
+        <Link to="/owner" className="inline-flex items-center gap-1.5 py-1 text-[15px] font-medium text-lake-700 hover:text-lake-900">
+          <ArrowLeft size={16} /> Back to your boats
         </Link>
 
         <div className="mt-4">
           <DashboardBanner image={photos.harbour} eyebrow="Boat Owner Portal" title="Your company" icon={Building2} />
         </div>
 
-        {loading && <div className="mt-6"><LoadingState label="Loading your company" /></div>}
-        {error && <div className="mt-6"><ErrorState message={error} onRetry={reload} /></div>}
+        {loading && <div className="mt-6"><LoadingState large label="Loading your company" /></div>}
+        {error && <div className="mt-6"><ErrorState large message={error} onRetry={reload} /></div>}
 
         {!loading && !error && !company && (
           <div className="mt-6">
-            <EmptyState
+            <EmptyState large
               title="No company on your account"
               hint="Your login is not linked to a company yet. Contact an administrator so your fleet can be moved onto one."
             />
@@ -278,19 +278,19 @@ export default function CompanyPage() {
           <>
             <div className="mt-6 rounded-2xl border border-lake-100 bg-white p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  {company.verificationStatus === 'verified' ? <ShieldCheck size={18} className="text-lake-600" />
-                    : company.verificationStatus === 'rejected' ? <ShieldAlert size={18} className="text-red-600" />
-                    : <Clock size={18} className="text-amber-600" />}
-                  <h2 className="font-semibold text-lake-950">{company.name}</h2>
+                <div className="flex min-w-0 items-center gap-2">
+                  {company.verificationStatus === 'verified' ? <ShieldCheck size={20} className="text-lake-600" />
+                    : company.verificationStatus === 'rejected' ? <ShieldAlert size={20} className="text-red-600" />
+                    : <Clock size={20} className="text-amber-600" />}
+                  <h2 className="min-w-0 break-words text-xl font-bold leading-snug tracking-[-0.015em] text-lake-950">{company.name}</h2>
                 </div>
-                <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_VIEW[company.verificationStatus].chip}`}>
+                <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${STATUS_VIEW[company.verificationStatus].chip}`}>
                   {STATUS_VIEW[company.verificationStatus].label}
                 </span>
               </div>
-              <p className="mt-2 text-sm text-lake-600">{STATUS_VIEW[company.verificationStatus].blurb}</p>
+              <p className="mt-2 text-base leading-normal text-lake-700">{STATUS_VIEW[company.verificationStatus].blurb}</p>
               {company.verificationNote && (
-                <p className="mt-2 rounded-lg bg-lake-50 px-3 py-2 text-sm text-lake-700">
+                <p className="mt-2 rounded-lg bg-lake-50 px-3.5 py-2.5 text-[15px] leading-normal text-lake-800">
                   Administrator: {company.verificationNote}
                 </p>
               )}
@@ -300,17 +300,17 @@ export default function CompanyPage() {
               <CompanyDetails company={company} onSaved={reload} />
             </div>
 
-            <h2 className="mt-8 font-display text-xl font-medium text-lake-950">Proof of company ownership</h2>
-            <p className="mt-1 text-sm text-lake-600">
+            <h2 className="mt-10 font-display text-xl font-bold tracking-[-0.015em] text-lake-950">Proof of company ownership</h2>
+            <p className="mt-1.5 text-base leading-normal text-lake-700">
               An administrator reviews each document separately, so you only replace the one that fails.
             </p>
 
             {/* Without this, a failed document fetch would leave every slot showing
                 "Not uploaded" and an owner would reasonably re-upload all four. */}
-            {docsLoading && <div className="mt-4"><LoadingState label="Loading your documents" /></div>}
+            {docsLoading && <div className="mt-4"><LoadingState large label="Loading your documents" /></div>}
             {docsError && (
               <div className="mt-4">
-                <ErrorState message={docsError} onRetry={() => setDocsKey((k) => k + 1)} />
+                <ErrorState large message={docsError} onRetry={() => setDocsKey((k) => k + 1)} />
               </div>
             )}
 

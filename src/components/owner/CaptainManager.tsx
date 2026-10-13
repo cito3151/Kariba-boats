@@ -11,7 +11,7 @@ export default function CaptainManager({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const inputClass = 'rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400';
+  const inputClass = 'min-w-0 rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base text-lake-950 outline-none focus:border-lake-500';
 
   const add = async () => {
     if (!name.trim() || !phone.trim()) { setError('Enter a captain name and phone.'); return; }
@@ -30,19 +30,19 @@ export default function CaptainManager({
 
   return (
     <div className="rounded-2xl border border-lake-100 bg-lake-50/60 p-4">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-lake-800">
-        <Anchor size={15} /> Your captains
+      <h2 className="flex items-center gap-2 text-lg font-bold tracking-[-0.01em] text-lake-900">
+        <Anchor size={18} /> Your captains
       </h2>
-      <p className="mt-1 text-xs text-lake-500">Add the captains who run your trips, then assign one to each confirmed booking.</p>
+      <p className="mt-1.5 text-[15px] leading-normal text-lake-700">Add the captains who run your trips, then assign one to each confirmed booking.</p>
 
       {captains.length > 0 && (
         <ul className="mt-3 space-y-1.5">
           {captains.map((c) => (
-            <li key={c.id} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-sm">
-              <span className="min-w-0"><span className="font-medium text-lake-900">{c.name}</span> <span className="text-xs text-lake-500">{c.phone}</span></span>
+            <li key={c.id} className="flex items-center justify-between gap-3 rounded-lg bg-white px-3.5 py-2.5 text-base">
+              <span className="min-w-0 break-words"><span className="font-semibold text-lake-900">{c.name}</span> <span className="whitespace-nowrap text-[15px] tabular-nums text-lake-700">{c.phone}</span></span>
               <button onClick={() => remove(c.id)} disabled={busy}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 disabled:opacity-50">
-                <Trash2 size={13} /> Remove
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
+                <Trash2 size={15} /> Remove
               </button>
             </li>
           ))}
@@ -53,11 +53,11 @@ export default function CaptainManager({
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Captain name" className={inputClass} />
         <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" className={inputClass} />
         <button onClick={add} disabled={busy}
-          className="inline-flex items-center justify-center gap-1 rounded-lg bg-lake-700 px-4 py-2 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
-          <Plus size={14} /> Add
+          className="inline-flex items-center justify-center gap-1 rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
+          <Plus size={16} /> Add
         </button>
       </div>
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm font-medium text-red-700">{error}</p>}
     </div>
   );
 }

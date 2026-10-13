@@ -26,19 +26,19 @@ export default function TouristTripsPage() {
   return (
     <PageTransition>
       <div className="mx-auto max-w-3xl px-4 sm:px-6 py-6">
-        <h1 className="font-display text-2xl font-medium text-lake-950">My trips</h1>
-        <p className="mt-1 text-sm text-lake-500">Your booking requests and their status.</p>
+        <h1 className="font-display text-[1.75rem] font-bold leading-tight tracking-[-0.02em] text-lake-950 sm:text-[2rem]">My trips</h1>
+        <p className="mt-2 text-base leading-normal text-lake-700">Your booking requests and their status.</p>
 
         <div className="mt-5 space-y-3">
-          {loading && <LoadingState label="Loading your trips" />}
-          {error && <ErrorState message={error} onRetry={reload} />}
+          {loading && <LoadingState large label="Loading your trips" />}
+          {error && <ErrorState large message={error} onRetry={reload} />}
           {!loading && !error && rows.length === 0 && (
-            <EmptyState
+            <EmptyState large
               title="You have not booked any trips yet"
               hint="Browse boats and send a booking request to get started."
               action={
-                <Link to="/" className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-sunset-500 px-4 py-2 text-sm font-semibold text-white hover:bg-sunset-600">
-                  <Anchor size={15} /> Browse boats
+                <Link to="/" className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-sunset-500 px-4 py-2.5 text-sm font-semibold text-lake-950 hover:bg-sunset-400">
+                  <Anchor size={16} /> Browse boats
                 </Link>
               }
             />
@@ -48,13 +48,13 @@ export default function TouristTripsPage() {
               <motion.div key={b.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }} className="rounded-2xl border border-lake-100 bg-white p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h3 className="font-semibold text-lake-950">{b.boatName}</h3>
-                    <p className="text-xs text-lake-500">
+                  <div className="min-w-0">
+                    <h3 className="break-words text-[1.0625rem] font-semibold leading-snug text-lake-950">{b.boatName}</h3>
+                    <p className="mt-1 break-words text-[15px] leading-normal tabular-nums text-lake-700">
                       {b.boatLocation} · {bookingsSvc.tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · ${b.priceTotal}
                     </p>
                     {b.captainName && (
-                      <p className="mt-0.5 text-xs text-lake-600">Captain: <span className="font-medium text-lake-900">{b.captainName}</span> · {b.captainPhone}</p>
+                      <p className="mt-1 text-[15px] leading-normal text-lake-700">Captain: <span className="font-semibold text-lake-900">{b.captainName}</span> · <span className="tabular-nums">{b.captainPhone}</span></p>
                     )}
                   </div>
                   <div className="flex flex-wrap items-center justify-end gap-3">
@@ -64,12 +64,12 @@ export default function TouristTripsPage() {
                     )}
                     {b.status === 'completed' && !reviewedIds.has(b.id) && reviewingId !== b.id && (
                       <button onClick={() => setReviewingId(b.id)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-lake-200 px-3 py-1.5 text-xs font-semibold text-lake-700 hover:bg-lake-50">
-                        <Star size={13} /> Leave a review
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-semibold text-lake-700 hover:bg-lake-50">
+                        <Star size={15} /> Leave a review
                       </button>
                     )}
                     {reviewedIds.has(b.id) && (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600"><Star size={13} className="fill-emerald-500 text-emerald-500" /> Reviewed</span>
+                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700"><Star size={15} className="fill-emerald-600 text-emerald-600" /> Reviewed</span>
                     )}
                   </div>
                 </div>

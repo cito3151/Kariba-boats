@@ -24,8 +24,8 @@ const EMPTY: BoatInput = {
 };
 
 const inputClass =
-  'mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400';
-const labelClass = 'text-xs font-medium text-lake-500';
+  'mt-1.5 w-full rounded-lg border border-lake-200 bg-lake-50 px-3 py-2.5 text-base text-lake-950 outline-none focus:border-lake-500';
+const labelClass = 'block text-sm font-medium text-lake-700';
 
 function validate(v: BoatInput): Record<string, string> {
   const errors: Record<string, string> = {};
@@ -96,7 +96,7 @@ export default function BoatForm({
   };
 
   const err = (key: string) =>
-    errors[key] ? <p className="mt-1 text-xs text-red-600">{errors[key]}</p> : null;
+    errors[key] ? <p className="mt-1.5 text-sm font-medium text-red-700">{errors[key]}</p> : null;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -155,7 +155,7 @@ export default function BoatForm({
         <label className={labelClass}>Deposit to confirm a booking (percent)</label>
         <input type="number" min={20} max={100} step={1} value={v.depositPercent}
           onChange={(e) => set('depositPercent', Number(e.target.value))} className={inputClass} />
-        <p className="mt-1 text-xs text-lake-400">Minimum 20 percent. Raise it if you want a larger deposit.</p>
+        <p className="mt-1.5 text-sm text-lake-700">Minimum 20 percent. Raise it if you want a larger deposit.</p>
         {err('depositPercent')}
       </div>
 
@@ -185,15 +185,15 @@ export default function BoatForm({
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-lake-700">
+      <label className="flex items-center gap-2.5 text-base text-lake-800">
         <input type="checkbox" checked={v.crewIncluded}
-          onChange={(e) => set('crewIncluded', e.target.checked)} className="h-4 w-4 rounded" />
+          onChange={(e) => set('crewIncluded', e.target.checked)} className="h-5 w-5 rounded accent-lake-700" />
         Crew or skipper is included
       </label>
 
       <div className="rounded-xl border border-lake-100 bg-lake-50/60 p-4">
-        <p className="text-sm font-semibold text-lake-800">Maintenance tracking</p>
-        <p className="mt-1 text-xs text-lake-500">
+        <p className="text-lg font-bold tracking-[-0.01em] text-lake-900">Maintenance tracking</p>
+        <p className="mt-1.5 text-[15px] leading-normal text-lake-700">
           Set how many operating hours the boat runs between services. If the boat already has hours
           on it, enter them here so alerts are accurate from day one.
         </p>
@@ -220,11 +220,11 @@ export default function BoatForm({
       </div>
 
       {submitError && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{submitError}</p>
+        <p className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{submitError}</p>
       )}
 
       <button type="submit" disabled={busy}
-        className="w-full rounded-lg bg-sunset-500 py-2.5 text-sm font-semibold text-white hover:bg-sunset-600 transition-colors disabled:opacity-60 sm:w-auto sm:px-6">
+        className="w-full rounded-lg bg-sunset-500 py-3 text-base font-semibold text-lake-950 hover:bg-sunset-400 transition-colors disabled:opacity-60 sm:w-auto sm:px-6">
         {busy ? 'Saving' : submitLabel}
       </button>
     </form>

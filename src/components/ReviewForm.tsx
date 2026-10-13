@@ -29,25 +29,25 @@ export default function ReviewForm({
   };
 
   return (
-    <div className="mt-3 rounded-xl border border-lake-100 bg-lake-50/60 p-3">
-      <p className="text-xs font-semibold text-lake-800">How was your trip?</p>
+    <div className="mt-3 rounded-xl border border-lake-100 bg-lake-50/60 p-4">
+      <p className="text-lg font-bold tracking-[-0.01em] text-lake-900">How was your trip?</p>
       <div className="mt-2 flex items-center gap-1">
         {[1, 2, 3, 4, 5].map((n) => (
           <button key={n} type="button" aria-label={`${n} star${n > 1 ? 's' : ''}`}
             onClick={() => setRating(n)} onMouseEnter={() => setHover(n)} onMouseLeave={() => setHover(0)}
-            className="p-0.5">
-            <Star size={22}
-              className={(hover || rating) >= n ? 'fill-sunset-400 text-sunset-400' : 'text-lake-300'} />
+            className="p-1">
+            <Star size={26}
+              className={(hover || rating) >= n ? 'fill-sunset-400 text-sunset-400' : 'text-lake-400'} />
           </button>
         ))}
       </div>
       <textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={2} maxLength={600}
         placeholder="Share a few words about your experience (optional)"
-        className="mt-2 w-full rounded-lg border border-lake-100 bg-white px-3 py-2 text-sm outline-none focus:border-lake-400" />
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        className="mt-2 w-full rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base text-lake-950 outline-none focus:border-lake-500" />
+      {error && <p className="mt-1.5 text-sm font-medium text-red-700">{error}</p>}
       <button onClick={submit} disabled={busy}
-        className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-sunset-500 px-4 py-2 text-xs font-semibold text-white hover:bg-sunset-600 disabled:opacity-60">
-        <Send size={13} /> {busy ? 'Submitting' : 'Submit review'}
+        className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-sunset-500 px-4 py-2.5 text-sm font-semibold text-lake-950 hover:bg-sunset-400 disabled:opacity-60">
+        <Send size={15} /> {busy ? 'Submitting' : 'Submit review'}
       </button>
     </div>
   );

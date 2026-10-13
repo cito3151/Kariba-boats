@@ -33,8 +33,8 @@ export default function StatTile({
           <Icon size={18} />
         </span>
       )}
-      <p className="mt-3 text-3xl font-bold leading-none tabular-nums text-lake-950">{value}</p>
-      <p className="mt-1.5 truncate text-xs font-medium text-lake-500">{label}</p>
+      <p className="mt-3 text-[2rem] font-bold leading-none tracking-[-0.02em] tabular-nums text-lake-950">{value}</p>
+      <p className="mt-2 break-words text-sm font-medium leading-snug text-lake-700">{label}</p>
       {active && (
         <motion.span
           layoutId="stat-tile-accent"

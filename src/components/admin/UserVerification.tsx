@@ -61,32 +61,32 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
   const chip = STATUS_CHIP[user.verificationStatus];
 
   return (
-    <motion.div variants={staggerItem} className="rounded-xl border border-lake-100 bg-white p-3 transition-shadow hover:shadow-md">
+    <motion.div variants={staggerItem} className="rounded-xl border border-lake-100 bg-white p-4 transition-shadow hover:shadow-md">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="font-medium text-lake-950">{user.businessName || user.fullName}</p>
-          <p className="text-xs text-lake-500">{user.role} · {user.fullName}{user.phone ? ` · ${user.phone}` : ''}</p>
+        <div className="min-w-0">
+          <p className="break-words text-base font-semibold text-lake-950">{user.businessName || user.fullName}</p>
+          <p className="mt-0.5 break-words text-[15px] leading-normal text-lake-700">{user.role} · {user.fullName}{user.phone ? ` · ${user.phone}` : ''}</p>
           {user.verificationStatus === 'rejected' && user.verificationNote && (
-            <p className="mt-1 text-xs text-red-600">Reason: {user.verificationNote}</p>
+            <p className="mt-1 text-[15px] leading-normal text-red-700">Reason: {user.verificationNote}</p>
           )}
         </div>
-        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${chip.className}`}>
-          {user.verificationStatus === 'pending' ? <Clock size={12} /> : user.verificationStatus === 'verified' ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
+        <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[13px] font-semibold leading-none ${chip.className}`}>
+          {user.verificationStatus === 'pending' ? <Clock size={13} /> : user.verificationStatus === 'verified' ? <ShieldCheck size={13} /> : <ShieldAlert size={13} />}
           {chip.label}
         </span>
       </div>
 
       <div className="mt-3">
-        <p className="text-xs font-semibold text-lake-600">Registration documents ({docs.length})</p>
+        <p className="text-sm font-semibold text-lake-700">Registration documents ({docs.length})</p>
         {docs.length === 0 ? (
-          <p className="mt-1 text-xs text-amber-700">None uploaded yet. This account cannot be verified until it uploads at least one document.</p>
+          <p className="mt-1 text-[15px] leading-normal text-amber-800">None uploaded yet. This account cannot be verified until it uploads at least one document.</p>
         ) : (
-          <ul className="mt-1 space-y-1">
+          <ul className="mt-1 space-y-0.5">
             {docs.map((d) => (
               <li key={d.id}>
                 <button onClick={() => viewDoc(d.storagePath)}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-lake-700 hover:text-lake-900">
-                  <ExternalLink size={12} /> {d.label || d.fileName}
+                  className="inline-flex items-center gap-1.5 py-1 text-[15px] font-semibold text-lake-700 underline-offset-2 hover:text-lake-900 hover:underline">
+                  <ExternalLink size={14} /> {d.label || d.fileName}
                 </button>
               </li>
             ))}
@@ -94,49 +94,49 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
         )}
       </div>
 
-      {error && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
+      {error && <p className="mt-2 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{error}</p>}
 
       {mode === 'none' && (
         <div className="mt-3 flex flex-wrap items-end gap-3">
           {user.verificationStatus !== 'verified' && (
             <>
               <div>
-                <label className="text-xs font-medium text-lake-500">Trust score (0 to 100)</label>
+                <label className="block text-sm font-medium text-lake-700">Trust score (0 to 100)</label>
                 <input type="number" min={0} max={100} value={trust}
                   onChange={(e) => setTrust(Math.max(0, Math.min(100, Number(e.target.value))))}
-                  className="mt-1 w-24 rounded-lg border border-lake-100 bg-lake-50 px-3 py-1.5 text-sm outline-none focus:border-lake-400" />
+                  className="mt-1.5 w-24 rounded-lg border border-lake-200 bg-lake-50 px-3 py-2.5 text-base tabular-nums outline-none focus:border-lake-500" />
               </div>
               {user.role === 'hotel' ? (
                 <button onClick={() => { setMode('hotel'); setError(''); }} disabled={busy || !hasDocs}
-                  className="rounded-lg bg-lake-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
+                  className="rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
                   Verify hotel
                 </button>
               ) : user.role === 'agency' ? (
                 <button onClick={() => { setMode('agency'); setError(''); }} disabled={busy || !hasDocs}
-                  className="rounded-lg bg-lake-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
+                  className="rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
                   Verify agency
                 </button>
               ) : (
                 <button onClick={verifyOwner} disabled={busy || !hasDocs}
-                  className="rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
+                  className="rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
                   Verify
                 </button>
               )}
               <button onClick={() => { setMode('reject'); setError(''); }} disabled={busy}
-                className="rounded-lg border border-red-200 px-4 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">
+                className="rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
                 Reject
               </button>
               {/* A title on a disabled button reaches nobody: it is out of the tab
                   order and does not reliably fire a tooltip. */}
               {!hasDocs && (
-                <p className="w-full text-xs text-lake-600">Upload a registration document before this account can be verified.</p>
+                <p className="w-full text-[15px] leading-normal text-lake-700">Upload a registration document before this account can be verified.</p>
               )}
             </>
           )}
           {user.verificationStatus === 'verified' && (
             <button onClick={revoke} disabled={busy}
-              className="inline-flex items-center gap-1 rounded-lg border border-lake-200 px-4 py-1.5 text-xs font-semibold text-lake-700 hover:bg-lake-50 disabled:opacity-50">
-              <X size={13} /> Revoke verification
+              className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-4 py-2.5 text-sm font-semibold text-lake-700 hover:bg-lake-50 disabled:opacity-50">
+              <X size={15} /> Revoke verification
             </button>
           )}
         </div>
@@ -146,54 +146,54 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
         <div className="mt-3 space-y-2">
           <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2}
             placeholder="Reason for rejection (at least 5 characters)"
-            className="w-full rounded-lg border border-lake-200 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400" />
+            className="w-full rounded-lg border border-lake-200 bg-lake-50 px-3 py-2.5 text-base outline-none focus:border-lake-500" />
           <div className="flex gap-2">
             <button onClick={submitReject} disabled={busy}
-              className="rounded-lg bg-red-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50">Confirm rejection</button>
+              className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50">Confirm rejection</button>
             <button onClick={() => { setMode('none'); setError(''); }}
-              className="rounded-lg border border-lake-200 px-4 py-1.5 text-xs font-medium text-lake-600 hover:bg-lake-50">Cancel</button>
+              className="rounded-lg border border-lake-200 px-4 py-2.5 text-sm font-semibold text-lake-700 hover:bg-lake-50">Cancel</button>
           </div>
         </div>
       )}
 
       {mode === 'hotel' && (
         <div className="mt-3 space-y-2 rounded-lg border border-lake-100 bg-lake-50/60 p-3">
-          <p className="text-xs font-semibold text-lake-800">Verify and link this hotel</p>
+          <p className="text-lg font-bold tracking-[-0.01em] text-lake-900">Verify and link this hotel</p>
           <div className="grid gap-2 sm:grid-cols-3">
             <input value={hotelName} onChange={(e) => setHotelName(e.target.value)} placeholder="Hotel name"
-              className="rounded-lg border border-lake-100 bg-white px-3 py-1.5 text-sm outline-none focus:border-lake-400" />
+              className="rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base outline-none focus:border-lake-500" />
             <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location"
-              className="rounded-lg border border-lake-100 bg-white px-3 py-1.5 text-sm outline-none focus:border-lake-400" />
+              className="rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base outline-none focus:border-lake-500" />
             <input type="number" min={0} max={30} value={commission} onChange={(e) => setCommission(Number(e.target.value))}
               placeholder="Commission %" title="Commission %"
-              className="rounded-lg border border-lake-100 bg-white px-3 py-1.5 text-sm outline-none focus:border-lake-400" />
+              className="rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base outline-none focus:border-lake-500" />
           </div>
           <div className="flex gap-2">
             <button onClick={submitHotel} disabled={busy}
-              className="rounded-lg bg-lake-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">Verify and link</button>
+              className="rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">Verify and link</button>
             <button onClick={() => { setMode('none'); setError(''); }}
-              className="rounded-lg border border-lake-200 px-4 py-1.5 text-xs font-medium text-lake-600 hover:bg-lake-50">Cancel</button>
+              className="rounded-lg border border-lake-200 px-4 py-2.5 text-sm font-semibold text-lake-700 hover:bg-lake-50">Cancel</button>
           </div>
         </div>
       )}
 
       {mode === 'agency' && (
         <div className="mt-3 space-y-2 rounded-lg border border-lake-100 bg-lake-50/60 p-3">
-          <p className="text-xs font-semibold text-lake-800">Verify and link this travel agency</p>
+          <p className="text-lg font-bold tracking-[-0.01em] text-lake-900">Verify and link this travel agency</p>
           <div className="grid gap-2 sm:grid-cols-3">
             <input value={hotelName} onChange={(e) => setHotelName(e.target.value)} placeholder="Agency name"
-              className="rounded-lg border border-lake-100 bg-white px-3 py-1.5 text-sm outline-none focus:border-lake-400" />
+              className="rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base outline-none focus:border-lake-500" />
             <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location"
-              className="rounded-lg border border-lake-100 bg-white px-3 py-1.5 text-sm outline-none focus:border-lake-400" />
+              className="rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base outline-none focus:border-lake-500" />
             <input type="number" min={0} max={30} value={commission} onChange={(e) => setCommission(Number(e.target.value))}
               placeholder="Commission %" title="Commission %"
-              className="rounded-lg border border-lake-100 bg-white px-3 py-1.5 text-sm outline-none focus:border-lake-400" />
+              className="rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base outline-none focus:border-lake-500" />
           </div>
           <div className="flex gap-2">
             <button onClick={submitAgency} disabled={busy}
-              className="rounded-lg bg-lake-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-lake-800 disabled:opacity-50">Verify and link</button>
+              className="rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">Verify and link</button>
             <button onClick={() => { setMode('none'); setError(''); }}
-              className="rounded-lg border border-lake-200 px-4 py-1.5 text-xs font-medium text-lake-600 hover:bg-lake-50">Cancel</button>
+              className="rounded-lg border border-lake-200 px-4 py-2.5 text-sm font-semibold text-lake-700 hover:bg-lake-50">Cancel</button>
           </div>
         </div>
       )}
@@ -204,8 +204,8 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
 export default function UserVerification() {
   const { data, loading, error, reload } = useAsync(usersSvc.listOwnersAndHotels, []);
 
-  if (loading) return <LoadingState label="Loading owners and hotels" />;
-  if (error) return <ErrorState message={error} onRetry={reload} />;
+  if (loading) return <LoadingState large label="Loading owners and hotels" />;
+  if (error) return <ErrorState large message={error} onRetry={reload} />;
   const users = data ?? [];
   const pending = users.filter((u) => u.verificationStatus === 'pending');
   const others = users.filter((u) => u.verificationStatus !== 'pending');
@@ -213,9 +213,9 @@ export default function UserVerification() {
   return (
     <div className="space-y-6">
       <section>
-        <h3 className="mb-2 text-sm font-semibold text-lake-800">Pending review ({pending.length})</h3>
+        <h3 className="mb-3 text-lg font-bold tracking-[-0.01em] text-lake-900">Pending review ({pending.length})</h3>
         {pending.length === 0 ? (
-          <EmptyState title="Nothing pending" hint="New owner and hotel signups appear here for review." />
+          <EmptyState large title="Nothing pending" hint="New owner and hotel signups appear here for review." />
         ) : (
           <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
             {pending.map((u) => <AccountRow key={u.id} user={u} onDone={reload} />)}
@@ -224,7 +224,7 @@ export default function UserVerification() {
       </section>
       {others.length > 0 && (
         <section>
-          <h3 className="mb-2 text-sm font-semibold text-lake-800">Reviewed accounts</h3>
+          <h3 className="mb-3 text-lg font-bold tracking-[-0.01em] text-lake-900">Reviewed accounts</h3>
           <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
             {others.map((u) => <AccountRow key={u.id} user={u} onDone={reload} />)}
           </motion.div>

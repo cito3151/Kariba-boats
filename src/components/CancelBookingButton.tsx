@@ -80,12 +80,12 @@ export default function CancelBookingButton({ booking, onCancelled, disabled = f
     <div>
       <span role="status" aria-live="polite" className="sr-only">{announcement}</span>
 
-      {done && <p className="text-xs font-medium text-lake-600" aria-hidden>Booking cancelled</p>}
+      {done && <p className="text-sm font-medium text-lake-700" aria-hidden>Booking cancelled</p>}
 
       {!done && !open && (
         <button ref={triggerRef} type="button" onClick={() => setOpen(true)} disabled={disabled}
-          className={`inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 focus-visible:ring-red-500 ${FOCUS_RING}`}>
-          <Ban size={13} /> Cancel
+          className={`inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50 focus-visible:ring-red-500 ${FOCUS_RING}`}>
+          <Ban size={15} /> Cancel
         </button>
       )}
 
@@ -98,25 +98,25 @@ export default function CancelBookingButton({ booking, onCancelled, disabled = f
           initial={reduce ? { opacity: 0 } : { opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={reduce ? { duration: 0.15 } : { type: 'spring', bounce: 0, duration: 0.25 }}
-          className="max-w-xs rounded-md border border-red-200 bg-red-50 p-3"
+          className="max-w-sm rounded-lg border border-red-200 bg-red-50 p-3.5"
         >
-          <p className="text-sm font-semibold text-red-900">Cancel this booking?</p>
-          <p className="mt-0.5 text-xs text-lake-700">{booking.boatName} · {tripWhen(booking)}</p>
-          <p className="mt-0.5 text-xs text-lake-600">This cannot be undone.</p>
+          <p className="text-base font-semibold text-red-900">Cancel this booking?</p>
+          <p className="mt-1 break-words text-[15px] leading-snug text-lake-800">{booking.boatName} · {tripWhen(booking)}</p>
+          <p className="mt-0.5 text-[15px] leading-snug text-lake-700">This cannot be undone.</p>
 
           {error && (
-            <p role="alert" className="mt-2 text-xs font-medium text-red-700">{error}</p>
+            <p role="alert" className="mt-2 text-sm font-medium text-red-700">{error}</p>
           )}
 
           <div className="mt-3 flex flex-wrap gap-2">
             {/* aria-disabled, not disabled: a focused button that becomes disabled drops
                 keyboard focus to the page, and the user loses their place mid-request. */}
             <button ref={confirmRef} type="button" onClick={confirm} aria-disabled={busy}
-              className={`rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 focus-visible:ring-red-600 ${FOCUS_RING} ${busy ? 'cursor-not-allowed opacity-60' : ''}`}>
+              className={`rounded-lg bg-red-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-red-700 focus-visible:ring-red-600 ${FOCUS_RING} ${busy ? 'cursor-not-allowed opacity-60' : ''}`}>
               {busy ? 'Cancelling' : 'Yes, cancel booking'}
             </button>
             <button type="button" onClick={close} aria-disabled={busy}
-              className={`rounded-md border border-lake-200 bg-white px-3 py-1.5 text-xs font-semibold text-lake-700 hover:bg-lake-50 focus-visible:ring-lake-500 ${FOCUS_RING} ${busy ? 'cursor-not-allowed opacity-60' : ''}`}>
+              className={`rounded-lg border border-lake-200 bg-white px-3.5 py-2 text-sm font-semibold text-lake-700 hover:bg-lake-50 focus-visible:ring-lake-500 ${FOCUS_RING} ${busy ? 'cursor-not-allowed opacity-60' : ''}`}>
               Keep booking
             </button>
           </div>
