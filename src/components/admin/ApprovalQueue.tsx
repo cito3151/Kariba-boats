@@ -7,6 +7,7 @@ import PortalSection from '../portal/PortalSection';
 import { portalCard, portalButtonSecondary, portalButtonDanger } from '../portal/styles';
 import { Figure } from '../BookingFigures';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
+import Reveal from '../Reveal';
 import { staggerContainer, staggerItem } from '../motion';
 import { useAsync } from '../../hooks/useAsync';
 import { supabase } from '../../lib/supabase';
@@ -105,8 +106,9 @@ export default function ApprovalQueue() {
           )}
           <AnimatePresence>
             {queue.map((b) => (
-              <motion.div key={b.id} layout={!reduce}
-                initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              // Rises in when the queue arrives (or as it scrolls into view), in the
+              // same wave as every other card; a decided card slides out right.
+              <Reveal key={b.id} layout={!reduce}
                 exit={reduce ? { opacity: 0 } : { opacity: 0, x: 40, transition: { duration: 0.2 } }}
                 transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
                 className={`${portalCard} p-4 sm:p-5`}>
@@ -169,7 +171,7 @@ export default function ApprovalQueue() {
                     )}
                   </div>
                 )}
-              </motion.div>
+              </Reveal>
             ))}
           </AnimatePresence>
         </div>

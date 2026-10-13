@@ -72,7 +72,7 @@ export default function BoatTypeTiles({
         >
           Explore by boat type
         </h2>
-        <p className="mt-1 text-sm text-lake-600">Choose a type to see the boats listed under it.</p>
+        <p className="mt-1 text-sm text-lake-700">Choose a type to see the boats listed under it.</p>
       </Reveal>
 
       {/* A snap row on phones, where the tiles bleed to the screen edge so the

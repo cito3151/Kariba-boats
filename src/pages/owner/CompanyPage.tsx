@@ -6,6 +6,7 @@ import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
 import PortalSection from '../../components/portal/PortalSection';
 import { portalCard } from '../../components/portal/styles';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
+import Reveal from '../../components/Reveal';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../data/AuthContext';
 import * as companies from '../../services/companies.service';
@@ -265,9 +266,10 @@ export default function CompanyPage() {
       {company && (
         <>
           {/* Verification status beside the editable details on a wide screen,
-              the way an account page sets the summary next to the form. */}
+              the way an account page sets the summary next to the form. Both rise
+              in when the company has loaded. */}
           <div className="grid items-start gap-4 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-6">
-            <div className={`${portalCard} min-w-0 p-4 sm:p-5`}>
+            <Reveal className={`${portalCard} min-w-0 p-4 sm:p-5`}>
               <span className={`inline-flex rounded-full px-2.5 py-1 text-[13px] font-semibold leading-none ${STATUS_VIEW[company.verificationStatus].chip}`}>
                 {STATUS_VIEW[company.verificationStatus].label}
               </span>
@@ -283,9 +285,11 @@ export default function CompanyPage() {
                   Administrator: {company.verificationNote}
                 </p>
               )}
-            </div>
+            </Reveal>
 
-            <CompanyDetails company={company} onSaved={reload} />
+            <Reveal className="min-w-0">
+              <CompanyDetails company={company} onSaved={reload} />
+            </Reveal>
           </div>
 
           <PortalSection
@@ -301,15 +305,17 @@ export default function CompanyPage() {
             )}
 
             <div className={`grid items-start gap-4 md:grid-cols-2 ${docsLoading || docsError ? 'hidden' : ''}`}>
+              {/* The slots rise in once the documents are in and the grid is shown. */}
               {companies.REQUIRED_DOCUMENTS.map((slot) => (
-                <DocumentSlot
-                  key={slot.kind}
-                  kind={slot.kind} label={slot.label} hint={slot.hint}
-                  documents={documents ?? []}
-                  companyId={company.id}
-                  userId={currentUser?.id ?? ''}
-                  onChanged={refreshAll}
-                />
+                <Reveal key={slot.kind} className="min-w-0">
+                  <DocumentSlot
+                    kind={slot.kind} label={slot.label} hint={slot.hint}
+                    documents={documents ?? []}
+                    companyId={company.id}
+                    userId={currentUser?.id ?? ''}
+                    onChanged={refreshAll}
+                  />
+                </Reveal>
               ))}
             </div>
           </PortalSection>

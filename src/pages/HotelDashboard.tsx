@@ -10,7 +10,7 @@ import { LoadingState, ErrorState } from '../components/StateViews';
 import VerificationBanner from '../components/VerificationBanner';
 import DocumentUploader from '../components/verification/DocumentUploader';
 import { useAuth } from '../data/AuthContext';
-import { useAsync } from '../hooks/useAsync';
+import { loadedFigure, useAsync } from '../hooks/useAsync';
 import * as boats from '../services/boats.service';
 import { listBookingsForHotel } from '../services/bookings.service';
 import type { PublicBoat } from '../services/boats.service';
@@ -22,7 +22,7 @@ export default function HotelDashboard() {
   const [bookingBoat, setBookingBoat] = useState<PublicBoat | null>(null);
 
   const { data: boatList, loading, error, reload } = useAsync(() => boats.listPublicBoats(), []);
-  const { data: hotelBookings, reload: reloadBookings } = useAsync(
+  const { data: hotelBookings, loading: bookingsLoading, reload: reloadBookings } = useAsync(
     () => (hotelId ? listBookingsForHotel(hotelId) : Promise.resolve([])), [hotelId],
   );
 
@@ -56,9 +56,9 @@ export default function HotelDashboard() {
       )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-        <StatTile index={0} icon={Users} label="Pending guest requests" value={pendingCount} />
-        <StatTile index={1} icon={Building2} label="Referred bookings" value={(hotelBookings ?? []).length} />
-        <StatTile index={2} icon={ShieldCheck} label="Boats available to book" value={(boatList ?? []).length} />
+        <StatTile index={0} icon={Users} label="Pending guest requests" value={loadedFigure(hotelBookings, bookingsLoading, pendingCount)} />
+        <StatTile index={1} icon={Building2} label="Referred bookings" value={loadedFigure(hotelBookings, bookingsLoading, (hotelBookings ?? []).length)} />
+        <StatTile index={2} icon={ShieldCheck} label="Boats available to book" value={loadedFigure(boatList, loading, (boatList ?? []).length)} />
       </div>
 
       <PortalSection title="Available boats" className="mt-10">

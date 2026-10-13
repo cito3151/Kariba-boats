@@ -5,6 +5,7 @@ import PortalSection from '../../components/portal/PortalSection';
 import { portalCard } from '../../components/portal/styles';
 import MaintenanceCard from '../../components/owner/MaintenanceCard';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
+import Reveal from '../../components/Reveal';
 import { useAuth } from '../../data/AuthContext';
 import { useAsync } from '../../hooks/useAsync';
 import * as boats from '../../services/boats.service';
@@ -95,10 +96,10 @@ export default function MaintenancePage() {
             history does not stretch its neighbour. */}
         <div className="grid items-start gap-6 lg:grid-cols-2">
           {sorted.map((boat: OwnerBoat) => (
-            <div key={boat.id} className="min-w-0">
+            <Reveal key={boat.id} className="min-w-0">
               <MaintenanceCard boat={boat} onChanged={reload} />
               <BoatHistory boatId={boat.id} />
-            </div>
+            </Reveal>
           ))}
         </div>
       </PortalSection>

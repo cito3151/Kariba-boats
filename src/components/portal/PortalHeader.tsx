@@ -45,8 +45,10 @@ export interface PortalHeaderProps {
  * 1440px, the worst case for lake-200 is 5.1:1.
  *
  * The band is always at the top of the page, so its type rises on mount, in
- * reading order, rather than waiting for a scroll; the photo drifts in parallax
- * as the page scrolls away from it.
+ * reading order (breadcrumb, title block, actions), rather than waiting for a
+ * scroll. The photo sits exactly on its chosen crop with the page at the top and
+ * drifts gently down as the page scrolls away from it (PhotoBackdrop's `top`
+ * parallax; the band's overflow-hidden keeps the layer inside it).
  */
 export default function PortalHeader({
   breadcrumbs, eyebrow, icon: Icon, title, subtitle, actions, photo = portalPhotos.admin,
@@ -56,7 +58,7 @@ export default function PortalHeader({
 
   return (
     <div className="relative overflow-hidden bg-lake-950 text-white">
-      <PhotoBackdrop photo={photo} priority parallax />
+      <PhotoBackdrop photo={photo} priority parallax="top" />
       <div aria-hidden className="absolute inset-0 bg-linear-to-r from-lake-950/92 via-lake-950/84 to-lake-950/75" />
       <div className="relative mx-auto max-w-6xl px-4 pb-8 pt-5 sm:px-6 sm:pb-10 sm:pt-6">
         {breadcrumbs && breadcrumbs.length > 0 && (

@@ -20,3 +20,13 @@ export function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []) {
   useEffect(() => run(), [run]);
   return { data, loading, error, reload: run };
 }
+
+/**
+ * A StatTile figure from a useAsync result: null until the query first answers,
+ * so the tile holds a quiet bar and counts up when the real number arrives
+ * instead of showing a made-up 0. A reload keeps the old figure (the tile counts
+ * on from it) and a failed query shows 0.
+ */
+export function loadedFigure(data: unknown, loading: boolean, n: number): number | null {
+  return data == null && loading ? null : n;
+}

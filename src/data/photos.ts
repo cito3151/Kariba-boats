@@ -138,6 +138,18 @@ export const photos = {
   shoreHouseboat: photo(unsplash('1548342653-a614c828e272'), FULL_BLEED, 'object-[72%_60%] lg:object-[50%_60%]'),
 };
 
+/**
+ * The soft lake wash behind pale page areas (LakeBackdrop): the white cruiser on
+ * blue water from the boat-type tiles, blurred, brightened, flattened and
+ * desaturated by the CDN itself (imgix's blur, bri, con and sat), so the browser
+ * draws a plain image and scrolling never re-runs a CSS blur. Under that blur no
+ * detail survives past 480px, so a larger file would only cost bytes (about
+ * 14KB). Measured, its darkest pixel is rgb(155 162 162): LakeBackdrop's
+ * contrast figures are worked from that.
+ */
+export const lakeWashSrc =
+  `${unsplash('1727379899259-81ec81876551', 60)(480)}&blur=80&bri=35&con=-40&sat=-20`;
+
 /** The backdrop behind the sign-in, sign-up and password pages (AuthCard). */
 export const authPhoto = photos.shoreHouseboat;
 

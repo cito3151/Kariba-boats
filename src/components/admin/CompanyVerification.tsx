@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Building2, ShieldCheck, ShieldAlert, Eye, Check, X, AlertTriangle } from 'lucide-react';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
+import Reveal from '../Reveal';
 import { portalCard, portalButtonSecondary, portalButtonDanger } from '../portal/styles';
 import { adminButtonCommit, adminButtonConfirmReject } from './styles';
 import { useAsync } from '../../hooks/useAsync';
@@ -264,7 +265,12 @@ export default function CompanyVerification({ onReviewed }: { onReviewed?: () =>
 
   return (
     <div className="space-y-3">
-      {sorted.map((c) => <CompanyCard key={c.id} company={c} onChanged={refresh} />)}
+      {/* Each card rises in when the list arrives, or as it scrolls into view. */}
+      {sorted.map((c) => (
+        <Reveal key={c.id}>
+          <CompanyCard company={c} onChanged={refresh} />
+        </Reveal>
+      ))}
     </div>
   );
 }

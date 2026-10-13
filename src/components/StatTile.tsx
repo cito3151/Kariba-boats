@@ -1,12 +1,13 @@
 import { useLayoutEffect, useRef } from 'react';
 import { animate, motion, useReducedMotion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
-import { REVEAL_STAGGER, revealSpring } from './motion';
+import { REVEAL_STAGGER, REVEAL_TRAVEL, revealSpring } from './motion';
 
 /**
- * A figure that counts up to its value when the tile first appears, and from
- * the old figure to the new one when it changes (the 0 shown while data loads,
- * then the real count). The digits are written straight into the DOM from a
+ * A figure that counts up from 0 to its value when it first appears, and from
+ * the old figure to the new one when it changes (a reload after an approval).
+ * StatTile mounts it only once the real value is known, so the count starts the
+ * moment the data arrives, never from a placeholder 0. The digits are written straight into the DOM from a
  * motion value, so counting never re-renders React. Screen readers get the
  * real value at once from the visually hidden copy; the counting digits are
  * hidden from them. Under reduced motion the final figure is simply drawn.
@@ -55,8 +56,12 @@ export default function StatTile({
   label, value, icon: Icon, active, onClick, index = 0,
 }: {
   label: string;
-  /** Omit for a tile that opens a view rather than counting something. */
-  value?: number;
+  /**
+   * Omit for a tile that opens a view rather than counting something. Null while
+   * the figure is still loading: the tile holds its place with a quiet bar, and
+   * the count runs from 0 when the real value arrives.
+   */
+  value?: number | null;
   icon?: LucideIcon;
   active?: boolean;
   onClick?: () => void;
@@ -90,6 +95,11 @@ export default function StatTile({
         <p className="mt-3 flex h-8 items-end text-[15px] font-semibold text-lake-700">
           View <span aria-hidden className="ml-1 transition-transform group-hover:translate-x-0.5">→</span>
         </p>
+      ) : value === null ? (
+        <p className="mt-3 flex h-8 items-center">
+          <span aria-hidden className="block h-6 w-12 rounded-md bg-lake-100 motion-safe:animate-pulse" />
+          <span className="sr-only">Loading</span>
+        </p>
       ) : (
         <p className="mt-3 text-[2rem] font-bold leading-none tracking-[-0.02em] tabular-nums text-lake-950">
           <CountUp value={value} />
@@ -111,7 +121,7 @@ export default function StatTile({
   const entrance = reduce
     ? {}
     : {
-        initial: { opacity: 0, y: 16 },
+        initial: { opacity: 0, y: REVEAL_TRAVEL },
         animate: { opacity: 1, y: 0 },
         transition: { ...revealSpring, delay: 0.1 + Math.min(index, 6) * REVEAL_STAGGER },
       };

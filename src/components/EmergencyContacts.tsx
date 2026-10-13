@@ -2,8 +2,10 @@ import { LifeBuoy, Phone } from 'lucide-react';
 import { useAsync } from '../hooks/useAsync';
 import { listEmergencyContacts } from '../services/emergency.service';
 import { portalCard, portalButtonSecondary } from './portal/styles';
+import Reveal from './Reveal';
 
-// Read-only safety card. Renders nothing until the admin has added contacts.
+// Read-only safety card. Renders nothing until the admin has added contacts, and
+// rises in when they have loaded (it mounts only then, so the rise is seen).
 // The compact form is the public boat page's sidebar card; the full form is a
 // portal card beside the tourist's trips, where it heads its own column (h2).
 export default function EmergencyContacts({ compact = false }: { compact?: boolean }) {
@@ -14,7 +16,7 @@ export default function EmergencyContacts({ compact = false }: { compact?: boole
   const Heading = compact ? 'h3' : 'h2';
 
   return (
-    <div className={compact ? 'rounded-2xl border border-lake-100 bg-white p-4' : `${portalCard} p-4 sm:p-5`}>
+    <Reveal className={compact ? 'rounded-2xl border border-lake-100 bg-white p-4' : `${portalCard} p-4 sm:p-5`}>
       <Heading className={`flex items-center gap-2 text-lake-950 ${compact ? 'font-semibold' : 'text-lg font-bold tracking-[-0.01em]'}`}>
         <LifeBuoy size={compact ? 16 : 20} className={compact ? 'text-sunset-500' : 'text-sunset-700'} /> Emergency contacts
       </Heading>
@@ -34,6 +36,6 @@ export default function EmergencyContacts({ compact = false }: { compact?: boole
           </li>
         ))}
       </ul>
-    </div>
+    </Reveal>
   );
 }

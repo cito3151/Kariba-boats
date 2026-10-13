@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { FileText, Trash2, Upload, ExternalLink } from 'lucide-react';
 import { LoadingState, ErrorState } from '../StateViews';
+import Reveal from '../Reveal';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../data/AuthContext';
 import { portalCard, portalButtonSecondary, portalButtonDanger } from '../portal/styles';
@@ -69,7 +70,7 @@ export default function DocumentUploader() {
           {docs.length > 0 && (
             <ul className="mt-3 space-y-2">
               {docs.map((d) => (
-                <li key={d.id} className="flex items-center justify-between gap-3 rounded-lg bg-lake-50 px-3.5 py-2.5">
+                <Reveal as="li" key={d.id} y={16} className="flex items-center justify-between gap-3 rounded-lg bg-lake-50 px-3.5 py-2.5">
                   <div className="min-w-0">
                     <p className="truncate text-base font-semibold text-lake-900">{d.label || d.fileName}</p>
                     <p className="truncate text-sm text-lake-700">{d.fileName}</p>
@@ -84,7 +85,7 @@ export default function DocumentUploader() {
                       <Trash2 size={15} />
                     </button>
                   </div>
-                </li>
+                </Reveal>
               ))}
             </ul>
           )}

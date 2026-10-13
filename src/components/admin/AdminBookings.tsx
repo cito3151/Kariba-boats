@@ -1,8 +1,9 @@
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, useReducedMotion } from 'framer-motion';
 import StatusBadge from '../StatusBadge';
 import BookingFigures from '../BookingFigures';
 import CancelBookingButton from '../CancelBookingButton';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
+import Reveal from '../Reveal';
 import { portalCard } from '../portal/styles';
 import { useAsync } from '../../hooks/useAsync';
 import * as bookingsSvc from '../../services/bookings.service';
@@ -24,8 +25,8 @@ export default function AdminBookings() {
       )}
       <AnimatePresence>
         {rows.map((b) => (
-          <motion.div key={b.id} layout={!reduce}
-            initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          // Rises in when the list arrives, or as it scrolls into view.
+          <Reveal key={b.id} layout={!reduce}
             exit={{ opacity: 0 }} transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
             className={`${portalCard} p-4 sm:p-5`}>
             <div className="flex flex-wrap items-start justify-between gap-2">
@@ -38,7 +39,7 @@ export default function AdminBookings() {
                 <CancelBookingButton booking={b} onCancelled={reload} />
               </div>
             )}
-          </motion.div>
+          </Reveal>
         ))}
       </AnimatePresence>
     </div>

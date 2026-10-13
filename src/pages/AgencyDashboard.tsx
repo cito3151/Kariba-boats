@@ -10,7 +10,7 @@ import { LoadingState, ErrorState } from '../components/StateViews';
 import VerificationBanner from '../components/VerificationBanner';
 import DocumentUploader from '../components/verification/DocumentUploader';
 import { useAuth } from '../data/AuthContext';
-import { useAsync } from '../hooks/useAsync';
+import { loadedFigure, useAsync } from '../hooks/useAsync';
 import * as boats from '../services/boats.service';
 import { listBookingsForAgency } from '../services/bookings.service';
 import type { PublicBoat } from '../services/boats.service';
@@ -23,7 +23,7 @@ export default function AgencyDashboard() {
   const [bookingBoat, setBookingBoat] = useState<PublicBoat | null>(null);
 
   const { data: boatList, loading, error, reload } = useAsync(() => boats.listPublicBoats(), []);
-  const { data: agencyBookings, reload: reloadBookings } = useAsync(
+  const { data: agencyBookings, loading: bookingsLoading, reload: reloadBookings } = useAsync(
     () => (agencyId ? listBookingsForAgency(agencyId) : Promise.resolve([])), [agencyId],
   );
 
@@ -54,9 +54,9 @@ export default function AgencyDashboard() {
       {!verified && <div className="mb-4"><DocumentUploader /></div>}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-        <StatTile index={0} icon={Users} label="Pending client requests" value={pendingCount} />
-        <StatTile index={1} icon={Briefcase} label="Bookings made" value={(agencyBookings ?? []).length} />
-        <StatTile index={2} icon={ShieldCheck} label="Boats available to book" value={(boatList ?? []).length} />
+        <StatTile index={0} icon={Users} label="Pending client requests" value={loadedFigure(agencyBookings, bookingsLoading, pendingCount)} />
+        <StatTile index={1} icon={Briefcase} label="Bookings made" value={loadedFigure(agencyBookings, bookingsLoading, (agencyBookings ?? []).length)} />
+        <StatTile index={2} icon={ShieldCheck} label="Boats available to book" value={loadedFigure(boatList, loading, (boatList ?? []).length)} />
       </div>
 
       <PortalSection title="Available boats" className="mt-10">

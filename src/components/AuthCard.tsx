@@ -26,7 +26,7 @@ export default function AuthCard({
           to quieten the photo enough that the card reads as the subject: lighter
           than a header scrim, so the boat stays visible beside the card on wider
           screens, and densest at the foot where the card's shadow falls. */}
-      <PhotoBackdrop photo={authPhoto} priority parallax />
+      <PhotoBackdrop photo={authPhoto} priority parallax="top" />
       <div aria-hidden className="absolute inset-0 bg-linear-to-b from-lake-950/55 via-lake-950/40 to-lake-950/70" />
 
       <motion.div

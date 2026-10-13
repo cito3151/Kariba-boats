@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText, FileText, LifeBuoy, Building2 } from 'lucide-react';
 import AdminPortalPage from '../components/admin/AdminPortalPage';
 import PortalSection from '../components/portal/PortalSection';
@@ -17,8 +18,9 @@ import EmergencyContactsAdmin from '../components/admin/EmergencyContactsAdmin';
 import { BOAT_TYPE_LABELS } from '../components/BoatCard';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import Reveal from '../components/Reveal';
+import { viewSwap } from '../components/motion';
 import { useAuth } from '../data/AuthContext';
-import { useAsync } from '../hooks/useAsync';
+import { loadedFigure, useAsync } from '../hooks/useAsync';
 import * as boats from '../services/boats.service';
 import { listAllBookings } from '../services/bookings.service';
 import { listOwnersAndHotels, listAllUsers } from '../services/users.service';
@@ -94,16 +96,16 @@ function BoatList({ boats: list }: { boats: OwnerBoat[] }) {
 export default function AdminDashboard() {
   const { currentUser } = useAuth();
   const { data: boatData, loading, error, reload } = useAsync(() => boats.listBoatsForAdmin(), []);
-  const { data: bookingData } = useAsync(listAllBookings, []);
-  const { data: userData } = useAsync(listOwnersAndHotels, []);
+  const { data: bookingData, loading: bookingsLoading } = useAsync(listAllBookings, []);
+  const { data: userData, loading: usersLoading } = useAsync(listOwnersAndHotels, []);
   const isSuper = currentUser?.isSuperAdmin ?? false;
-  const { data: allUsers } = useAsync(
+  const { data: allUsers, loading: allUsersLoading } = useAsync(
     () => (isSuper ? listAllUsers() : Promise.resolve([])), [isSuper],
   );
   // A count, not the queue: listCompaniesForReview reads every verification document
   // on the platform, which is a lot to download for one tile an admin may never open.
   const {
-    data: companiesAwaiting, reload: reloadCompanyCount,
+    data: companiesAwaiting, loading: companiesLoading, reload: reloadCompanyCount,
   } = useAsync(countCompaniesAwaitingReview, []);
   const [view, setView] = useState<View>('queue');
 
@@ -113,19 +115,20 @@ export default function AdminDashboard() {
   ).length;
   const unverified = (userData ?? []).filter((u) => u.verificationStatus === 'pending').length;
 
-  const tiles: { key: View; label: string; value?: number; icon: typeof Anchor }[] = [
-    { key: 'all', label: 'Total boats', value: list.length, icon: Anchor },
-    { key: 'queue', label: 'Awaiting review', value: list.filter((b) => b.status === 'pending' || b.pendingChanges).length, icon: Clock },
-    { key: 'live', label: 'Live for tourists', value: list.filter((b) => b.status === 'approved' && b.isActive).length, icon: CheckCircle2 },
-    { key: 'attention', label: 'Maintenance attention', value: list.filter((b) => b.maintenanceStatus === 'due' || b.maintenanceStatus === 'overdue').length, icon: Wrench },
-    { key: 'bookings', label: 'Active bookings', value: activeBookings, icon: CalendarCheck },
-    { key: 'users', label: 'Unverified owners/hotels', value: unverified, icon: UserCheck },
-    { key: 'companies', label: 'Company documents', value: companiesAwaiting ?? 0, icon: Building2 },
+  // Each figure is null until its own query answers (see loadedFigure).
+  const tiles: { key: View; label: string; value?: number | null; icon: typeof Anchor }[] = [
+    { key: 'all', label: 'Total boats', value: loadedFigure(boatData, loading, list.length), icon: Anchor },
+    { key: 'queue', label: 'Awaiting review', value: loadedFigure(boatData, loading, list.filter((b) => b.status === 'pending' || b.pendingChanges).length), icon: Clock },
+    { key: 'live', label: 'Live for tourists', value: loadedFigure(boatData, loading, list.filter((b) => b.status === 'approved' && b.isActive).length), icon: CheckCircle2 },
+    { key: 'attention', label: 'Maintenance attention', value: loadedFigure(boatData, loading, list.filter((b) => b.maintenanceStatus === 'due' || b.maintenanceStatus === 'overdue').length), icon: Wrench },
+    { key: 'bookings', label: 'Active bookings', value: loadedFigure(bookingData, bookingsLoading, activeBookings), icon: CalendarCheck },
+    { key: 'users', label: 'Unverified owners/hotels', value: loadedFigure(userData, usersLoading, unverified), icon: UserCheck },
+    { key: 'companies', label: 'Company documents', value: loadedFigure(companiesAwaiting, companiesLoading, companiesAwaiting ?? 0), icon: Building2 },
     { key: 'audit', label: 'Activity log', icon: ScrollText },
     { key: 'emergency', label: 'Emergency contacts', icon: LifeBuoy },
   ];
   if (isSuper) {
-    tiles.push({ key: 'roles', label: 'Admins and roles', value: (allUsers ?? []).filter((u) => u.role === 'admin').length, icon: UserCog });
+    tiles.push({ key: 'roles', label: 'Admins and roles', value: loadedFigure(allUsers, allUsersLoading, (allUsers ?? []).filter((u) => u.role === 'admin').length), icon: UserCog });
     tiles.push({ key: 'legal', label: 'Legal documents', icon: FileText });
   }
 
@@ -179,11 +182,17 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Switching tiles cross-fades the views: the old one fades out, then the
+          new one fades in while its heading and cards rise into place. */}
       <div className="mt-10">
-        {view === 'queue' && <ApprovalQueue />}
-        {view !== 'queue' && body !== null && (
-          <PortalSection title={VIEW_TITLES[view]}>{body}</PortalSection>
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={view} {...viewSwap}>
+            {view === 'queue' && <ApprovalQueue />}
+            {view !== 'queue' && body !== null && (
+              <PortalSection title={VIEW_TITLES[view]}>{body}</PortalSection>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </AdminPortalPage>
   );

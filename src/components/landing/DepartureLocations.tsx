@@ -44,7 +44,7 @@ export default function DepartureLocations({ locations }: { locations: string[] 
 
   return (
     <section className="relative overflow-hidden bg-lake-950" aria-labelledby="departures-heading">
-      <PhotoBackdrop photo={photos.karibaShore} parallax />
+      <PhotoBackdrop photo={photos.karibaShore} parallax="band" />
       <div aria-hidden className="absolute inset-0 bg-linear-to-r from-lake-950/92 via-lake-950/84 to-lake-950/75" />
       <div className="relative mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
         <Reveal>

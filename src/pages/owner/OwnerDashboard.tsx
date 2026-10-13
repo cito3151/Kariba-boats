@@ -13,7 +13,7 @@ import Reveal from '../../components/Reveal';
 import VerificationBanner from '../../components/VerificationBanner';
 import DocumentUploader from '../../components/verification/DocumentUploader';
 import { useAuth } from '../../data/AuthContext';
-import { useAsync } from '../../hooks/useAsync';
+import { loadedFigure, useAsync } from '../../hooks/useAsync';
 import * as boats from '../../services/boats.service';
 import * as imagesSvc from '../../services/images.service';
 import * as maint from '../../services/maintenance.service';
@@ -87,11 +87,13 @@ export default function OwnerDashboard() {
 
   const unread = (notifications ?? []).filter((n) => !n.isRead);
   const list = boatList ?? [];
+  // Null until the boats first load, so the tiles count up when they arrive.
+  const stat = (n: number) => loadedFigure(boatList, loading, n);
   const stats = {
-    total: list.length,
-    live: list.filter((b) => b.status === 'approved' && b.isActive).length,
-    pending: list.filter((b) => b.status === 'pending').length,
-    attention: list.filter((b) => b.maintenanceStatus === 'due' || b.maintenanceStatus === 'overdue').length,
+    total: stat(list.length),
+    live: stat(list.filter((b) => b.status === 'approved' && b.isActive).length),
+    pending: stat(list.filter((b) => b.status === 'pending').length),
+    attention: stat(list.filter((b) => b.maintenanceStatus === 'due' || b.maintenanceStatus === 'overdue').length),
   };
   const visible = list.filter((b) => {
     if (filter === 'live') return b.status === 'approved' && b.isActive;
