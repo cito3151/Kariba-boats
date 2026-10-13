@@ -149,6 +149,7 @@ export default function HotelDashboard() {
           boat={bookingBoat}
           touristId={null}
           hotelId={hotelId}
+          onBehalfOfGuest
           onClose={() => { setBookingBoat(null); reloadBookings(); }}
         />
       )}

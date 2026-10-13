@@ -147,7 +147,7 @@ export default function AgencyDashboard() {
         <BookingModal
           boat={bookingBoat}
           touristId={null}
-          initialName=""
+          onBehalfOfGuest
           onClose={() => { setBookingBoat(null); reloadBookings(); }}
         />
       )}

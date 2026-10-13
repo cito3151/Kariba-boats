@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Check, X, Wallet, CheckCircle2, Ban, UserCheck } from 'lucide-react';
+import { ArrowLeft, Check, X, Wallet, CheckCircle2, UserCheck } from 'lucide-react';
 import PageTransition from '../../components/PageTransition';
 import StatusBadge from '../../components/StatusBadge';
+import CancelBookingButton from '../../components/CancelBookingButton';
 import CaptainManager from '../../components/owner/CaptainManager';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
 import { useAuth } from '../../data/AuthContext';
@@ -50,11 +51,6 @@ function AssignCaptain({ booking, captains, onAssigned }: {
 const ORDER: Record<BookingStatus, number> = {
   requested: 0, confirmed: 1, deposit_paid: 2, completed: 3, declined: 4, cancelled: 5,
 };
-
-function tripWhen(b: BookingRow): string {
-  if (b.startTime && b.durationHours) return `${b.startDate} at ${b.startTime} (${b.durationHours}h)`;
-  return `${b.startDate}, ${b.days} day${b.days > 1 ? 's' : ''}`;
-}
 
 export default function OwnerBookingsPage() {
   const { currentUser } = useAuth();
@@ -107,7 +103,7 @@ export default function OwnerBookingsPage() {
                   <div>
                     <h3 className="font-semibold text-lake-950">{b.boatName}</h3>
                     <p className="text-xs text-lake-500">
-                      {b.guestName} · {tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · ${b.priceTotal}
+                      {b.guestName} · {bookingsSvc.tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · ${b.priceTotal}
                     </p>
                   </div>
                   <StatusBadge status={b.status} />
@@ -142,11 +138,7 @@ export default function OwnerBookingsPage() {
                         className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
                         <CheckCircle2 size={13} /> Complete
                       </button>
-                      <button onClick={() => run(b.id, () => bookingsSvc.cancelBooking(b.id))}
-                        disabled={busyId === b.id}
-                        className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">
-                        <Ban size={13} /> Cancel
-                      </button>
+                      <CancelBookingButton booking={b} onCancelled={reload} disabled={busyId === b.id} />
                     </>
                   )}
                 </div>

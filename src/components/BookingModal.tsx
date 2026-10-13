@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import type { PublicBoat } from '../services/boats.service';
@@ -25,6 +25,11 @@ interface Props {
   boat: PublicBoat;
   touristId: string | null;
   hotelId?: string | null;
+  // True when staff book for someone else (hotel or travel agency). The guest fields
+  // then start empty whatever initialName and initialPhone say: those are the signed-in
+  // user's own details, and the booking would otherwise go out under the staff
+  // member's name. A hotelId implies it.
+  onBehalfOfGuest?: boolean;
   initialName?: string;
   initialPhone?: string;
   // Dates picked on the boat page calendar. They only prefill the date inputs,
@@ -33,14 +38,18 @@ interface Props {
   initialStartDate?: string;
   initialEndDate?: string;
   onClose: () => void;
+  /** Fired once the server has accepted the request, before the success screen. */
+  onBooked?: () => void;
 }
 
 type Step = 'form' | 'submitting' | 'success';
 
 export default function BookingModal({
-  boat, touristId, hotelId = null, initialName = '', initialPhone = '',
-  initialStartDate = '', initialEndDate = '', onClose,
+  boat, touristId, hotelId = null, onBehalfOfGuest = false, initialName = '', initialPhone = '',
+  initialStartDate = '', initialEndDate = '', onClose, onBooked,
 }: Props) {
+  const onBehalf = onBehalfOfGuest || hotelId !== null;
+  const nameHintId = useId();
   // `> 0`, not just non-null: a rate of 0 means the owner did not offer that
   // basis. Checking only for null opened this modal on "Daily, $0/day" for a boat
   // priced hourly, and the server agreed, so the trip was booked for nothing.
@@ -48,8 +57,8 @@ export default function BookingModal({
   const hasDaily = boat.pricePerDay != null && boat.pricePerDay > 0;
 
   const [step, setStep] = useState<Step>('form');
-  const [guestName, setGuestName] = useState(initialName);
-  const [guestPhone, setGuestPhone] = useState(initialPhone);
+  const [guestName, setGuestName] = useState(onBehalf ? '' : initialName);
+  const [guestPhone, setGuestPhone] = useState(onBehalf ? '' : initialPhone);
   const [date, setDate] = useState(initialStartDate);
   // A one-day daily trip arrives with no end date; the end defaults to the start.
   const [endDate, setEndDate] = useState(initialEndDate || (hasDaily ? initialStartDate : ''));
@@ -116,6 +125,7 @@ export default function BookingModal({
       setBookingId(result.id);
       setDepositAmount(result.depositAmount);
       setStep('success');
+      onBooked?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'That slot is no longer available.');
       setStep('form');
@@ -137,7 +147,7 @@ export default function BookingModal({
           <div className="flex items-start justify-between">
             <div>
               <h3 className="font-semibold text-lake-950">
-                {hotelId ? 'Book on behalf of guest' : 'Request to book'}
+                {onBehalf ? 'Book on behalf of guest' : 'Request to book'}
               </h3>
               <p className="text-xs text-lake-500">{boat.name}</p>
             </div>
@@ -163,16 +173,25 @@ export default function BookingModal({
                   </div>
                 )}
                 <div>
-                  <label className="text-xs font-medium text-lake-500">
-                    {hotelId ? "Guest's full name" : 'Your full name'}
+                  <label htmlFor={`${nameHintId}-name`} className="text-xs font-medium text-lake-500">
+                    {onBehalf ? "Guest's full name" : 'Your full name'}
                   </label>
-                  <input required value={guestName} onChange={(e) => setGuestName(e.target.value)}
+                  <input id={`${nameHintId}-name`} required value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    aria-describedby={!onBehalf && initialName ? nameHintId : undefined}
                     className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
                     placeholder="e.g. Jane Moyo" />
+                  {/* Only when the name came from the profile, so it never reads as a
+                      question about a field the user typed into themselves. */}
+                  {!onBehalf && initialName && (
+                    <p id={nameHintId} className="mt-1 text-[11px] text-lake-400">
+                      Booking for yourself? Check your name is right.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs font-medium text-lake-500">
-                    {hotelId ? "Guest's phone / WhatsApp" : 'Your phone / WhatsApp'}
+                    {onBehalf ? "Guest's phone / WhatsApp" : 'Your phone / WhatsApp'}
                   </label>
                   <input required value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)}
                     className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-sm outline-none focus:border-lake-400"
@@ -256,12 +275,17 @@ export default function BookingModal({
                   </motion.div>
                 )}
 
-                <label className="flex items-start gap-2 text-xs text-lake-600">
+                {/* The whole row is the target (at least 24px tall, full width), not just the
+                    box. leading-5 matches the 20px box, so the first line of text sits level
+                    with it and a wrapped line stays under the text, not under the box. */}
+                <label className="flex min-h-6 cursor-pointer items-start gap-3 py-1 text-xs leading-5 text-lake-600">
                   <input type="checkbox" checked={waiverAccepted}
-                    onChange={(e) => setWaiverAccepted(e.target.checked)} className="mt-0.5" />
+                    onChange={(e) => setWaiverAccepted(e.target.checked)}
+                    className="h-5 w-5 shrink-0 cursor-pointer rounded accent-lake-700 outline-none focus-visible:ring-2 focus-visible:ring-lake-800 focus-visible:ring-offset-2" />
                   <span>
                     I accept the{' '}
-                    <button type="button" className="font-semibold text-lake-700 underline"
+                    <button type="button"
+                      className="rounded-sm font-semibold text-lake-700 underline outline-none focus-visible:ring-2 focus-visible:ring-lake-800 focus-visible:ring-offset-1"
                       onClick={() => setShowWaiver(true)}>booking liability waiver</button>.
                   </span>
                 </label>

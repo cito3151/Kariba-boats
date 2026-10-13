@@ -37,6 +37,12 @@ function toBookingRow(r: any): BookingRow {
   };
 }
 
+/** One-line "when" for a booking: date and hours for an hourly trip, date and days otherwise. */
+export function tripWhen(b: Pick<BookingRow, 'startDate' | 'days' | 'startTime' | 'durationHours'>): string {
+  if (b.startTime && b.durationHours) return `${b.startDate} at ${b.startTime} (${b.durationHours}h)`;
+  return `${b.startDate}, ${b.days} day${b.days > 1 ? 's' : ''}`;
+}
+
 export async function createBooking(input: BookingInput, touristId: string | null) {
   void touristId; // tourist_id is derived server-side in create_booking
   const { data, error } = await supabase.rpc('create_booking', {

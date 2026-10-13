@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ShieldCheck, ShieldAlert, Users, LifeBuoy, Phone, TrendingUp, Star, Wallet, BadgeCheck } from 'lucide-react';
@@ -27,6 +27,13 @@ function validIsoDay(v: string | null): v is string {
   return toISODate(new Date(y, m - 1, d)) === v;
 }
 
+// Dropping the range leaves any other query params alone.
+function clearRangeParams(params: URLSearchParams): URLSearchParams {
+  params.delete('start');
+  params.delete('end');
+  return params;
+}
+
 const GOOD_FOR: Record<string, string[]> = {
   houseboat: ['Overnight stays', 'Families', 'Sightseeing', 'Relaxation'],
   speedboat: ['Day trips', 'Watersports', 'Small groups'],
@@ -40,6 +47,10 @@ export default function BoatDetail() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [showModal, setShowModal] = useState(false);
+  // Set when a request goes through. Those days are now the visitor's own booking,
+  // so closing the modal would reload them as booked and reject the link as "no
+  // longer available", seconds after they booked it. closeModal clears it quietly.
+  const justBookedRef = useRef(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -55,30 +66,13 @@ export default function BoatDetail() {
   );
   const { data: reviews } = useAsync(() => (id ? listReviewsForBoat(id) : Promise.resolve([])), [id]);
 
-  if (loading) return <PageTransition><div className="mx-auto max-w-6xl px-4 py-10"><LoadingState label="Loading boat" /></div></PageTransition>;
-  if (error) return <PageTransition><div className="mx-auto max-w-6xl px-4 py-10"><ErrorState message={error} onRetry={reload} /></div></PageTransition>;
-  if (!boat) return <PageTransition><div className="mx-auto max-w-6xl px-4 py-10"><ErrorState message="This boat is not available." /></div></PageTransition>;
-
-  const price = priceView(boat);
-  const rates = priceLabels(boat);
-  const sorted = [...(imageRows ?? [])].sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
-  const galleryImages = sorted.length
-    ? sorted.map((i) => imagesSvc.publicImageUrl(i.storagePath))
-    : [`illustration:${boat.boatType}`];
-
-  const reviewList = reviews ?? [];
-  const avgRating = reviewList.length
-    ? reviewList.reduce((s, r) => s + r.rating, 0) / reviewList.length
-    : null;
-  const goodFor = GOOD_FOR[boat.boatType] ?? [];
-  const descLong = boat.description.length > 320;
-  const descShown = descLong && !descExpanded ? `${boat.description.slice(0, 320).trimEnd()}...` : boat.description;
-
-  const calendarBoat = { id: boat.id, priceUnit: (price?.unit ?? 'day') as 'hour' | 'day' };
-  const calendarBookings = bookingRows ?? [];
-
   // Date selection. A boat with no usable rate ("On request") has nothing to price a
   // range against, so it keeps the read-only calendar. Hourly-only boats pick one date.
+  // This sits above the early returns because the cleanup effect below is a hook and
+  // has to run on every render; until the boat loads, selection is simply off.
+  const price = boat ? priceView(boat) : null;
+  const calendarBoat = { id: boat?.id ?? '', priceUnit: (price?.unit ?? 'day') as 'hour' | 'day' };
+  const calendarBookings = bookingRows ?? [];
   const selectionEnabled = price !== null;
   const singleDate = calendarBoat.priceUnit === 'hour';
   const urlStart = searchParams.get('start');
@@ -96,11 +90,38 @@ export default function BoatDetail() {
     else rangeDropped = true;
   }
 
+  // A rejected range is taken out of the address bar, so a refresh or a shared copy of
+  // the link does not repeat the bad state. `replace` keeps it out of history, and the
+  // boat id is remembered so the message below outlives the params it was about, once.
+  const [staleLinkBoatId, setStaleLinkBoatId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!rangeDropped) return;
+    setStaleLinkBoatId(calendarBoat.id);
+    setSearchParams((prev) => clearRangeParams(new URLSearchParams(prev)), { replace: true });
+  }, [rangeDropped, calendarBoat.id, setSearchParams]);
+
+  if (loading) return <PageTransition><div className="mx-auto max-w-6xl px-4 py-10"><LoadingState label="Loading boat" /></div></PageTransition>;
+  if (error) return <PageTransition><div className="mx-auto max-w-6xl px-4 py-10"><ErrorState message={error} onRetry={reload} /></div></PageTransition>;
+  if (!boat) return <PageTransition><div className="mx-auto max-w-6xl px-4 py-10"><ErrorState message="This boat is not available." /></div></PageTransition>;
+
+  const rates = priceLabels(boat);
+  const sorted = [...(imageRows ?? [])].sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
+  const galleryImages = sorted.length
+    ? sorted.map((i) => imagesSvc.publicImageUrl(i.storagePath))
+    : [`illustration:${boat.boatType}`];
+
+  const reviewList = reviews ?? [];
+  const avgRating = reviewList.length
+    ? reviewList.reduce((s, r) => s + r.rating, 0) / reviewList.length
+    : null;
+  const goodFor = GOOD_FOR[boat.boatType] ?? [];
+  const descLong = boat.description.length > 320;
+  const descShown = descLong && !descExpanded ? `${boat.description.slice(0, 320).trimEnd()}...` : boat.description;
+
   const handleRangeChange = (next: DateRange | null) => {
+    setStaleLinkBoatId(null);
     setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      params.delete('start');
-      params.delete('end');
+      const params = clearRangeParams(new URLSearchParams(prev));
       if (next) {
         params.set('start', next.start);
         if (next.end) params.set('end', next.end);
@@ -122,6 +143,10 @@ export default function BoatDetail() {
 
   const closeModal = () => {
     setShowModal(false);
+    if (justBookedRef.current) {
+      justBookedRef.current = false;
+      setSearchParams((prev) => clearRangeParams(new URLSearchParams(prev)), { replace: true });
+    }
     // A request sent from the modal now holds its days; refresh so the calendar shows it.
     reloadBookings();
   };
@@ -255,7 +280,7 @@ export default function BoatDetail() {
                 selectedRange={range}
                 onRangeChange={selectionEnabled ? handleRangeChange : undefined}
               />
-              {rangeDropped && (
+              {(rangeDropped || staleLinkBoatId === boat.id) && (
                 <p role="status" className="mt-2 text-xs text-amber-800">
                   The dates in your link are no longer available. Pick new ones above.
                 </p>
@@ -354,11 +379,13 @@ export default function BoatDetail() {
         <BookingModal
           boat={boat}
           touristId={currentUser?.id ?? null}
-          initialName={currentUser?.name}
+          // Trimmed: profile names can carry stray whitespace into the form.
+          initialName={currentUser?.name?.trim()}
           initialPhone={currentUser?.phone ?? undefined}
           initialStartDate={range?.start}
           initialEndDate={singleDate ? undefined : range?.end ?? undefined}
           onClose={closeModal}
+          onBooked={() => { justBookedRef.current = true; }}
         />
       )}
     </PageTransition>

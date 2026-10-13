@@ -1,21 +1,16 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Anchor, Ban, Star } from 'lucide-react';
+import { Anchor, Star } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import StatusBadge from '../components/StatusBadge';
 import ReviewForm from '../components/ReviewForm';
+import CancelBookingButton from '../components/CancelBookingButton';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import EmergencyContacts from '../components/EmergencyContacts';
 import { useAuth } from '../data/AuthContext';
 import { useAsync } from '../hooks/useAsync';
 import * as bookingsSvc from '../services/bookings.service';
-import type { BookingRow } from '../services/bookings.service';
-
-function tripWhen(b: BookingRow): string {
-  if (b.startTime && b.durationHours) return `${b.startDate} at ${b.startTime} (${b.durationHours}h)`;
-  return `${b.startDate}, ${b.days} day${b.days > 1 ? 's' : ''}`;
-}
 
 const CANCELLABLE = new Set(['requested', 'confirmed', 'deposit_paid']);
 
@@ -23,17 +18,8 @@ export default function TouristTripsPage() {
   const { currentUser } = useAuth();
   const touristId = currentUser?.id ?? '';
   const { data, loading, error, reload } = useAsync(() => bookingsSvc.listMyBookings(touristId), [touristId]);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [actionError, setActionError] = useState('');
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
-
-  const cancel = async (id: string) => {
-    setBusyId(id); setActionError('');
-    try { await bookingsSvc.cancelBooking(id); reload(); }
-    catch (e) { setActionError(e instanceof Error ? e.message : 'Could not cancel.'); }
-    finally { setBusyId(null); }
-  };
 
   const rows = data ?? [];
 
@@ -42,10 +28,6 @@ export default function TouristTripsPage() {
       <div className="mx-auto max-w-3xl px-4 sm:px-6 py-6">
         <h1 className="font-display text-2xl font-medium text-lake-950">My trips</h1>
         <p className="mt-1 text-sm text-lake-500">Your booking requests and their status.</p>
-
-        {actionError && (
-          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</p>
-        )}
 
         <div className="mt-5 space-y-3">
           {loading && <LoadingState label="Loading your trips" />}
@@ -69,19 +51,16 @@ export default function TouristTripsPage() {
                   <div>
                     <h3 className="font-semibold text-lake-950">{b.boatName}</h3>
                     <p className="text-xs text-lake-500">
-                      {b.boatLocation} · {tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · ${b.priceTotal}
+                      {b.boatLocation} · {bookingsSvc.tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · ${b.priceTotal}
                     </p>
                     {b.captainName && (
                       <p className="mt-0.5 text-xs text-lake-600">Captain: <span className="font-medium text-lake-900">{b.captainName}</span> · {b.captainPhone}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center justify-end gap-3">
                     <StatusBadge status={b.status} />
                     {CANCELLABLE.has(b.status) && (
-                      <button onClick={() => cancel(b.id)} disabled={busyId === b.id}
-                        className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">
-                        <Ban size={13} /> Cancel
-                      </button>
+                      <CancelBookingButton booking={b} onCancelled={reload} />
                     )}
                     {b.status === 'completed' && !reviewedIds.has(b.id) && reviewingId !== b.id && (
                       <button onClick={() => setReviewingId(b.id)}
