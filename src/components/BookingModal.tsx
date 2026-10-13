@@ -35,8 +35,11 @@ type Step = 'form' | 'submitting' | 'success';
 export default function BookingModal({
   boat, touristId, hotelId = null, initialName = '', initialPhone = '', onClose,
 }: Props) {
-  const hasHourly = boat.pricePerHour != null;
-  const hasDaily = boat.pricePerDay != null;
+  // `> 0`, not just non-null: a rate of 0 means the owner did not offer that
+  // basis. Checking only for null opened this modal on "Daily, $0/day" for a boat
+  // priced hourly, and the server agreed, so the trip was booked for nothing.
+  const hasHourly = boat.pricePerHour != null && boat.pricePerHour > 0;
+  const hasDaily = boat.pricePerDay != null && boat.pricePerDay > 0;
 
   const [step, setStep] = useState<Step>('form');
   const [guestName, setGuestName] = useState(initialName);

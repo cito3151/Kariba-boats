@@ -17,9 +17,20 @@ export const BOAT_TYPE_LABELS: Record<BoatKind, string> = {
   pontoon: 'Pontoon',
 };
 
+/**
+ * A rate the owner actually set. `0` means "I don't offer this", not "free":
+ * BoatForm has always validated with `!= null && > 0`, but the tourist-facing
+ * helpers checked only for null, so a boat with price_per_day = 0 advertised
+ * "$0/day", sorted to the top of "price: low to high", and opened the booking
+ * modal on a $0 daily rate. There is a live boat in exactly that state.
+ */
+function hasRate(value: number | null): value is number {
+  return value != null && value > 0;
+}
+
 export function priceView(boat: PublicBoat): { amount: number; unit: 'hour' | 'day' } | null {
-  if (boat.pricePerDay != null) return { amount: boat.pricePerDay, unit: 'day' };
-  if (boat.pricePerHour != null) return { amount: boat.pricePerHour, unit: 'hour' };
+  if (hasRate(boat.pricePerDay)) return { amount: boat.pricePerDay, unit: 'day' };
+  if (hasRate(boat.pricePerHour)) return { amount: boat.pricePerHour, unit: 'hour' };
   return null;
 }
 
@@ -27,8 +38,8 @@ export function priceView(boat: PublicBoat): { amount: number; unit: 'hour' | 'd
 // hourly and/or daily pricing depending on what the boat offers.
 export function priceLabels(boat: Pick<PublicBoat, 'pricePerHour' | 'pricePerDay'>): { amount: number; unit: 'hour' | 'day'; short: string }[] {
   const out: { amount: number; unit: 'hour' | 'day'; short: string }[] = [];
-  if (boat.pricePerHour != null) out.push({ amount: boat.pricePerHour, unit: 'hour', short: 'hr' });
-  if (boat.pricePerDay != null) out.push({ amount: boat.pricePerDay, unit: 'day', short: 'day' });
+  if (hasRate(boat.pricePerHour)) out.push({ amount: boat.pricePerHour, unit: 'hour', short: 'hr' });
+  if (hasRate(boat.pricePerDay)) out.push({ amount: boat.pricePerDay, unit: 'day', short: 'day' });
   return out;
 }
 
