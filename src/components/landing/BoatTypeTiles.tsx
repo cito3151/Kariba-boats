@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import Reveal from '../Reveal';
+import { staggerContainer, staggerItem } from '../motion';
 import { BOAT_TYPE_LABELS } from '../BoatCard';
 import { photos, type Photo } from '../../data/photos';
 import type { BoatKind } from '../../services/boats.service';
@@ -74,33 +75,47 @@ export default function BoatTypeTiles({
         <p className="mt-1 text-sm text-lake-600">Choose a type to see the boats listed under it.</p>
       </Reveal>
 
-      <Reveal delay={0.05} className="mt-6">
-        {/* A snap row on phones, where the tiles bleed to the screen edge so the
-            next one is visibly there to swipe to. From md up it is a plain grid. */}
-        <div
-          ref={rowRef}
-          className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 py-1 scroll-pl-4 sm:-mx-6 sm:px-6 sm:scroll-pl-6
-                     md:mx-0 md:grid md:grid-cols-5 md:gap-4 md:overflow-visible md:px-0 md:py-0"
-        >
-          {ordered.map((type) => {
-            const isSelected = selected === type;
-            const count = counts?.[type];
-            // An empty type stays clickable (it lands on the empty state with its
-            // "Clear filters" action) but reads as unavailable, not as a promise.
-            const isEmpty = count === 0;
-            return (
+      {/* A snap row on phones, where the tiles bleed to the screen edge so the
+          next one is visibly there to swipe to. From md up it is a plain grid.
+          The row, not each tile, decides when they arrive: on a phone most tiles
+          sit off to the side, where they would never count as in view, so all
+          five rise in a wave as soon as the row reaches the screen. The rise
+          would make the row scroll up and down for a moment, hence
+          overflow-y-hidden, which leaves the sideways scroll and the snap alone. */}
+      <motion.div
+        ref={rowRef}
+        variants={staggerContainer}
+        initial={reduceMotion ? false : 'hidden'}
+        whileInView="show"
+        viewport={{ once: true, amount: 0.2 }}
+        className="-mx-4 mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden px-4 py-1 scroll-pl-4 sm:-mx-6 sm:px-6 sm:scroll-pl-6
+                   md:mx-0 md:grid md:grid-cols-5 md:gap-4 md:overflow-visible md:px-0 md:py-0"
+      >
+        {ordered.map((type) => {
+          const isSelected = selected === type;
+          const count = counts?.[type];
+          // An empty type stays clickable (it lands on the empty state with its
+          // "Clear filters" action) but reads as unavailable, not as a promise.
+          const isEmpty = count === 0;
+          return (
+            // The entrance moves this wrapper; the hover lift and press moves
+            // are CSS on the button inside, so the two never fight over one
+            // element's transform.
+            <motion.div key={type} variants={staggerItem} className="w-[62%] shrink-0 snap-start sm:w-[38%] md:w-auto">
+              {/* Lifts 4px on hover from md, where the row no longer clips it;
+                  `hover:` only applies on devices that can hover, so a tap on a
+                  phone never leaves a tile raised. */}
               <button
-                key={type}
                 type="button"
                 aria-pressed={isSelected}
                 onClick={() => {
                   onSelect(type);
                   scrollToBoats(reduceMotion);
                 }}
-                className="group relative aspect-[4/5] w-[62%] shrink-0 snap-start overflow-hidden rounded-md bg-lake-950 text-left text-white
-                           outline-none transition-transform duration-150 active:scale-[0.98]
+                className="group relative block aspect-[4/5] w-full overflow-hidden rounded-md bg-lake-950 text-left text-white
+                           outline-none transition-transform duration-200 ease-out active:scale-[0.98]
                            focus-visible:ring-2 focus-visible:ring-sunset-500 focus-visible:ring-offset-2
-                           sm:w-[38%] md:w-auto"
+                           md:hover:-translate-y-1 motion-reduce:md:hover:translate-y-0"
               >
                 <span
                   aria-hidden
@@ -136,10 +151,10 @@ export default function BoatTypeTiles({
                   <span aria-hidden className="absolute inset-x-0 bottom-0 h-1 bg-sunset-500" />
                 )}
               </button>
-            );
-          })}
-        </div>
-      </Reveal>
+            </motion.div>
+          );
+        })}
+      </motion.div>
     </section>
   );
 }

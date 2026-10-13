@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Anchor, MapPin, Star, UserCheck } from 'lucide-react';
 import PortalPage from '../components/portal/PortalPage';
+import Reveal from '../components/Reveal';
 import { portalPhotos } from '../data/photos';
 import PortalSection from '../components/portal/PortalSection';
 import { portalCard, portalButtonPrimary, portalButtonSecondary } from '../components/portal/styles';
@@ -64,8 +65,7 @@ export default function TouristTripsPage() {
                 const canReview = b.status === 'completed' && !reviewedIds.has(b.id) && reviewingId !== b.id;
                 const reviewed = reviewedIds.has(b.id);
                 return (
-                  <motion.div key={b.id} layout={!reduceMotion}
-                    initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                  <Reveal key={b.id} layout={!reduceMotion}
                     exit={{ opacity: 0 }} transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
                     className={`${portalCard} p-4 sm:p-5`}>
                     <div className="flex flex-wrap items-start justify-between gap-2">
@@ -112,7 +112,7 @@ export default function TouristTripsPage() {
                           setReviewingId(null);
                         }} />
                     )}
-                  </motion.div>
+                  </Reveal>
                 );
               })}
             </AnimatePresence>

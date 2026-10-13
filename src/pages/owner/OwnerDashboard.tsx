@@ -9,6 +9,7 @@ import { portalCard, portalButtonPrimary, portalButtonSecondary, portalButtonDan
 import BoatImage from '../../components/BoatImage';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
 import StatTile from '../../components/StatTile';
+import Reveal from '../../components/Reveal';
 import VerificationBanner from '../../components/VerificationBanner';
 import DocumentUploader from '../../components/verification/DocumentUploader';
 import { useAuth } from '../../data/AuthContext';
@@ -178,7 +179,7 @@ export default function OwnerDashboard() {
             {visible.map((boat) => {
               const maintChip = MAINT_CHIP[boat.maintenanceStatus];
               return (
-                <li key={boat.id} className={`${portalCard} flex flex-col overflow-hidden`}>
+                <Reveal as="li" key={boat.id} className={`${portalCard} flex flex-col overflow-hidden`}>
                   <div className="relative aspect-[16/10] w-full overflow-hidden bg-lake-100">
                     <CoverImage boat={boat} />
                     <span className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[13px] font-semibold leading-none shadow-sm ${BOAT_STATUS_CHIP[boat.status].className}`}>
@@ -228,7 +229,7 @@ export default function OwnerDashboard() {
                       <Trash2 size={15} /> Delete
                     </button>
                   </div>
-                </li>
+                </Reveal>
               );
             })}
           </ul>

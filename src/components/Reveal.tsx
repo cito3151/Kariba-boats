@@ -1,36 +1,37 @@
-import { motion, useReducedMotion } from 'framer-motion';
-import type { ReactNode } from 'react';
+import { motion } from 'framer-motion';
+import type { ComponentProps, ReactNode } from 'react';
+import { useReveal, type RevealOptions } from './motion';
 
+type PassThrough = Omit<ComponentProps<typeof motion.div>, 'initial' | 'animate' | 'viewport' | 'onViewportEnter' | 'children'>;
+
+/**
+ * Rises and fades its content in once, as it scrolls into view (see useReveal
+ * for the rules). `as="li"` for a list item. Other motion props, such as
+ * `layout` and `exit` for a card in an AnimatePresence list, pass through.
+ *
+ * Reduced motion keeps the reveal, but takes out the travel: the content still
+ * arrives as the reader reaches it, it just no longer slides across the screen.
+ * A cross-fade carries the same "this is new" signal without the vestibular
+ * cost, which is what the setting is actually asking for.
+ */
 export default function Reveal({
   children,
-  delay = 0,
-  y = 28,
-  className,
-}: {
+  as = 'div',
+  delay,
+  x,
+  y,
+  amount,
+  ...rest
+}: RevealOptions & PassThrough & {
   children: ReactNode;
-  delay?: number;
-  y?: number;
-  className?: string;
+  as?: 'div' | 'li';
 }) {
-  const reduce = useReducedMotion();
+  const reveal = useReveal({ delay, x, y, amount });
+  const Component = (as === 'li' ? motion.li : motion.div) as typeof motion.div;
 
   return (
-    <motion.div
-      // Reduced motion keeps the reveal, but takes out the travel: the content
-      // still arrives as the reader reaches it, it just no longer slides up the
-      // screen. A cross-fade carries the same "this is new" signal without the
-      // vestibular cost, which is what the setting is actually asking for.
-      initial={reduce ? { opacity: 0 } : { opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={
-        reduce
-          ? { duration: 0.25, delay }
-          : { type: 'spring', bounce: 0, duration: 0.55, delay }
-      }
-      className={className}
-    >
+    <Component {...rest} {...reveal}>
       {children}
-    </motion.div>
+    </Component>
   );
 }

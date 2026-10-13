@@ -5,6 +5,7 @@ import PageTransition from '../components/PageTransition';
 import BoatCard, { BOAT_TYPE_LABELS, priceView } from '../components/BoatCard';
 import BoatCardSkeleton from '../components/BoatCardSkeleton';
 import Reveal from '../components/Reveal';
+import { riseOnMount } from '../components/motion';
 import { ErrorState } from '../components/StateViews';
 import { useAsync } from '../hooks/useAsync';
 import BoatTypeTiles from '../components/landing/BoatTypeTiles';
@@ -45,6 +46,11 @@ export default function TouristHome() {
   const heroY = useTransform(scrollYProgress, [0, 1], ['0%', reduceMotion ? '0%' : '30%']);
   const heroScale = useTransform(scrollYProgress, [0, 1], reduceMotion ? [1, 1] : [1.08, 1.25]);
   const heroOpacity = useTransform(scrollYProgress, [0, 1], [1, reduceMotion ? 0.7 : 0.4]);
+  // The headline lags the page a little as the hero scrolls away and has faded
+  // out by the time it would slide under the site header, the way MSC's hero
+  // copy leaves. Under reduced motion it scrolls as plain text, at full opacity.
+  const heroCopyY = useTransform(scrollYProgress, [0, 1], [0, reduceMotion ? 0 : 120]);
+  const heroCopyOpacity = useTransform(scrollYProgress, [0, 0.55], [1, reduceMotion ? 1 : 0]);
 
   /**
    * Hero entry: a short rise that settles without overshoot. Nothing here was
@@ -52,13 +58,7 @@ export default function TouristHome() {
    * is the critically damped default. Under reduced motion the travel is dropped
    * and only the cross-fade remains.
    */
-  const rise = (delay: number) => ({
-    initial: reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 },
-    animate: { opacity: 1, y: 0 },
-    transition: reduceMotion
-      ? { duration: 0.2, delay: delay / 2 }
-      : ({ type: 'spring', bounce: 0, duration: 0.5, delay } as const),
-  });
+  const rise = (delay: number) => riseOnMount(reduceMotion, delay);
 
   // Listed boats per type, straight from the live listings and independent of
   // the filters, so each tile answers "how many of these are on the platform".
@@ -116,7 +116,7 @@ export default function TouristHome() {
             sizes="100vw"
             alt=""
             fetchPriority="high"
-            style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
+            style={{ y: heroY, scale: heroScale, opacity: heroOpacity, willChange: reduceMotion ? undefined : 'transform' }}
             className="absolute inset-0 h-full w-full object-cover object-center sm:object-[52%_0%] lg:object-[52%_30%]"
           />
         </picture>
@@ -127,7 +127,10 @@ export default function TouristHome() {
             the subtitle is 4.8:1 or better and the headline 6.7:1 or better. */}
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(13_37_50/0.82),rgb(13_37_50/0.62)_45%,rgb(13_37_50/0.2)_75%,rgb(13_37_50/0.1))]" />
 
-        <div className="relative mx-auto max-w-6xl px-4 sm:px-6 pt-20 sm:pt-24 lg:pt-28 text-center">
+        <motion.div
+          style={{ y: heroCopyY, opacity: heroCopyOpacity }}
+          className="relative mx-auto max-w-6xl px-4 sm:px-6 pt-20 sm:pt-24 lg:pt-28 text-center"
+        >
           {/* Set the way boat and cruise booking sites set theirs: one bold sans,
               a few plain words, and no eyebrow or qualifier stacked on top. The old
               headline ("Find and book a real, verified boat on Kariba, today.") was
@@ -146,7 +149,7 @@ export default function TouristHome() {
           >
             Houseboats, fishing trips and sunset cruises from verified local operators.
           </motion.p>
-        </div>
+        </motion.div>
       </section>
 
       {/* The booking bar overlaps the foot of the photograph, the way the search
@@ -218,9 +221,13 @@ export default function TouristHome() {
               {/* Zero gets its own words: "Show 0 boats" offers something that is
                   not there. It still scrolls down, to the empty state and its
                   "Clear filters" button. */}
-              {filtered.length === 0
-                ? 'No matching boats'
-                : `Show ${filtered.length} boat${filtered.length === 1 ? '' : 's'}`}
+              {/* While loading, or if the list failed, there is no count to give:
+                  "No matching boats" would claim the lake is empty. */}
+              {loading || error
+                ? 'Show boats'
+                : filtered.length === 0
+                  ? 'No matching boats'
+                  : `Show ${filtered.length} boat${filtered.length === 1 ? '' : 's'}`}
             </button>
           </div>
         </motion.div>
@@ -230,8 +237,9 @@ export default function TouristHome() {
           claim and one line backing it, which is how the booking sites present
           theirs. */}
       <section className="mx-auto max-w-6xl px-4 pt-14 pb-2 sm:px-6">
+        {/* Each claim rises in on its rule, in a wave across the row. */}
         <dl className="grid grid-cols-1 gap-x-10 gap-y-6 sm:grid-cols-3">
-          <div className="border-t-2 border-lake-950 pt-4">
+          <Reveal className="border-t-2 border-lake-950 pt-4">
             {/* Worded to what the platform actually enforces: every listing goes
                 through the admin approval queue, while the verified badge is a
                 separate, per-company check. It does not claim every operator's
@@ -240,19 +248,19 @@ export default function TouristHome() {
             <dd className="mt-1 text-sm leading-relaxed text-lake-600">
               Our team approves each boat before it goes live. Look for the verified badge on checked operators.
             </dd>
-          </div>
-          <div className="border-t-2 border-lake-950 pt-4">
+          </Reveal>
+          <Reveal className="border-t-2 border-lake-950 pt-4">
             <dt className="text-[15px] font-bold text-lake-950">The price up front</dt>
             <dd className="mt-1 text-sm leading-relaxed text-lake-600">
               See the full rate before you ask. A deposit confirms the booking, the rest is paid on the day.
             </dd>
-          </div>
-          <div className="border-t-2 border-lake-950 pt-4">
+          </Reveal>
+          <Reveal className="border-t-2 border-lake-950 pt-4">
             <dt className="text-[15px] font-bold text-lake-950">Reviews from real trips</dt>
             <dd className="mt-1 text-sm leading-relaxed text-lake-600">
               Only guests whose trip was completed can leave a review.
             </dd>
-          </div>
+          </Reveal>
         </dl>
       </section>
 
@@ -273,8 +281,12 @@ export default function TouristHome() {
                   Available boats
                 </h2>
                 <p className="mt-1 text-sm text-lake-600">
-                  <span className="font-semibold tabular-nums text-lake-950">{filtered.length}</span>{' '}
-                  {filtered.length === 1 ? 'boat matches' : 'boats match'} your search
+                  {loading ? 'Loading boats…' : error ? 'Boats could not be loaded' : (
+                    <>
+                      <span className="font-semibold tabular-nums text-lake-950">{filtered.length}</span>{' '}
+                      {filtered.length === 1 ? 'boat matches' : 'boats match'} your search
+                    </>
+                  )}
                 </p>
               </div>
               <label className="flex items-center gap-2 text-sm text-lake-600">

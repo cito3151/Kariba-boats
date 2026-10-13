@@ -1,7 +1,9 @@
 import { Fragment, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ChevronRight, type LucideIcon } from 'lucide-react';
 import PhotoBackdrop from '../PhotoBackdrop';
+import { REVEAL_STAGGER, riseOnMount } from '../motion';
 import { portalPhotos, type Photo } from '../../data/photos';
 
 export interface Crumb {
@@ -41,17 +43,24 @@ export interface PortalHeaderProps {
  * behind it leaves lake-200 at 4.7:1 and white at 7:1, so the text passes AA
  * whatever the photo does. Measured on the actual photos at 375, 768 and
  * 1440px, the worst case for lake-200 is 5.1:1.
+ *
+ * The band is always at the top of the page, so its type rises on mount, in
+ * reading order, rather than waiting for a scroll; the photo drifts in parallax
+ * as the page scrolls away from it.
  */
 export default function PortalHeader({
   breadcrumbs, eyebrow, icon: Icon, title, subtitle, actions, photo = portalPhotos.admin,
 }: PortalHeaderProps) {
+  const reduce = useReducedMotion();
+  const rise = (step: number) => riseOnMount(reduce, 0.04 + step * REVEAL_STAGGER);
+
   return (
     <div className="relative overflow-hidden bg-lake-950 text-white">
-      <PhotoBackdrop photo={photo} priority />
+      <PhotoBackdrop photo={photo} priority parallax />
       <div aria-hidden className="absolute inset-0 bg-linear-to-r from-lake-950/92 via-lake-950/84 to-lake-950/75" />
       <div className="relative mx-auto max-w-6xl px-4 pb-8 pt-5 sm:px-6 sm:pb-10 sm:pt-6">
         {breadcrumbs && breadcrumbs.length > 0 && (
-          <nav aria-label="Breadcrumb">
+          <motion.nav aria-label="Breadcrumb" {...rise(0)}>
             <ol className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-sm">
               {breadcrumbs.map((crumb, i) => (
                 <Fragment key={`${crumb.label}-${i}`}>
@@ -78,11 +87,11 @@ export default function PortalHeader({
                 </Fragment>
               ))}
             </ol>
-          </nav>
+          </motion.nav>
         )}
 
         <div className="mt-5 flex flex-col gap-5 sm:mt-6 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
+          <motion.div className="min-w-0" {...rise(1)}>
             <p className="flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-[0.08em] text-lake-200">
               {Icon && <Icon size={15} className="shrink-0 text-sunset-300" aria-hidden />}
               {eyebrow}
@@ -91,8 +100,8 @@ export default function PortalHeader({
               {title}
             </h1>
             {subtitle && <p className="mt-2 max-w-2xl text-base leading-normal text-lake-100">{subtitle}</p>}
-          </div>
-          {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
+          </motion.div>
+          {actions && <motion.div className="flex shrink-0 flex-wrap gap-2" {...rise(2)}>{actions}</motion.div>}
         </div>
       </div>
     </div>

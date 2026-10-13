@@ -1,5 +1,4 @@
 import { useState, type ReactNode } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText, FileText, LifeBuoy, Building2 } from 'lucide-react';
 import AdminPortalPage from '../components/admin/AdminPortalPage';
@@ -17,7 +16,7 @@ import LegalDocuments from '../components/admin/LegalDocuments';
 import EmergencyContactsAdmin from '../components/admin/EmergencyContactsAdmin';
 import { BOAT_TYPE_LABELS } from '../components/BoatCard';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
-import { staggerContainer, staggerItem } from '../components/motion';
+import Reveal from '../components/Reveal';
 import { useAuth } from '../data/AuthContext';
 import { useAsync } from '../hooks/useAsync';
 import * as boats from '../services/boats.service';
@@ -52,12 +51,13 @@ const STATUS_CHIP: Record<BoatStatus, string> = {
 };
 
 function BoatList({ boats: list }: { boats: OwnerBoat[] }) {
-  const reduce = useReducedMotion();
   if (list.length === 0) return <EmptyState large title="No boats here" hint="Nothing matches this filter yet." />;
+  // Each card rises in as it scrolls into view: the full fleet runs well past
+  // the fold, so a one-off stagger on mount would play out where nobody sees it.
   return (
-    <motion.ul variants={staggerContainer} initial={reduce ? false : 'hidden'} animate="show" className="space-y-3">
+    <ul className="space-y-3">
       {list.map((b) => (
-        <motion.li variants={staggerItem} key={b.id} className={`${portalCard} p-4 sm:p-5`}>
+        <Reveal as="li" key={b.id} className={`${portalCard} p-4 sm:p-5`}>
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
               <h3 className="break-words text-lg font-bold leading-snug tracking-[-0.01em] text-lake-950">{b.name}</h3>
@@ -85,9 +85,9 @@ function BoatList({ boats: list }: { boats: OwnerBoat[] }) {
               View public listing
             </Link>
           )}
-        </motion.li>
+        </Reveal>
       ))}
-    </motion.ul>
+    </ul>
   );
 }
 
@@ -167,9 +167,10 @@ export default function AdminDashboard() {
           phone they run as one sideways-scrolling row inside their own container,
           with the next tile peeking in, so the selected section's content is not
           pushed six tile rows down the page; from sm up they wrap into a grid. The
-          vertical padding keeps the focus ring clear of the scroller's clip. */}
+          vertical padding keeps the focus ring clear of the scroller's clip, and
+          overflow-y-hidden stops the tiles' rise-in making the row scroll up and down. */}
       <div role="group" aria-label="Admin sections"
-        className="-mx-4 -my-1 overflow-x-auto px-4 py-1 sm:m-0 sm:overflow-visible sm:p-0">
+        className="-mx-4 -my-1 overflow-x-auto overflow-y-hidden px-4 py-1 sm:m-0 sm:overflow-visible sm:p-0">
         <div className="grid auto-cols-[9.5rem] grid-flow-col gap-3 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
           {tiles.map((t, i) => (
             <StatTile key={t.key} index={i} label={t.label} value={t.value} icon={t.icon}

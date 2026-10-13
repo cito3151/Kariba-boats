@@ -8,6 +8,8 @@ interface Props {
   alt?: string;
   intervalMs?: number;
   className?: string;
+  /** Extra classes for each photo, e.g. a hover zoom driven by the parent's `group`. */
+  imageClassName?: string;
   showArrows?: boolean;
   showDots?: boolean;
 }
@@ -33,6 +35,7 @@ export default function AutoCarousel({
   alt = '',
   intervalMs = 4000,
   className = '',
+  imageClassName = '',
   showArrows = false,
   showDots = false,
 }: Props) {
@@ -82,7 +85,7 @@ export default function AutoCarousel({
           transition={reduce ? { duration: 0.25 } : { duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           className="absolute inset-0"
         >
-          <BoatImage src={images[index]} alt={alt} className="h-full w-full" />
+          <BoatImage src={images[index]} alt={alt} className={`h-full w-full ${imageClassName}`} />
         </motion.div>
       </AnimatePresence>
 

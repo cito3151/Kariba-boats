@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../data/AuthContext';
 import BrandMark from './BrandMark';
+import Reveal from './Reveal';
 
 const allNavItems = [
   { to: '/', label: 'Browse Boats', icon: Anchor, end: true },
@@ -327,8 +328,9 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_90%_at_100%_0%,var(--color-lake-800),transparent)]" />
         <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 water-texture bg-white/6" />
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-14">
+          {/* The columns fade up in a wave as the footer reaches the screen. */}
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-12">
-            <div className="sm:col-span-2 lg:col-span-1">
+            <Reveal y={16} className="sm:col-span-2 lg:col-span-1">
               {/* The emblem's boat is navy, so it sits on a white tile to stay visible. */}
               <div className="flex items-center gap-3">
                 <span className="inline-flex rounded-md bg-white p-1.5">
@@ -340,30 +342,32 @@ export default function Layout({ children }: { children: ReactNode }) {
                 A booking site for verified boats on Lake Kariba, Zimbabwe, used by tourists, hotels, travel agencies
                 and boat companies.
               </p>
-            </div>
+            </Reveal>
 
             {footerColumns.map((column) => (
-              <nav key={column.id} aria-labelledby={column.id}>
-                <h2 id={column.id} className="text-xs font-bold uppercase tracking-wider text-white">
-                  {column.heading}
-                </h2>
-                <ul className="mt-4 space-y-3">
-                  {column.links.map((link) => (
-                    <li key={link.to}>
-                      <Link to={link.to} className={footerLinkClass}>
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                  {column.id === 'footer-account' && currentUser && (
-                    <li>
-                      <button type="button" onClick={handleLogout} className={footerLinkClass}>
-                        Log out
-                      </button>
-                    </li>
-                  )}
-                </ul>
-              </nav>
+              <Reveal y={16} key={column.id}>
+                <nav aria-labelledby={column.id}>
+                  <h2 id={column.id} className="text-xs font-bold uppercase tracking-wider text-white">
+                    {column.heading}
+                  </h2>
+                  <ul className="mt-4 space-y-3">
+                    {column.links.map((link) => (
+                      <li key={link.to}>
+                        <Link to={link.to} className={footerLinkClass}>
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                    {column.id === 'footer-account' && currentUser && (
+                      <li>
+                        <button type="button" onClick={handleLogout} className={footerLinkClass}>
+                          Log out
+                        </button>
+                      </li>
+                    )}
+                  </ul>
+                </nav>
+              </Reveal>
             ))}
           </div>
 

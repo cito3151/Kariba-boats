@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, X, Wallet, CheckCircle2, UserCheck } from 'lucide-react';
 import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
 import PortalSection from '../../components/portal/PortalSection';
+import Reveal from '../../components/Reveal';
 import { portalCard } from '../../components/portal/styles';
 import StatusBadge from '../../components/StatusBadge';
 import CancelBookingButton from '../../components/CancelBookingButton';
@@ -97,8 +98,7 @@ export default function OwnerBookingsPage() {
             )}
             <AnimatePresence>
               {rows.map((b) => (
-                <motion.div key={b.id} layout={!reduceMotion}
-                  initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                <Reveal key={b.id} layout={!reduceMotion}
                   exit={{ opacity: 0 }} transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
                   className={`${portalCard} p-4 sm:p-5`}>
                   <div className="flex flex-wrap items-start justify-between gap-2">
@@ -143,7 +143,7 @@ export default function OwnerBookingsPage() {
                   </div>
 
                   <AssignCaptain booking={b} captains={captains} onAssigned={run} />
-                </motion.div>
+                </Reveal>
               ))}
             </AnimatePresence>
           </div>

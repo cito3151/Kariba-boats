@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Gauge, MapPin, ShieldCheck, Users } from 'lucide-react';
 import AutoCarousel from './AutoCarousel';
+import { revealSpring, useReveal } from './motion';
 import { useAsync } from '../hooks/useAsync';
 import * as imagesSvc from '../services/images.service';
 import type { BoatImage } from '../services/images.service';
@@ -45,6 +46,7 @@ export function priceLabels(boat: Pick<PublicBoat, 'pricePerHour' | 'pricePerDay
 
 export default function BoatCard({ boat, images: providedImages }: { boat: PublicBoat; images?: BoatImage[] }) {
   const reduce = useReducedMotion();
+  const reveal = useReveal();
   // When the parent list supplies images (batched, no N+1), use them; otherwise fetch
   // this one boat's images as a fallback. The hook is always called (Promise.resolve
   // skips the network when images were provided).
@@ -65,23 +67,33 @@ export default function BoatCard({ boat, images: providedImages }: { boat: Publi
 
   return (
     <motion.div
-      layout
-      // Reduced motion keeps the entrance as a cross-fade and drops the travel,
-      // the same pattern as Reveal.
-      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.25 }}
-      transition={reduce ? { duration: 0.25 } : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      // Slides to its new place when the filters reorder the grid, except under
+      // reduced motion, where the grid simply redraws.
+      layout={!reduce}
+      transition={revealSpring}
+      // Rises in as it scrolls into view, in a wave with the cards beside it
+      // (see useReveal); reduced motion keeps only a short cross-fade.
+      {...reveal}
       className="h-full"
     >
+      {/* Hover lifts the card 3px and slowly zooms its photo. framer's hover
+          ignores touch, and the zoom is a `group-hover:` class, which Tailwind
+          only applies on devices that can hover, so a tap never leaves either
+          behind. */}
       <MotionLink
         to={`/boats/${boat.id}`}
         whileHover={reduce ? undefined : { y: -3 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+        transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
         className="group flex h-full flex-col overflow-hidden rounded-md border border-lake-100 bg-white shadow-[0_1px_3px_rgba(13,37,50,0.08)] outline-none transition-[box-shadow,scale] duration-200 hover:shadow-[0_10px_28px_rgba(13,37,50,0.14)] focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100"
       >
         <div className="relative h-44 shrink-0 overflow-hidden">
-          <AutoCarousel images={images} alt={boat.name} className="h-full w-full" showDots />
+          <AutoCarousel
+            images={images}
+            alt={boat.name}
+            className="h-full w-full"
+            imageClassName="transition-[scale] duration-500 ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+            showDots
+          />
           {/* lake-950 rather than pure black: the scrim reads as part of the
               palette instead of a neutral dropped on top of it. It sits under
               the carousel dots so they stay legible on pale photos. */}

@@ -22,6 +22,9 @@ interface Group {
  * scrim is the portal headers' (92% navy at the left, 75% at the right), so the
  * heading is 7:1 or better and the lake-100 subtitle 5.7:1 or better whatever
  * the photo does; the cards carry their own text on white.
+ *
+ * The photo drifts in parallax behind the band; the heading rises in, then the
+ * cards follow in a wave as they reach the screen.
  */
 export default function DepartureLocations({ locations }: { locations: string[] }) {
   const groups = useMemo(() => {
@@ -41,7 +44,7 @@ export default function DepartureLocations({ locations }: { locations: string[] 
 
   return (
     <section className="relative overflow-hidden bg-lake-950" aria-labelledby="departures-heading">
-      <PhotoBackdrop photo={photos.karibaShore} />
+      <PhotoBackdrop photo={photos.karibaShore} parallax />
       <div aria-hidden className="absolute inset-0 bg-linear-to-r from-lake-950/92 via-lake-950/84 to-lake-950/75" />
       <div className="relative mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
         <Reveal>
@@ -52,23 +55,24 @@ export default function DepartureLocations({ locations }: { locations: string[] 
             Where trips depart
           </h2>
           <p className="mt-1 text-[15px] text-lake-100">The departure points of the boats listed now.</p>
-          <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {groups.map((g) => (
-              <li
-                key={g.key}
-                className="flex items-center justify-between gap-3 rounded-md bg-white px-4 py-3.5 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)]"
-              >
-                <span className="flex min-w-0 items-center gap-2 text-[15px] font-bold text-lake-950">
-                  <MapPin size={15} className="shrink-0 text-sunset-600" aria-hidden />
-                  <span className="truncate">{g.name}</span>
-                </span>
-                <span className="shrink-0 text-sm tabular-nums text-lake-600">
-                  {g.count} {g.count === 1 ? 'boat' : 'boats'}
-                </span>
-              </li>
-            ))}
-          </ul>
         </Reveal>
+        <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {groups.map((g) => (
+            <Reveal
+              as="li"
+              key={g.key}
+              className="flex items-center justify-between gap-3 rounded-md bg-white px-4 py-3.5 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)]"
+            >
+              <span className="flex min-w-0 items-center gap-2 text-[15px] font-bold text-lake-950">
+                <MapPin size={15} className="shrink-0 text-sunset-600" aria-hidden />
+                <span className="truncate">{g.name}</span>
+              </span>
+              <span className="shrink-0 text-sm tabular-nums text-lake-600">
+                {g.count} {g.count === 1 ? 'boat' : 'boats'}
+              </span>
+            </Reveal>
+          ))}
+        </ul>
       </div>
     </section>
   );

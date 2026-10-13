@@ -1,29 +1,126 @@
-import type { Variants } from 'framer-motion';
+import { useRef } from 'react';
+import { useAnimationControls, useReducedMotion } from 'framer-motion';
+import type { TargetAndTransition, Variants } from 'framer-motion';
 
-// Shared entrance choreography for dashboard lists and grids. Wrap a container
-// in `staggerContainer` (initial="hidden" animate="show") and give each child
-// `staggerItem` so items reveal in a natural wave. framer-motion automatically
-// respects prefers-reduced-motion for these transforms.
+/**
+ * The house entrance: a critically damped spring (no overshoot, because nothing
+ * the reader did threw it) that settles in about 0.6s. Shared by the scroll
+ * reveals, the header rise and the dashboard lists, so every entrance on the
+ * site moves at the same pace.
+ */
+export const revealSpring = { type: 'spring', bounce: 0, duration: 0.6 } as const;
+
+/** Under prefers-reduced-motion an entrance is this short cross-fade and nothing else. */
+export const reducedFade = { duration: 0.2 } as const;
+
+/** Seconds between neighbours that arrive together. */
+export const REVEAL_STAGGER = 0.06;
+
+/** The default travel of a reveal, in px: enough to read as "arriving", short enough to stay calm. */
+export const REVEAL_TRAVEL = 24;
+
+// A burst of reveals (a row of cards scrolling in together, or everything on
+// screen at load) is spread into a wave rather than landing as one block. Each
+// reveal asks for its delay at the moment it starts: the first of a burst gets
+// none, the next REVEAL_STAGGER, and so on, capped so a long list never makes
+// the reader wait. A card that scrolls in on its own starts at once. Spacing by
+// arrival rather than by list index means it works for any grid and column
+// count, and for items that mount later (a filter change, a reload).
+const MAX_STAGGER_DELAY = 0.36;
+let waveEnd = 0;
+
+export function nextRevealDelay(): number {
+  const now = performance.now() / 1000;
+  const start = Math.min(Math.max(now, waveEnd), now + MAX_STAGGER_DELAY);
+  waveEnd = start + REVEAL_STAGGER;
+  return start - now;
+}
+
+export interface RevealOptions {
+  /** Starting offset in px. Defaults to REVEAL_TRAVEL upwards (y) and none sideways. */
+  x?: number;
+  y?: number;
+  /** A fixed delay in seconds. Omit to take a place in the current wave. */
+  delay?: number;
+  /** How much of the element must be on screen before it reveals (0 to 1). */
+  amount?: number;
+}
+
+/**
+ * Props for any motion element that should rise and fade in once, when `amount`
+ * of it has scrolled into view. Spread them on a motion.div, motion.li, a
+ * motion(Link) and so on; Reveal is this hook on a div or li.
+ *
+ * Content already on screen at load reveals on the first frame the observer
+ * reports, so nothing above the fold waits for a scroll. Only transform and
+ * opacity move. Under reduced motion there is no travel and no wave, just a
+ * short fade.
+ */
+export function useReveal({ x = 0, y = REVEAL_TRAVEL, delay, amount = 0.2 }: RevealOptions = {}) {
+  const reduce = useReducedMotion();
+  const controls = useAnimationControls();
+  // framer-motion calls onViewportEnter again on every re-entry, even with
+  // `once`; the reveal itself must only ever run the first time.
+  const revealed = useRef(false);
+
+  const initial: TargetAndTransition = reduce ? { opacity: 0 } : { opacity: 0, x, y };
+
+  return {
+    initial,
+    animate: controls,
+    viewport: { once: true, amount },
+    onViewportEnter: () => {
+      if (revealed.current) return;
+      revealed.current = true;
+      void controls.start(
+        reduce
+          ? { opacity: 1, transition: reducedFade }
+          : { opacity: 1, x: 0, y: 0, transition: { ...revealSpring, delay: delay ?? nextRevealDelay() } },
+      );
+    },
+  };
+}
+
+// Shared entrance choreography for dashboard lists that appear with their data.
+// Wrap a container in `staggerContainer` (initial={reduce ? false : 'hidden'}
+// animate="show") and give each child `staggerItem` so items reveal in a natural
+// wave. Passing `initial={false}` under reduced motion shows them at once.
 
 export const staggerContainer: Variants = {
   hidden: {},
   show: {
-    transition: { staggerChildren: 0.05, delayChildren: 0.02 },
+    transition: { staggerChildren: REVEAL_STAGGER, delayChildren: 0.02 },
   },
 };
 
 export const staggerItem: Variants = {
-  hidden: { opacity: 0, y: 14, scale: 0.98 },
-  show: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
-  },
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: revealSpring },
 };
 
 // A single element that rises into view once (for section blocks, not lists).
 export const riseIn: Variants = {
   hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
+  show: { opacity: 1, y: 0, transition: revealSpring },
 };
+
+/**
+ * Props for something that is on screen the moment its page opens (a page
+ * title, the hero headline): it rises on mount rather than waiting for the
+ * observer. `delay` places it in the opening sequence.
+ */
+export function riseOnMount(reduce: boolean | null, delay = 0) {
+  return {
+    initial: reduce ? { opacity: 0 } : { opacity: 0, y: 16 },
+    animate: { opacity: 1, y: 0 },
+    transition: reduce ? { ...reducedFade, delay: delay / 2 } : { ...revealSpring, delay },
+  };
+}
+
+/**
+ * How far a parallax photo travels across its frame, as a percentage of the
+ * photo layer. PhotoBackdrop's layer bleeds 10% of the frame above and below,
+ * which is 8.3% of the layer's own height; 6% of the layer (7.2% of the frame)
+ * leaves a margin, so an edge never shows.
+ */
+export const PARALLAX_RANGE = 6;

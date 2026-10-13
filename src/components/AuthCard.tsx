@@ -1,9 +1,10 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { authPhoto } from '../data/photos';
 import BrandMark from './BrandMark';
 import PhotoBackdrop from './PhotoBackdrop';
+import { riseOnMount } from './motion';
 
 export default function AuthCard({
   title,
@@ -16,6 +17,8 @@ export default function AuthCard({
   children: ReactNode;
   wide?: boolean;
 }) {
+  const reduce = useReducedMotion();
+
   return (
     <div className="relative min-h-svh flex items-center justify-center px-4 py-10 overflow-hidden bg-lake-950">
       {/* A houseboat off a red-earth shore. No text sits on the photograph: the
@@ -23,13 +26,11 @@ export default function AuthCard({
           to quieten the photo enough that the card reads as the subject: lighter
           than a header scrim, so the boat stays visible beside the card on wider
           screens, and densest at the foot where the card's shadow falls. */}
-      <PhotoBackdrop photo={authPhoto} priority />
+      <PhotoBackdrop photo={authPhoto} priority parallax />
       <div aria-hidden className="absolute inset-0 bg-linear-to-b from-lake-950/55 via-lake-950/40 to-lake-950/70" />
 
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        {...riseOnMount(reduce)}
         className={`relative w-full ${wide ? 'max-w-lg' : 'max-w-md'} rounded-2xl bg-white p-6 sm:p-8 shadow-2xl`}
       >
         <Link to="/" className="flex items-center gap-2 justify-center">

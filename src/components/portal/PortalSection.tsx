@@ -1,4 +1,5 @@
 import { useId, type ReactNode } from 'react';
+import Reveal from '../Reveal';
 
 /**
  * A titled block of content inside a portal page: an uppercase heading on a navy
@@ -6,6 +7,9 @@ import { useId, type ReactNode } from 'react';
  * description and actions on the right. Use it for each distinct part of a page
  * (Your boats, Proof of company ownership); do not use it for headings inside a
  * card, which keep the card's own h2/h3.
+ *
+ * The heading and its rule rise in as the section scrolls into view (on load for
+ * a section already on screen); the content brings its own entrance, if any.
  */
 export default function PortalSection({
   title, description, actions, children, className = '',
@@ -20,7 +24,7 @@ export default function PortalSection({
 
   return (
     <section aria-labelledby={headingId} className={className}>
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-lake-950 pb-3">
+      <Reveal y={16} className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-lake-950 pb-3">
         <div className="min-w-0">
           <h2 id={headingId} className="break-words text-lg font-extrabold uppercase tracking-[0.04em] text-lake-950 sm:text-xl">
             {title}
@@ -28,7 +32,7 @@ export default function PortalSection({
           {description && <p className="mt-1 text-[15px] leading-normal text-lake-700">{description}</p>}
         </div>
         {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
-      </div>
+      </Reveal>
       <div className="mt-4">{children}</div>
     </section>
   );
