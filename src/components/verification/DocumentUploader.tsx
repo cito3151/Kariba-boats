@@ -3,6 +3,7 @@ import { FileText, Trash2, Upload, ExternalLink } from 'lucide-react';
 import { LoadingState, ErrorState } from '../StateViews';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../data/AuthContext';
+import { portalCard, portalButtonSecondary, portalButtonDanger } from '../portal/styles';
 import {
   listMyDocuments, uploadDocuments, deleteDocument, openDocument,
   type VerificationDocument,
@@ -49,10 +50,12 @@ export default function DocumentUploader() {
   };
 
   return (
-    <div className="rounded-2xl border border-lake-100 bg-white p-4">
-      <h3 className="flex items-center gap-2 text-lg font-bold tracking-[-0.01em] text-lake-950">
-        <FileText size={18} /> Business documents
-      </h3>
+    // An h2: on every page that shows it (owner, hotel and agency portals) it sits
+    // straight under the page's h1, not inside a PortalSection.
+    <div className={`${portalCard} p-4 sm:p-5`}>
+      <h2 className="flex items-center gap-2 text-lg font-bold tracking-[-0.01em] text-lake-950">
+        <FileText size={18} aria-hidden /> Business documents
+      </h2>
       <p className="mt-1.5 text-[15px] leading-normal text-lake-700">
         Upload your company registration documents (PDF, JPEG, or PNG). Our team reviews these
         before your account is verified and your boats can go live.
@@ -66,17 +69,18 @@ export default function DocumentUploader() {
           {docs.length > 0 && (
             <ul className="mt-3 space-y-2">
               {docs.map((d) => (
-                <li key={d.id} className="flex items-center justify-between gap-3 rounded-xl border border-lake-100 px-3.5 py-2.5">
+                <li key={d.id} className="flex items-center justify-between gap-3 rounded-lg bg-lake-50 px-3.5 py-2.5">
                   <div className="min-w-0">
                     <p className="truncate text-base font-semibold text-lake-900">{d.label || d.fileName}</p>
                     <p className="truncate text-sm text-lake-700">{d.fileName}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <button onClick={() => view(d)} className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-semibold text-lake-700 hover:bg-lake-50 hover:text-lake-900">
+                    <button onClick={() => view(d)} className={portalButtonSecondary}>
                       <ExternalLink size={15} /> View
                     </button>
                     <button onClick={() => remove(d)} disabled={busy}
-                      className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
+                      aria-label={`Delete ${d.label || d.fileName}`}
+                      className={portalButtonDanger}>
                       <Trash2 size={15} />
                     </button>
                   </div>
@@ -94,15 +98,16 @@ export default function DocumentUploader() {
             </div>
             {/* A button rather than a <label> around the input: the input must be
                 display:none to hide the browser's own control, which also drops it
-                from the tab order, and a <label> cannot take focus itself. */}
+                from the tab order, and a <label> cannot take focus itself. Outlined:
+                the owner portal shows this card under its orange Register a boat. */}
             <button type="button" onClick={() => fileRef.current?.click()} disabled={busy}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-lake-700 px-4 py-3 text-sm font-semibold text-white outline-none hover:bg-lake-800 focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 disabled:opacity-60">
+              className={portalButtonSecondary}>
               <Upload size={16} /> {busy ? 'Uploading' : 'Upload'}
             </button>
             <input ref={fileRef} type="file" accept="application/pdf,image/jpeg,image/png" multiple
               className="hidden" tabIndex={-1} aria-hidden="true" onChange={onPick} disabled={busy} />
           </div>
-          {msg && <p role="alert" className="mt-2 text-sm font-medium text-red-700">{msg}</p>}
+          {msg && <p role="alert" className="mt-2 text-[15px] font-medium text-red-700">{msg}</p>}
         </>
       )}
     </div>

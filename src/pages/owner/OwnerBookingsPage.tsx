@@ -7,6 +7,7 @@ import { portalCard } from '../../components/portal/styles';
 import StatusBadge from '../../components/StatusBadge';
 import CancelBookingButton from '../../components/CancelBookingButton';
 import CaptainManager from '../../components/owner/CaptainManager';
+import BookingFigures from '../../components/BookingFigures';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
 import { useAuth } from '../../data/AuthContext';
 import { useAsync } from '../../hooks/useAsync';
@@ -48,8 +49,6 @@ function AssignCaptain({ booking, captains, onAssigned }: {
     </div>
   );
 }
-
-const detailLabel = 'text-[13px] font-semibold uppercase tracking-[0.05em] text-lake-700';
 
 const ORDER: Record<BookingStatus, number> = {
   requested: 0, confirmed: 1, deposit_paid: 2, completed: 3, declined: 4, cancelled: 5,
@@ -107,28 +106,7 @@ export default function OwnerBookingsPage() {
                     <StatusBadge status={b.status} />
                   </div>
 
-                  {/* Labelled figures, the way a booking confirmation lays out its
-                      details, instead of one dot-separated line to parse. */}
-                  <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-lake-100 py-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1.6fr)_minmax(0,0.8fr)_minmax(0,1fr)]">
-                    <div className="min-w-0">
-                      <dt className={detailLabel}>Guest</dt>
-                      <dd className="mt-0.5 break-words text-base font-semibold text-lake-950">{b.guestName}</dd>
-                    </div>
-                    <div className="min-w-0">
-                      <dt className={detailLabel}>When</dt>
-                      <dd className="mt-0.5 break-words text-base tabular-nums text-lake-950">{bookingsSvc.tripWhen(b)}</dd>
-                    </div>
-                    <div className="min-w-0">
-                      <dt className={detailLabel}>Group</dt>
-                      <dd className="mt-0.5 text-base tabular-nums text-lake-950">{b.groupSize} guest{b.groupSize > 1 ? 's' : ''}</dd>
-                    </div>
-                    <div className="min-w-0">
-                      <dt className={detailLabel}>Total</dt>
-                      <dd className={`mt-0.5 break-words tabular-nums ${b.priceTotal > 0 ? 'text-lg font-bold text-lake-950' : 'text-base text-lake-700'}`}>
-                        {bookingsSvc.tripPrice(b)}
-                      </dd>
-                    </div>
-                  </dl>
+                  <BookingFigures booking={b} />
 
                   <div className="mt-3.5 flex flex-wrap items-start gap-2">
                     {b.status === 'requested' && (

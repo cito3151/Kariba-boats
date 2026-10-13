@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Building2, ShieldCheck, ShieldAlert, Eye, Check, X, AlertTriangle } from 'lucide-react';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
+import { portalCard, portalButtonSecondary, portalButtonDanger } from '../portal/styles';
+import { adminButtonCommit, adminButtonConfirmReject } from './styles';
 import { useAsync } from '../../hooks/useAsync';
 import * as companies from '../../services/companies.service';
 import type {
@@ -78,29 +80,26 @@ function DocumentRow({ doc, onReviewed }: { doc: CompanyDocument; onReviewed: ()
     <li className="rounded-lg border border-lake-100 bg-lake-50 p-3.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-base font-semibold text-lake-950">{kindLabel}</p>
+          <p className="break-words text-base font-semibold text-lake-950">{kindLabel}</p>
           <p className="truncate text-[15px] text-lake-700">{doc.fileName}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className={`rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${DOC_CHIP[doc.reviewStatus]}`}>
             {doc.reviewStatus}
           </span>
-          <button onClick={view}
-            className="inline-flex items-center gap-1.5 rounded-md border border-lake-200 bg-white px-3 py-2 text-sm font-semibold text-lake-700 hover:bg-lake-50">
+          <button onClick={view} className={portalButtonSecondary}>
             <Eye size={15} /> View
           </button>
           {/* Hidden while the note panel is open: otherwise this Reject becomes a
               second live submit once a note exists, and the card carries two
               controls with the same label in different places. */}
           {!rejecting && doc.reviewStatus !== 'approved' && (
-            <button onClick={() => act('approved')} disabled={busy}
-              className="inline-flex items-center gap-1.5 rounded-md bg-lake-700 px-3 py-2 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
+            <button onClick={() => act('approved')} disabled={busy} className={adminButtonCommit}>
               <Check size={15} /> Approve
             </button>
           )}
           {!rejecting && doc.reviewStatus !== 'rejected' && (
-            <button ref={rejectRef} onClick={() => act('rejected')} disabled={busy}
-              className="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
+            <button ref={rejectRef} onClick={() => act('rejected')} disabled={busy} className={portalButtonDanger}>
               <X size={15} /> Reject
             </button>
           )}
@@ -108,7 +107,7 @@ function DocumentRow({ doc, onReviewed }: { doc: CompanyDocument; onReviewed: ()
       </div>
 
       {doc.reviewStatus === 'rejected' && doc.reviewNote && !rejecting && (
-        <p className="mt-2 text-[15px] leading-normal text-red-700">Reason given: {doc.reviewNote}</p>
+        <p className="mt-2 break-words text-[15px] leading-normal text-red-700">Reason given: {doc.reviewNote}</p>
       )}
 
       {rejecting && (
@@ -124,11 +123,10 @@ function DocumentRow({ doc, onReviewed }: { doc: CompanyDocument; onReviewed: ()
               className="w-full min-w-0 flex-1 rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base text-lake-950 outline-none focus:border-lake-500 sm:w-auto"
             />
             <button onClick={() => act('rejected')} disabled={busy || !note.trim()}
-              className="shrink-0 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50">
+              className={`${adminButtonConfirmReject} shrink-0`}>
               Confirm rejection
             </button>
-            <button onClick={cancelReject} disabled={busy}
-              className="shrink-0 rounded-lg border border-lake-200 px-3 py-2.5 text-sm font-semibold text-lake-700 hover:bg-lake-50 disabled:opacity-50">
+            <button onClick={cancelReject} disabled={busy} className={`${portalButtonSecondary} shrink-0`}>
               Cancel
             </button>
           </div>
@@ -165,12 +163,12 @@ function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChan
   };
 
   return (
-    <div className="rounded-2xl border border-lake-100 bg-white p-4">
+    <div className={`${portalCard} p-4 sm:p-5`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-2">
-          <Building2 size={20} className="mt-0.5 shrink-0 text-lake-600" />
+          <Building2 size={20} className="mt-0.5 shrink-0 text-lake-600" aria-hidden />
           <div className="min-w-0">
-            <h3 className="break-words text-[1.0625rem] font-semibold leading-snug text-lake-950">{company.name}</h3>
+            <h3 className="break-words text-lg font-bold leading-snug tracking-[-0.01em] text-lake-950">{company.name}</h3>
             <p className="mt-0.5 break-words text-[15px] leading-normal text-lake-700">
               {company.registrationNumber ? `Reg ${company.registrationNumber}` : 'No registration number given'}
               {company.contactEmail ? ` · ${company.contactEmail}` : ''}
@@ -219,7 +217,7 @@ function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChan
           {/* Mirrors admin_review_company's gate exactly, so the button is never
               offered for a decision the database will refuse. */}
           <button onClick={() => decide('verified')} disabled={busy || company.awaitingApproval.length > 0}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
+            className={adminButtonCommit}>
             <ShieldCheck size={16} /> Verify company
           </button>
           {company.awaitingApproval.length > 0 && (
@@ -228,8 +226,7 @@ function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChan
               {company.awaitingApproval.map((k) => companies.DOCUMENT_LABELS[k]).join(', ')}.
             </p>
           )}
-          <button onClick={() => decide('rejected')} disabled={busy || !note.trim()}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
+          <button onClick={() => decide('rejected')} disabled={busy || !note.trim()} className={portalButtonDanger}>
             <ShieldAlert size={16} /> Reject company
           </button>
           {/* A title on a disabled button reaches nobody: it is out of the tab order

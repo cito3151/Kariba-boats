@@ -21,10 +21,11 @@ export default function PendingChangesDiff({ boat }: { boat: OwnerBoat }) {
   if (!boat.pendingChanges) return null;
   const keys = Object.keys(boat.pendingChanges);
   return (
-    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 sm:p-4">
       <p className="text-[15px] font-semibold leading-normal text-amber-900">
         Proposed changes, live listing still shows the approved values
       </p>
+      {/* The table scrolls inside this box on a phone, never the page. */}
       <div className="mt-2 overflow-x-auto">
       <table className="w-full min-w-[28rem] text-[15px] leading-snug">
         <thead>

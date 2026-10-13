@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { staggerContainer, staggerItem } from '../motion';
+import { portalCard } from '../portal/styles';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
 import { useAsync } from '../../hooks/useAsync';
 import { listAudit } from '../../services/audit.service';
@@ -9,6 +10,10 @@ import type { AuditEntry } from '../../services/audit.service';
 
 const ENTITY_TYPES = ['boats', 'bookings', 'profiles', 'boat_images', 'reviews', 'hotels', 'consent_records', 'legal_documents'];
 const ACTIONS = ['insert', 'update', 'delete'];
+
+// White, not lake-50: the filters sit on the lake-50 page, not inside a card.
+const filterClass =
+  'min-w-0 rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base text-lake-950 outline-none focus:border-lake-500';
 
 const ACTION_CHIP: Record<AuditEntry['action'], string> = {
   insert: 'bg-lake-100 text-lake-700',
@@ -52,11 +57,14 @@ function ChangeDetails({ entry }: { entry: AuditEntry }) {
   );
 }
 
+// One entry of the log: a divided row in the log's single card, the way a
+// statement lists its lines, that opens to show what changed.
 function Row({ entry }: { entry: AuditEntry }) {
   const [open, setOpen] = useState(false);
   return (
-    <motion.div variants={staggerItem} className="rounded-xl border border-lake-100 bg-white px-4 py-3.5 transition-shadow hover:shadow-md">
-      <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center justify-between gap-3 text-left">
+    <motion.li variants={staggerItem}>
+      <button onClick={() => setOpen((o) => !o)} aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left outline-none transition-colors hover:bg-lake-50/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lake-500">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${ACTION_CHIP[entry.action]}`}>{entry.action}</span>
@@ -64,14 +72,14 @@ function Row({ entry }: { entry: AuditEntry }) {
             {entry.label && <span className="min-w-0 truncate text-base text-lake-700">{entry.label}</span>}
           </div>
           <p className="mt-1 break-words text-sm text-lake-700">
-            {new Date(entry.createdAt).toLocaleString()} · {entry.actorEmail || 'system'}
+            <span className="tabular-nums">{new Date(entry.createdAt).toLocaleString()}</span> · {entry.actorEmail || 'system'}
             {entry.actorRole ? ` (${entry.actorRole})` : ''}
           </p>
         </div>
         {open ? <ChevronUp size={18} className="shrink-0 text-lake-600" /> : <ChevronDown size={18} className="shrink-0 text-lake-600" />}
       </button>
-      {open && <div className="mt-3 border-t border-lake-100 pt-3"><ChangeDetails entry={entry} /></div>}
-    </motion.div>
+      {open && <div className="mx-4 mb-3.5 border-t border-lake-100 pt-3"><ChangeDetails entry={entry} /></div>}
+    </motion.li>
   );
 }
 
@@ -84,17 +92,18 @@ export default function AuditLog() {
   );
 
   const rows = data ?? [];
+  const reduce = useReducedMotion();
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
         <select value={entityType} onChange={(e) => setEntityType(e.target.value)}
-          className="rounded-lg border border-lake-200 bg-lake-50 px-3 py-2.5 text-base outline-none focus:border-lake-500">
+          aria-label="Filter by entity" className={filterClass}>
           <option value="">All entities</option>
           {ENTITY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
         <select value={action} onChange={(e) => setAction(e.target.value)}
-          className="rounded-lg border border-lake-200 bg-lake-50 px-3 py-2.5 text-base outline-none focus:border-lake-500">
+          aria-label="Filter by action" className={filterClass}>
           <option value="">All actions</option>
           {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
@@ -105,9 +114,12 @@ export default function AuditLog() {
       {!loading && !error && rows.length === 0 && (
         <EmptyState large title="No activity yet" hint="Changes across the platform will appear here as they happen." />
       )}
-      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-3">
-        {rows.map((e) => <Row key={e.id} entry={e} />)}
-      </motion.div>
+      {rows.length > 0 && (
+        <motion.ul variants={staggerContainer} initial={reduce ? false : 'hidden'} animate="show"
+          className={`${portalCard} divide-y divide-lake-100 overflow-hidden`}>
+          {rows.map((e) => <Row key={e.id} entry={e} />)}
+        </motion.ul>
+      )}
     </div>
   );
 }

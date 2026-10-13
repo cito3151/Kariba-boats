@@ -1,7 +1,9 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import StatusBadge from '../StatusBadge';
+import BookingFigures from '../BookingFigures';
 import CancelBookingButton from '../CancelBookingButton';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
+import { portalCard } from '../portal/styles';
 import { useAsync } from '../../hooks/useAsync';
 import * as bookingsSvc from '../../services/bookings.service';
 
@@ -9,6 +11,7 @@ const OPEN = new Set(['requested', 'confirmed', 'deposit_paid']);
 
 export default function AdminBookings() {
   const { data, loading, error, reload } = useAsync(bookingsSvc.listAllBookings, []);
+  const reduce = useReducedMotion();
 
   if (loading) return <LoadingState large label="Loading bookings" />;
   if (error) return <ErrorState large message={error} onRetry={reload} />;
@@ -21,20 +24,20 @@ export default function AdminBookings() {
       )}
       <AnimatePresence>
         {rows.map((b) => (
-          <motion.div key={b.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-lake-100 bg-white px-4 py-3.5">
-            <div className="min-w-0">
-              <p className="break-words text-base font-semibold text-lake-950">{b.boatName}</p>
-              <p className="mt-0.5 break-words text-[15px] leading-normal tabular-nums text-lake-700">
-                {b.guestName} · {bookingsSvc.tripWhen(b)} · {b.groupSize} guest{b.groupSize > 1 ? 's' : ''} · {bookingsSvc.tripPrice(b)}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center justify-end gap-3">
+          <motion.div key={b.id} layout={!reduce}
+            initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }} transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
+            className={`${portalCard} p-4 sm:p-5`}>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <h3 className="min-w-0 break-words text-lg font-bold leading-snug tracking-[-0.01em] text-lake-950">{b.boatName}</h3>
               <StatusBadge status={b.status} />
-              {OPEN.has(b.status) && (
-                <CancelBookingButton booking={b} onCancelled={reload} />
-              )}
             </div>
+            <BookingFigures booking={b} />
+            {OPEN.has(b.status) && (
+              <div className="mt-3.5 border-t border-lake-100 pt-3.5">
+                <CancelBookingButton booking={b} onCancelled={reload} />
+              </div>
+            )}
           </motion.div>
         ))}
       </AnimatePresence>
