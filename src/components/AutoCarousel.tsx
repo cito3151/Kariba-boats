@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import BoatImage from './BoatImage';
+import { ParallaxLayer, type ParallaxMode } from './PhotoBackdrop';
 
 interface Props {
   images: string[];
@@ -12,6 +13,13 @@ interface Props {
   imageClassName?: string;
   showArrows?: boolean;
   showDots?: boolean;
+  /**
+   * Drift the photos against the scroll, as PhotoBackdrop does (see ParallaxMode).
+   * Only the photos move: the arrows and dots stay put on the frame. The photo
+   * layer bleeds 10% above and below the frame, so give it room to crop. Off
+   * under reduced motion.
+   */
+  parallax?: false | ParallaxMode;
 }
 
 const slideVariants = {
@@ -38,6 +46,7 @@ export default function AutoCarousel({
   imageClassName = '',
   showArrows = false,
   showDots = false,
+  parallax = false,
 }: Props) {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -68,26 +77,30 @@ export default function AutoCarousel({
     setIndex(i);
   };
 
+  const slides = (
+    <AnimatePresence initial={false} custom={direction} mode="popLayout">
+      <motion.div
+        key={index}
+        custom={direction}
+        variants={variants}
+        initial="enter"
+        animate="center"
+        exit="exit"
+        transition={reduce ? { duration: 0.25 } : { duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute inset-0"
+      >
+        <BoatImage src={images[index]} alt={alt} className={`h-full w-full ${imageClassName}`} />
+      </motion.div>
+    </AnimatePresence>
+  );
+
   return (
     <div
       className={`relative overflow-hidden ${className}`}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <AnimatePresence initial={false} custom={direction} mode="popLayout">
-        <motion.div
-          key={index}
-          custom={direction}
-          variants={variants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={reduce ? { duration: 0.25 } : { duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute inset-0"
-        >
-          <BoatImage src={images[index]} alt={alt} className={`h-full w-full ${imageClassName}`} />
-        </motion.div>
-      </AnimatePresence>
+      {parallax && !reduce ? <ParallaxLayer mode={parallax}>{slides}</ParallaxLayer> : slides}
 
       {showArrows && images.length > 1 && (
         <>

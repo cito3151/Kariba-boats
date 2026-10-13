@@ -6,32 +6,37 @@ import Reveal from './Reveal';
 
 // Read-only safety card. Renders nothing until the admin has added contacts, and
 // rises in when they have loaded (it mounts only then, so the rise is seen).
-// The compact form is the public boat page's sidebar card; the full form is a
-// portal card beside the tourist's trips, where it heads its own column (h2).
+// The compact form is the public boat page's card, under its safety checklist,
+// where it is a section of the page (h2) in that page's grammar; the full form
+// is a portal card beside the tourist's trips, where it heads its own column.
 export default function EmergencyContacts({ compact = false }: { compact?: boolean }) {
   const { data } = useAsync(listEmergencyContacts, []);
   const contacts = data ?? [];
   if (contacts.length === 0) return null;
 
-  const Heading = compact ? 'h3' : 'h2';
-
   return (
-    <Reveal className={compact ? 'rounded-2xl border border-lake-100 bg-white p-4' : `${portalCard} p-4 sm:p-5`}>
-      <Heading className={`flex items-center gap-2 text-lake-950 ${compact ? 'font-semibold' : 'text-lg font-bold tracking-[-0.01em]'}`}>
-        <LifeBuoy size={compact ? 16 : 20} className={compact ? 'text-sunset-500' : 'text-sunset-700'} /> Emergency contacts
-      </Heading>
-      <ul className={`mt-3 ${compact ? 'space-y-2' : 'space-y-3'}`}>
+    <Reveal className={`${portalCard} ${compact ? 'p-5 sm:p-7' : 'p-4 sm:p-5'}`}>
+      {compact ? (
+        <>
+          <span aria-hidden className="block h-1 w-10 rounded-full bg-sunset-500" />
+          <h2 className="mt-3 flex items-center gap-2 text-xl font-extrabold uppercase tracking-[0.04em] text-lake-950 sm:text-2xl">
+            <LifeBuoy size={22} className="shrink-0 text-sunset-700" aria-hidden /> Emergency contacts
+          </h2>
+        </>
+      ) : (
+        <h2 className="flex items-center gap-2 text-lg font-bold tracking-[-0.01em] text-lake-950">
+          <LifeBuoy size={20} className="text-sunset-700" /> Emergency contacts
+        </h2>
+      )}
+      <ul className={compact ? 'mt-4 divide-y divide-lake-100' : 'mt-3 space-y-3'}>
         {contacts.map((c) => (
-          <li key={c.id} className={`flex items-center justify-between gap-3 ${compact ? 'text-sm' : 'flex-wrap text-base'}`}>
+          <li key={c.id} className={`flex flex-wrap items-center justify-between gap-3 text-base ${compact ? 'py-3 first:pt-0 last:pb-0' : ''}`}>
             <div className="min-w-0">
-              <p className={compact ? 'font-medium text-lake-900' : 'break-words font-semibold text-lake-900'}>{c.name}</p>
-              <p className={compact ? 'text-xs text-lake-500' : 'text-[15px] text-lake-700'}>{c.role}</p>
+              <p className="break-words font-semibold text-lake-900">{c.name}</p>
+              <p className="text-[15px] text-lake-700">{c.role}</p>
             </div>
-            <a href={`tel:${c.phone}`}
-              className={compact
-                ? 'inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-lake-50 px-3 py-1.5 text-xs font-semibold text-lake-700 hover:bg-lake-100'
-                : `${portalButtonSecondary} shrink-0 tabular-nums`}>
-              <Phone size={compact ? 13 : 15} /> {c.phone}
+            <a href={`tel:${c.phone}`} className={`${portalButtonSecondary} shrink-0 tabular-nums`}>
+              <Phone size={15} /> {c.phone}
             </a>
           </li>
         ))}

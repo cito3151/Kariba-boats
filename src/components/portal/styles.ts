@@ -10,20 +10,36 @@
 export const portalCard =
   'rounded-lg border border-lake-100 bg-white shadow-[0_1px_2px_rgb(13_37_50/0.06)]';
 
+// Shape and focus ring of every button, with no size and no colours, so the two
+// sizes below never carry a padding or font size the other has to fight.
+const buttonShape =
+  'inline-flex items-center justify-center gap-1.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 disabled:opacity-50';
+
 /**
  * Shape, type and focus ring of every portal button, with no colours, so a
  * variant (a red Delete, say) adds its own without fighting the ones below.
  */
 export const portalButtonBase =
-  'inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2.5 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 disabled:opacity-50';
+  `${buttonShape} px-3.5 py-2.5 text-sm transition-colors`;
+
+// Navy text, not white: white on this orange is 3.1:1, navy is 5.1:1.
+const primaryColours = 'bg-sunset-500 font-bold text-lake-950 hover:bg-sunset-400';
 
 /**
- * The one orange action on a page (Register a boat, and the like). Navy text, not
- * white: white on this orange is 3.1:1, navy is 5.1:1. Use it once per view; the
- * rest of the actions take `portalButtonSecondary`.
+ * The one orange action on a page (Register a boat, and the like). Use it once
+ * per view; the rest of the actions take `portalButtonSecondary`.
  */
 export const portalButtonPrimary =
-  `${portalButtonBase} bg-sunset-500 font-bold text-lake-950 hover:bg-sunset-400`;
+  `${portalButtonBase} ${primaryColours}`;
+
+/**
+ * The primary action at the booking flow's size (Book this boat, Send request):
+ * 48px tall with 16px type, the way a cruise site sets its one orange call to
+ * action. It gives under the finger on press (scale, not a reflow), except
+ * under reduced motion. Add `w-full` where it spans its card.
+ */
+export const portalButtonPrimaryLarge =
+  `${buttonShape} min-h-12 px-5 py-3 text-base tracking-[0.01em] ${primaryColours} transition-[color,background-color,scale] duration-150 enabled:active:scale-[0.98] motion-reduce:enabled:active:scale-100`;
 
 /** Outlined action for everything that is not the page's primary action. */
 export const portalButtonSecondary =

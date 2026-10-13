@@ -79,9 +79,12 @@ export default function PhotoBackdrop({
 /**
  * Its own component so a static backdrop never subscribes to scroll. The frame
  * (the layer's parent) is the scroll target. The offset lives in a motion value,
- * so scrolling never re-renders React.
+ * so scrolling never re-renders React. Exported for a photo frame that is not a
+ * backdrop (the boat page's header slideshow, through AutoCarousel's `parallax`):
+ * put it inside a `relative overflow-hidden` frame, and only when motion is not
+ * reduced, as PhotoBackdrop does.
  */
-function ParallaxLayer({ mode, children }: { mode: ParallaxMode; children: ReactNode }) {
+export function ParallaxLayer({ mode, children }: { mode: ParallaxMode; children: ReactNode }) {
   const frameRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: frameRef,

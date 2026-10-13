@@ -32,11 +32,25 @@ export interface DateRange {
 }
 
 const statusStyles: Record<DayStatus, string> = {
-  free: 'bg-white text-lake-800 border border-lake-100 hover:border-lake-400',
-  partial: 'bg-sunset-100 text-sunset-800 border border-sunset-200 hover:border-sunset-400',
+  free: 'bg-white text-lake-950 border border-lake-200 hover:border-lake-600 hover:bg-lake-50',
+  partial: 'bg-sunset-100 text-sunset-900 border border-sunset-300 hover:border-sunset-600',
   // Struck through as well as dark, so booked does not rest on colour alone.
   booked: 'bg-lake-700 text-white border border-lake-700 line-through decoration-1',
 };
+
+// A past day is out of reach, so it drops its box and its weight; lake-600 still
+// clears 4.5:1 on the white card, so the number stays readable.
+const pastStyle = 'border border-transparent font-normal text-lake-600 cursor-default';
+
+// Every day gives a little under the finger as it is pressed (scale only, so
+// nothing reflows), the way a physical key would. `enabled:` keeps a past day
+// still, and reduced motion keeps every day still.
+const dayPress =
+  'transition-[color,background-color,border-color,scale] duration-150 enabled:active:scale-[0.92] motion-reduce:enabled:active:scale-100';
+
+// The day grid's month swap: a short critically damped slide (no overshoot,
+// nothing the reader threw), or a plain fade under reduced motion.
+const monthSlide = { type: 'spring', bounce: 0, duration: 0.35 } as const;
 
 // Start and end are solid; days between are a light tint. sunset-700 rather than 500
 // so white text clears 4.5:1. The tint is never confused with "partly booked"
@@ -246,60 +260,65 @@ export default function AvailabilityCalendar({
   }
 
   return (
-    <div className="rounded-2xl border border-lake-100 bg-white p-4 sm:p-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="font-display text-lg font-medium text-lake-950 flex items-center gap-2">
-          <CalendarDays size={17} className="text-lake-600" /> Availability
-        </h3>
+    <div className="rounded-lg border border-lake-100 bg-white p-3 shadow-[0_1px_2px_rgb(13_37_50/0.06)] sm:p-6">
+      {/* Header: the section title in the page's grammar (a short orange rule over
+          an uppercase heading), with the month and its arrows beside it. */}
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 px-1 sm:px-0">
+        <div className="min-w-0">
+          <span aria-hidden className="block h-1 w-10 rounded-full bg-sunset-500" />
+          <h2 className="mt-3 flex items-center gap-2 text-xl font-extrabold uppercase tracking-[0.04em] text-lake-950 sm:text-2xl">
+            <CalendarDays size={22} className="shrink-0 text-lake-700" aria-hidden /> Availability
+          </h2>
+        </div>
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => shiftMonth(-1)}
-            className={`rounded-full p-1.5 text-lake-500 hover:bg-lake-50 hover:text-lake-800 ${focusRing}`}
+            className={`grid h-10 w-10 place-items-center rounded-full border border-lake-200 bg-white text-lake-800 transition-[background-color,scale] duration-150 hover:bg-lake-50 active:scale-[0.92] motion-reduce:active:scale-100 ${focusRing}`}
             aria-label="Previous month"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={18} />
           </button>
-          <span className="min-w-[130px] text-center text-sm font-semibold text-lake-900" aria-live="polite">
+          <span className="min-w-[150px] text-center text-base font-bold tabular-nums text-lake-950" aria-live="polite">
             {MONTHS[viewMonth]} {viewYear}
           </span>
           <button
             type="button"
             onClick={() => shiftMonth(1)}
-            className={`rounded-full p-1.5 text-lake-500 hover:bg-lake-50 hover:text-lake-800 ${focusRing}`}
+            className={`grid h-10 w-10 place-items-center rounded-full border border-lake-200 bg-white text-lake-800 transition-[background-color,scale] duration-150 hover:bg-lake-50 active:scale-[0.92] motion-reduce:active:scale-100 ${focusRing}`}
             aria-label="Next month"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={18} />
           </button>
         </div>
       </div>
 
       {/* Month summary */}
-      <p className="mt-1 text-xs text-lake-500">
-        {summary.bookedCount} day{summary.bookedCount !== 1 ? 's' : ''} booked
+      <p className="mt-3 px-1 text-[15px] leading-relaxed text-lake-700 sm:px-0">
+        <span className="font-semibold tabular-nums text-lake-950">{summary.freeCount}</span> day{summary.freeCount !== 1 ? 's' : ''} still free this month,{' '}
+        <span className="font-semibold tabular-nums text-lake-950">{summary.bookedCount}</span> booked
         {boat.priceUnit === 'hour' && summary.partialCount > 0 && (
-          <>, {summary.partialCount} partly booked</>
+          <>, <span className="font-semibold tabular-nums text-lake-950">{summary.partialCount}</span> partly booked</>
         )}
-        , {summary.freeCount} still free this month.
+        .
       </p>
 
       {/* Weekday header */}
-      <div className="mt-4 grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-lake-400">
+      <div className="mt-5 grid grid-cols-7 gap-1 text-center text-[13px] font-bold uppercase tracking-[0.04em] text-lake-700 sm:gap-1.5">
         {WEEKDAYS.map((w) => (
           <span key={w}>{w}</span>
         ))}
       </div>
 
-      {/* Day grid */}
+      {/* Day grid. Each day is at least 40px square on a 375px phone. */}
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={`${viewYear}-${viewMonth}`}
-          initial={{ opacity: 0, x: reduce ? 0 : slideDir * 28 }}
+          initial={{ opacity: 0, x: reduce ? 0 : slideDir * 24 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: reduce ? 0 : slideDir * -28 }}
-          transition={{ duration: reduce ? 0.15 : 0.25, ease: 'easeOut' }}
-          className="mt-1 grid grid-cols-7 gap-1"
+          exit={{ opacity: 0, x: reduce ? 0 : slideDir * -24 }}
+          transition={reduce ? { duration: 0.15 } : monthSlide}
+          className="mt-2 grid grid-cols-7 gap-1 sm:gap-1.5"
         >
           {Array.from({ length: summary.leadingBlanks }).map((_, i) => (
             <span key={`blank-${i}`} />
@@ -315,7 +334,7 @@ export default function AvailabilityCalendar({
             const blocked = selectable && !c.isPast && c.status === 'booked';
 
             let tone = statusStyles[c.status];
-            if (c.isPast) tone = 'text-lake-300 cursor-default';
+            if (c.isPast) tone = pastStyle;
             else if (isPicked) tone = startEndStyle;
             else if (inRange) tone = inRangeStyle;
 
@@ -327,9 +346,9 @@ export default function AvailabilityCalendar({
                 disabled={c.isPast}
                 aria-disabled={blocked || undefined}
                 aria-pressed={selectable && !c.isPast && !blocked ? isPicked || inRange : undefined}
-                className={`relative aspect-square rounded-lg text-xs font-medium transition-colors ${focusRing} ${tone} ${
+                className={`relative aspect-square min-h-10 rounded-lg text-[15px] font-semibold tabular-nums sm:text-base ${dayPress} ${focusRing} ${tone} ${
                   !selectable && selected === c.iso ? 'ring-2 ring-sunset-500 ring-offset-1' : ''
-                } ${c.iso === today ? 'font-bold underline underline-offset-2' : ''}`}
+                } ${c.iso === today ? 'font-extrabold underline underline-offset-[3px]' : ''}`}
                 aria-label={cellLabel(c)}
               >
                 {c.day}
@@ -340,26 +359,26 @@ export default function AvailabilityCalendar({
       </AnimatePresence>
 
       {/* Legend */}
-      <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-lake-600">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded border border-lake-200 bg-white" /> Free
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 px-1 text-sm text-lake-700 sm:px-0">
+        <span className="inline-flex items-center gap-2">
+          <span className="h-4 w-4 rounded border border-lake-300 bg-white" /> Free
         </span>
         {boat.priceUnit === 'hour' && (
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded bg-sunset-100 border border-sunset-300" /> Partly booked
+          <span className="inline-flex items-center gap-2">
+            <span className="h-4 w-4 rounded bg-sunset-100 border border-sunset-300" /> Partly booked
           </span>
         )}
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded bg-lake-700" /> Booked
+        <span className="inline-flex items-center gap-2">
+          <span className="h-4 w-4 rounded bg-lake-700" /> Booked
         </span>
         {selectable && (
           <>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded bg-sunset-700" /> {singleDate ? 'Selected' : 'Start and end'}
+            <span className="inline-flex items-center gap-2">
+              <span className="h-4 w-4 rounded bg-sunset-700" /> {singleDate ? 'Selected' : 'Start and end'}
             </span>
             {!singleDate && (
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-3 w-3 rounded border border-sunset-300 bg-sunset-100" /> In between
+              <span className="inline-flex items-center gap-2">
+                <span className="h-4 w-4 rounded border border-sunset-300 bg-sunset-100" /> In between
               </span>
             )}
           </>
@@ -368,11 +387,12 @@ export default function AvailabilityCalendar({
 
       {/* Selection summary */}
       {selectable && (
-        <div className="mt-3 rounded-xl border border-lake-100 bg-lake-50 p-3 text-sm">
-          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+        <div className="mt-4 rounded-lg border border-lake-100 bg-lake-50 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
             <div role="status" aria-live="polite" className="min-w-0">
-              <p className="font-semibold text-lake-900">{summaryText}</p>
-              <p className="mt-0.5 text-xs text-lake-600">{summaryHint}</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.05em] text-lake-700">Your dates</p>
+              <p className="mt-1 text-lg font-bold leading-snug text-lake-950">{summaryText}</p>
+              <p className="mt-1 text-[15px] leading-relaxed text-lake-700">{summaryHint}</p>
             </div>
             {rangeStart && (
               <div className="flex shrink-0 items-center gap-2">
@@ -380,7 +400,7 @@ export default function AvailabilityCalendar({
                   <button
                     type="button"
                     onClick={() => onRangeChange?.({ start: rangeStart, end: rangeStart })}
-                    className={`min-h-8 rounded-lg border border-lake-200 bg-white px-3 text-xs font-semibold text-lake-800 hover:bg-lake-50 ${focusRing}`}
+                    className={`min-h-10 rounded-lg border border-lake-200 bg-white px-3.5 text-sm font-semibold text-lake-800 transition-[background-color,scale] duration-150 hover:bg-lake-50 active:scale-[0.97] motion-reduce:active:scale-100 ${focusRing}`}
                   >
                     Just this day
                   </button>
@@ -388,7 +408,7 @@ export default function AvailabilityCalendar({
                 <button
                   type="button"
                   onClick={clearRange}
-                  className={`min-h-8 rounded-lg px-3 text-xs font-semibold text-lake-700 underline underline-offset-2 hover:text-lake-900 ${focusRing}`}
+                  className={`min-h-10 rounded-lg px-3 text-sm font-semibold text-lake-800 underline underline-offset-2 hover:text-lake-950 ${focusRing}`}
                 >
                   Clear
                 </button>
@@ -396,43 +416,43 @@ export default function AvailabilityCalendar({
             )}
           </div>
           {notice && (
-            <p role="alert" className="mt-2 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
-              <AlertCircle size={14} className="mt-0.5 shrink-0" aria-hidden="true" /> {notice}
+            <p role="alert" className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-[15px] leading-snug text-red-800">
+              <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden="true" /> {notice}
             </p>
           )}
         </div>
       )}
 
-      {/* Selected day detail */}
+      {/* Selected day detail. It fades and settles in place (opacity and transform
+          only); the space it needs is simply there, rather than animated open. */}
       <AnimatePresence>
         {selectedCell && (
           <motion.div
-            initial={{ opacity: 0, height: reduce ? 'auto' : 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: reduce ? 'auto' : 0 }}
-            transition={{ duration: reduce ? 0.15 : 0.25 }}
-            className="overflow-hidden"
+            initial={{ opacity: 0, y: reduce ? 0 : -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.12 } }}
+            transition={reduce ? { duration: 0.15 } : { type: 'spring', bounce: 0, duration: 0.3 }}
           >
-            <div className="mt-3 rounded-xl bg-lake-50 p-3 text-sm">
-              <p className="font-semibold text-lake-900 flex items-center gap-1.5">
-                <Clock size={14} className="text-lake-500" /> {selectedCell.iso}
+            <div className="mt-4 rounded-lg border border-lake-100 bg-lake-50 p-4 text-[15px]">
+              <p className="flex items-center gap-2 font-bold text-lake-950">
+                <Clock size={16} className="text-lake-700" aria-hidden /> {longDate(selectedCell.iso)}
               </p>
 
               {selectedCell.dayBookings.length === 0 ? (
-                <p className="mt-1 text-lake-600">
+                <p className="mt-1.5 text-lake-700">
                   {boat.priceUnit === 'hour'
                     ? 'Free all day, 06:00 to 18:00.'
                     : 'Free. This date can be booked.'}
                 </p>
               ) : (
                 <>
-                  <ul className="mt-1.5 space-y-1 text-lake-700">
+                  <ul className="mt-2 space-y-1.5 text-lake-800">
                     {selectedCell.dayBookings.map((b) => (
-                      <li key={b.id} className="flex items-center gap-2">
-                        <span className="h-1.5 w-1.5 rounded-full bg-lake-700" />
+                      <li key={b.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-lake-700" aria-hidden />
                         {describeBooking(b)}
                         {b.status === 'requested' && (
-                          <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[13px] font-semibold text-amber-900">
                             awaiting confirmation
                           </span>
                         )}
@@ -442,7 +462,7 @@ export default function AvailabilityCalendar({
                   {boat.priceUnit === 'hour' &&
                     selectedCell.status === 'partial' &&
                     freeGaps(selectedCell.dayBookings).length > 0 && (
-                      <p className="mt-2 text-xs text-emerald-700">
+                      <p className="mt-2 text-[15px] font-medium text-emerald-800">
                         Free:{' '}
                         {freeGaps(selectedCell.dayBookings)
                           .map((g) => `${g.start} to ${g.end}`)
