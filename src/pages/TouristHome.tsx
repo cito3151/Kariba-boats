@@ -7,6 +7,9 @@ import BoatCardSkeleton from '../components/BoatCardSkeleton';
 import Reveal from '../components/Reveal';
 import { ErrorState } from '../components/StateViews';
 import { useAsync } from '../hooks/useAsync';
+import BoatTypeTiles from '../components/landing/BoatTypeTiles';
+import DepartureLocations from '../components/landing/DepartureLocations';
+import EditorialBand from '../components/landing/EditorialBand';
 import { heroImage } from '../data/photos';
 import * as boats from '../services/boats.service';
 import * as imagesSvc from '../services/images.service';
@@ -56,6 +59,16 @@ export default function TouristHome() {
       ? { duration: 0.2, delay: delay / 2 }
       : ({ type: 'spring', bounce: 0, duration: 0.5, delay } as const),
   });
+
+  // Listed boats per type, straight from the live listings and independent of
+  // the filters, so each tile answers "how many of these are on the platform".
+  // Null until the listings have loaded, so a tile never shows a made-up zero.
+  const typeCounts = useMemo(() => {
+    if (!data) return null;
+    const counts: Record<BoatKind, number> = { houseboat: 0, speedboat: 0, fishing: 0, cruiser: 0, pontoon: 0 };
+    for (const b of data) counts[b.boatType] += 1;
+    return counts;
+  }, [data]);
 
   const filtered = useMemo(() => {
     return (data ?? []).filter((b) => {
@@ -223,6 +236,8 @@ export default function TouristHome() {
         </dl>
       </section>
 
+      <BoatTypeTiles counts={typeCounts} selected={boatType} onSelect={setBoatType} />
+
       {/* scroll-mt clears the sticky header, so "Show boats" lands on the heading
           rather than tucking it underneath the nav. */}
       <section id="boats" className="mx-auto max-w-6xl scroll-mt-20 px-4 sm:px-6 pt-14 pb-16">
@@ -239,7 +254,7 @@ export default function TouristHome() {
                 </h2>
                 <p className="mt-1 text-sm text-lake-600">
                   <span className="font-semibold tabular-nums text-lake-950">{filtered.length}</span>{' '}
-                  boat{filtered.length !== 1 ? 's' : ''} match your search
+                  {filtered.length === 1 ? 'boat matches' : 'boats match'} your search
                 </p>
               </div>
               <label className="flex items-center gap-2 text-sm text-lake-600">
@@ -302,6 +317,10 @@ export default function TouristHome() {
           </div>
         )}
       </section>
+
+      {!loading && !error && data && <DepartureLocations locations={data.map((b) => b.location)} />}
+
+      <EditorialBand />
     </PageTransition>
   );
 }
