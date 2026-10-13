@@ -24,8 +24,14 @@
   --color-sunset-800: #9c280b;
   --color-sunset-900: #7e240c;
 
-  --font-sans: 'Inter', 'Segoe UI', system-ui, Roboto, sans-serif;
-  --font-display: 'Fraunces', 'Segoe UI', system-ui, serif;
+  /* One family for everything, the way boat and cruise booking sites are set:
+     Boatsetter runs entirely on Avenir Next, MSC entirely on Pangea, and neither
+     uses a serif display face. The Fraunces + Inter pairing this replaced is one
+     of the most common defaults in generated sites, and read as such. Figtree is
+     a free face in the same friendly-geometric family as Avenir. --font-display
+     stays as a token so every existing font-display usage follows along. */
+  --font-sans: 'Figtree', 'Segoe UI', system-ui, Roboto, sans-serif;
+  --font-display: 'Figtree', 'Segoe UI', system-ui, Roboto, sans-serif;
 }
 
 html {

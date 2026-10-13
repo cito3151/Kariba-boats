@@ -36,9 +36,15 @@ export const photos = {
   ),
 };
 
-// A high-contrast Zimbabwe sunset: the dark lower half carries white hero copy
-// without needing a heavy scrim, so the photograph stays vivid behind the text.
-export const heroImage = photos.sunset2;
+// A kapenta rig on open water in daylight. Boat and cruise booking sites lead
+// with a boat on the water in good light, and kapenta rigs are the boat most
+// associated with Kariba. It also has no burned-in camera date stamp: the
+// "Kariba, Zimbabwe NN.JPG" set (lake1-3, resort1-3, sunset4-5) carries one in
+// the bottom-right corner, which rules those out for a hero at any crop.
+// Limitation worth knowing: the source is 1080px wide, so it softens on very
+// wide screens. A licensed or commissioned photo of a real listed boat would
+// fix that.
+export const heroImage = photos.fishermen;
 
 // Sentinel values recognised by BoatImage: for listings with no matching real
 // photo, this renders a labelled illustration instead of a real photo that
