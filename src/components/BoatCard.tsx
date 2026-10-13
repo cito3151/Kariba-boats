@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Users, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Gauge, MapPin, ShieldCheck, Users } from 'lucide-react';
 import AutoCarousel from './AutoCarousel';
 import { useAsync } from '../hooks/useAsync';
 import * as imagesSvc from '../services/images.service';
@@ -44,6 +44,7 @@ export function priceLabels(boat: Pick<PublicBoat, 'pricePerHour' | 'pricePerDay
 }
 
 export default function BoatCard({ boat, images: providedImages }: { boat: PublicBoat; images?: BoatImage[] }) {
+  const reduce = useReducedMotion();
   // When the parent list supplies images (batched, no N+1), use them; otherwise fetch
   // this one boat's images as a fallback. The hook is always called (Promise.resolve
   // skips the network when images were provided).
@@ -56,64 +57,97 @@ export default function BoatCard({ boat, images: providedImages }: { boat: Publi
   const images = sorted.length
     ? sorted.map((i) => imagesSvc.publicImageUrl(i.storagePath))
     : [`illustration:${boat.boatType}`];
-  const rates = priceLabels(boat);
+  // The headline rate comes from priceView (day if offered, else hour); the other
+  // rate, if the owner set one, is shown smaller beneath it. Both go through
+  // hasRate, so a 0 rate never reaches the card.
+  const price = priceView(boat);
+  const secondary = priceLabels(boat).find((r) => r.unit !== price?.unit);
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 32 }}
+      // Reduced motion keeps the entrance as a cross-fade and drops the travel,
+      // the same pattern as Reveal.
+      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      transition={reduce ? { duration: 0.25 } : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      className="h-full"
     >
       <MotionLink
         to={`/boats/${boat.id}`}
-        whileHover={{ y: -6 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-        className="group block overflow-hidden rounded-2xl bg-white border border-lake-100 shadow-sm hover:shadow-lg transition-shadow"
+        whileHover={reduce ? undefined : { y: -3 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+        className="group flex h-full flex-col overflow-hidden rounded-md border border-lake-100 bg-white shadow-[0_1px_3px_rgba(13,37,50,0.08)] outline-none transition-[box-shadow,scale] duration-200 hover:shadow-[0_10px_28px_rgba(13,37,50,0.14)] focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100"
       >
-        <div className="relative h-44 overflow-hidden">
+        <div className="relative h-44 shrink-0 overflow-hidden">
           <AutoCarousel images={images} alt={boat.name} className="h-full w-full" showDots />
-          <div className="absolute top-2 left-2 flex gap-1.5 z-10">
-            {boat.operatorVerified && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 text-[11px] font-semibold text-lake-700 shadow">
-                <ShieldCheck size={12} className="text-lake-600" /> Verified operator
-              </span>
-            )}
-          </div>
           {/* lake-950 rather than pure black: the scrim reads as part of the
-              palette instead of a neutral dropped on top of it. tabular-nums so
-              prices line up column to column across the grid rather than
-              jittering with the width of each digit. */}
-          {rates.length > 0 && (
-            <div className="absolute bottom-2 right-2 z-10 flex gap-1.5">
-              {rates.map((r) => (
-                <span key={r.unit}
-                  className="rounded-full bg-lake-950/70 px-2.5 py-1 text-xs font-semibold tabular-nums text-white backdrop-blur-[2px]">
-                  ${r.amount}<span className="opacity-75">/{r.short}</span>
-                </span>
-              ))}
-            </div>
+              palette instead of a neutral dropped on top of it. It sits under
+              the carousel dots so they stay legible on pale photos. */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-14 bg-linear-to-t from-lake-950/45 to-transparent" />
+          {boat.operatorVerified && (
+            <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-sm bg-white px-2 py-1 text-[11px] font-bold uppercase leading-none tracking-[0.06em] text-lake-950 shadow-[0_1px_3px_rgba(13,37,50,0.25)]">
+              <ShieldCheck size={12} className="text-lake-600" aria-hidden /> Verified operator
+            </span>
           )}
         </div>
 
-        <div className="p-4">
-          <h3 className="font-semibold text-lake-950 leading-snug">{boat.name}</h3>
-          <p className="mt-0.5 text-xs text-lake-500">{boat.location}</p>
+        <div className="flex flex-1 flex-col p-4">
+          <p className="text-[11px] font-bold uppercase leading-4 tracking-[0.1em] text-lake-600">
+            {BOAT_TYPE_LABELS[boat.boatType]}
+          </p>
+          <h3 className="mt-1 line-clamp-2 text-lg font-bold leading-6 text-lake-950">{boat.name}</h3>
+          <p className="mt-1 flex items-center gap-1 text-xs leading-4 text-lake-600">
+            <MapPin size={12} className="shrink-0" aria-hidden />
+            <span className="truncate">Departs from {boat.location}</span>
+          </p>
 
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            <span className="rounded-full bg-lake-50 px-2 py-0.5 text-[11px] text-lake-600 border border-lake-100">
-              {BOAT_TYPE_LABELS[boat.boatType]}
+          <ul className="mt-3 space-y-1 text-xs leading-4 text-lake-600">
+            <li className="flex items-center gap-1.5">
+              <Users size={12} className="shrink-0" aria-hidden />
+              <span>
+                Up to <span className="font-semibold tabular-nums text-lake-950">{boat.capacity}</span>{' '}
+                {boat.capacity === 1 ? 'guest' : 'guests'}
+              </span>
+            </li>
+            <li className="flex items-center gap-1.5">
+              <Gauge size={12} className="shrink-0" aria-hidden />
+              <span>
+                Operator trust score{' '}
+                <span className="font-semibold tabular-nums text-lake-950">{boat.operatorTrustScore}</span>
+                <span className="tabular-nums">/100</span>
+              </span>
+            </li>
+          </ul>
+
+          <div className="mt-auto pt-4">
+          <div className="flex items-end justify-between gap-3 border-t border-lake-100 pt-4">
+            <div className="min-w-0">
+              {price ? (
+                <>
+                  <p className="text-[11px] font-bold uppercase leading-4 tracking-[0.1em] text-lake-600">From</p>
+                  <p className="leading-8 text-lake-950">
+                    <span className="text-2xl font-bold tabular-nums">${price.amount}</span>
+                    <span className="text-sm text-lake-600"> / {price.unit}</span>
+                  </p>
+                  {secondary && (
+                    <p className="text-xs leading-4 text-lake-600">
+                      or <span className="font-semibold tabular-nums text-lake-950">${secondary.amount}</span> / {secondary.unit}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm leading-5 text-lake-600">Rate not listed</p>
+              )}
+            </div>
+            {/* A span, not a link: the whole card is already the one link. Navy
+                on sunset-500 is 5.08:1; white on it is 3.11:1 and fails AA at
+                this size. */}
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-sunset-500 px-3.5 py-2.5 text-xs font-bold uppercase leading-4 tracking-[0.08em] text-lake-950 transition-colors group-hover:bg-sunset-400 group-focus-visible:bg-sunset-400">
+              View boat <ArrowRight size={14} aria-hidden />
             </span>
           </div>
-
-          <div className="mt-3 flex items-center justify-between text-xs text-lake-500">
-            <span className="inline-flex items-center gap-1">
-              Trust <span className="tabular-nums">{boat.operatorTrustScore}</span>
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <Users size={12} /> <span className="tabular-nums">{boat.capacity}</span>
-            </span>
           </div>
         </div>
       </MotionLink>

@@ -106,16 +106,26 @@ export default function AutoCarousel({
       )}
 
       {showDots && images.length > 1 && (
-        <div className="absolute bottom-2.5 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
+        // The dot you see stays 6px, but the button around it is 24px square: the
+        // WCAG 2.2 minimum target. These sit inside a card that is itself a link,
+        // so a 6px target meant a thumb aimed at a dot usually opened the boat.
+        <div className="absolute bottom-0.5 left-1/2 z-10 flex -translate-x-1/2">
           {images.map((_, i) => (
             <button
               key={i}
+              type="button"
               onClick={(e) => jump(e, i)}
               aria-label={`Go to photo ${i + 1}`}
-              className={`h-1.5 rounded-full transition-all ${
-                i === index ? 'w-4 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/75'
-              }`}
-            />
+              aria-current={i === index ? 'true' : undefined}
+              className="group/dot grid h-6 min-w-6 place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <span
+                aria-hidden
+                className={`block h-1.5 rounded-full transition-all ${
+                  i === index ? 'w-4 bg-white' : 'w-1.5 bg-white/50 group-hover/dot:bg-white/75'
+                }`}
+              />
+            </button>
           ))}
         </div>
       )}
