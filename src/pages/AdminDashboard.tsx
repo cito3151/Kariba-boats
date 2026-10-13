@@ -113,7 +113,7 @@ export default function AdminDashboard() {
   ).length;
   const unverified = (userData ?? []).filter((u) => u.verificationStatus === 'pending').length;
 
-  const tiles: { key: View; label: string; value: number; icon: typeof Anchor }[] = [
+  const tiles: { key: View; label: string; value?: number; icon: typeof Anchor }[] = [
     { key: 'all', label: 'Total boats', value: list.length, icon: Anchor },
     { key: 'queue', label: 'Awaiting review', value: list.filter((b) => b.status === 'pending' || b.pendingChanges).length, icon: Clock },
     { key: 'live', label: 'Live for tourists', value: list.filter((b) => b.status === 'approved' && b.isActive).length, icon: CheckCircle2 },
@@ -121,12 +121,12 @@ export default function AdminDashboard() {
     { key: 'bookings', label: 'Active bookings', value: activeBookings, icon: CalendarCheck },
     { key: 'users', label: 'Unverified owners/hotels', value: unverified, icon: UserCheck },
     { key: 'companies', label: 'Company documents', value: companiesAwaiting ?? 0, icon: Building2 },
-    { key: 'audit', label: 'Activity log', value: 0, icon: ScrollText },
-    { key: 'emergency', label: 'Emergency contacts', value: 0, icon: LifeBuoy },
+    { key: 'audit', label: 'Activity log', icon: ScrollText },
+    { key: 'emergency', label: 'Emergency contacts', icon: LifeBuoy },
   ];
   if (isSuper) {
     tiles.push({ key: 'roles', label: 'Admins and roles', value: (allUsers ?? []).filter((u) => u.role === 'admin').length, icon: UserCog });
-    tiles.push({ key: 'legal', label: 'Legal documents', value: 0, icon: FileText });
+    tiles.push({ key: 'legal', label: 'Legal documents', icon: FileText });
   }
 
   // The current view's content, or null when it has none to show (the super-admin

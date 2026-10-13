@@ -8,7 +8,8 @@ export default function StatTile({
   label, value, icon: Icon, active, onClick, index = 0,
 }: {
   label: string;
-  value: number;
+  /** Omit for a tile that opens a view rather than counting something. */
+  value?: number;
   icon?: LucideIcon;
   active?: boolean;
   onClick?: () => void;
@@ -36,7 +37,15 @@ export default function StatTile({
           <Icon size={18} />
         </span>
       )}
-      <p className="mt-3 text-[2rem] font-bold leading-none tracking-[-0.02em] tabular-nums text-lake-950">{value}</p>
+      {/* A made-up 0 on a tile that counts nothing reads as "empty". Without a
+          figure the tile says it opens a view, at the same height as a number. */}
+      {value === undefined ? (
+        <p className="mt-3 flex h-8 items-end text-[15px] font-semibold text-lake-700">
+          View <span aria-hidden className="ml-1 transition-transform group-hover:translate-x-0.5">→</span>
+        </p>
+      ) : (
+        <p className="mt-3 text-[2rem] font-bold leading-none tracking-[-0.02em] tabular-nums text-lake-950">{value}</p>
+      )}
       <p className="mt-2 break-words text-sm font-semibold leading-snug text-lake-700">{label}</p>
       {active && (
         <motion.span
