@@ -3,8 +3,9 @@ import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion
 import { Search, Users, ShieldCheck, ArrowDownUp, Wallet, MessagesSquare, Anchor } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import BoatCard, { BOAT_TYPE_LABELS, priceView } from '../components/BoatCard';
+import BoatCardSkeleton from '../components/BoatCardSkeleton';
 import Reveal from '../components/Reveal';
-import { LoadingState, ErrorState } from '../components/StateViews';
+import { ErrorState } from '../components/StateViews';
 import { useAsync } from '../hooks/useAsync';
 import { heroImage } from '../data/photos';
 import * as boats from '../services/boats.service';
@@ -111,13 +112,13 @@ export default function TouristHome() {
                composition. */
             className="mt-3 font-display font-medium max-w-2xl lg:max-w-4xl
                        text-[clamp(2.25rem,4.4vw,3.75rem)]
-                       leading-[1.06] tracking-[-0.016em] lg:tracking-[-0.022em]"
+                       leading-[1.06] tracking-[-0.016em] lg:tracking-[-0.022em] text-balance"
           >
             Find and book a real, verified boat on Kariba, today.
           </motion.h1>
           <motion.p
             {...rise(0.22)}
-            className="mt-5 max-w-xl text-lg text-lake-100"
+            className="mt-5 max-w-xl text-lg text-pretty text-lake-100"
           >
             Compare fishing boats, houseboats, and sunset cruises with transparent pricing,
             verified safety checks, and real reviews. No phone calls needed.
@@ -125,7 +126,7 @@ export default function TouristHome() {
 
           <motion.div
             {...rise(0.32)}
-            className="mt-9 rounded-2xl bg-white/95 backdrop-blur p-4 sm:p-5 text-lake-950 shadow-2xl"
+            className="mt-9 rounded-2xl bg-white/95 backdrop-blur p-4 sm:p-5 text-lake-950 shadow-[0_24px_60px_-20px_rgba(13,37,50,0.55)]"
           >
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <div>
@@ -209,7 +210,12 @@ export default function TouristHome() {
             <div className="flex flex-wrap gap-2">
               {TYPE_OPTIONS.map((t) => (
                 <button key={t} type="button" onClick={() => setBoatType(t)}
-                  className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                  aria-pressed={boatType === t}
+                  /* Feedback on the press itself, not only on the settled state, and
+                     a focus ring so the filter row is usable from the keyboard. */
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-semibold outline-none
+                    transition-[color,background-color,border-color,transform] duration-200
+                    active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 ${
                     boatType === t
                       ? 'bg-lake-700 text-white'
                       : 'border border-lake-100 bg-white text-lake-600 hover:border-lake-300'
@@ -221,7 +227,12 @@ export default function TouristHome() {
           </div>
         </Reveal>
 
-        {loading && <LoadingState label="Finding boats on Kariba" />}
+        {loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" role="status" aria-busy="true">
+            <span className="sr-only">Finding boats on Kariba</span>
+            {Array.from({ length: 6 }, (_, i) => <BoatCardSkeleton key={i} />)}
+          </div>
+        )}
         {error && <ErrorState message={error} onRetry={reload} />}
         {!loading && !error && (data ?? []).length === 0 && (
           <div className="rounded-xl border border-dashed border-lake-200 py-16 text-center text-lake-500">

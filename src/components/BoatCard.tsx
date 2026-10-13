@@ -81,10 +81,15 @@ export default function BoatCard({ boat, images: providedImages }: { boat: Publi
               </span>
             )}
           </div>
+          {/* lake-950 rather than pure black: the scrim reads as part of the
+              palette instead of a neutral dropped on top of it. tabular-nums so
+              prices line up column to column across the grid rather than
+              jittering with the width of each digit. */}
           {rates.length > 0 && (
             <div className="absolute bottom-2 right-2 z-10 flex gap-1.5">
               {rates.map((r) => (
-                <span key={r.unit} className="rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white">
+                <span key={r.unit}
+                  className="rounded-full bg-lake-950/70 px-2.5 py-1 text-xs font-semibold tabular-nums text-white backdrop-blur-[2px]">
                   ${r.amount}<span className="opacity-75">/{r.short}</span>
                 </span>
               ))}
@@ -104,10 +109,10 @@ export default function BoatCard({ boat, images: providedImages }: { boat: Publi
 
           <div className="mt-3 flex items-center justify-between text-xs text-lake-500">
             <span className="inline-flex items-center gap-1">
-              Trust {boat.operatorTrustScore}
+              Trust <span className="tabular-nums">{boat.operatorTrustScore}</span>
             </span>
             <span className="inline-flex items-center gap-1">
-              <Users size={12} /> {boat.capacity}
+              <Users size={12} /> <span className="tabular-nums">{boat.capacity}</span>
             </span>
           </div>
         </div>
