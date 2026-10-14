@@ -13,9 +13,10 @@
 // such a row would stay pending for ever.
 //
 // Called once a day by pg_cron through pg_net (migration 35). Deployed with
-// --no-verify-jwt: the caller proves itself with a shared secret in the
-// x-purge-secret header, which must equal the PURGE_STORAGE_QUEUE_SECRET function
-// secret. See supabase/functions/README.md.
+// JWT verification off: the caller proves itself with the x-purge-secret header,
+// which the database compares with the Vault secret purge_storage_queue_secret
+// (purge_storage_queue_secret_ok, service role only). The secret is generated in
+// SQL by migration 35 and exists nowhere else. See supabase/functions/README.md.
 //
 // Logs carry queue row ids, never object paths: the paths contain user ids and
 // original file names, which the purge treats as personal data.
@@ -49,28 +50,13 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-// Constant-time comparison, so the secret cannot be guessed a byte at a time.
-function secretsMatch(given: string, expected: string): boolean {
-  const a = new TextEncoder().encode(given);
-  const b = new TextEncoder().encode(expected);
-  let diff = a.length ^ b.length;
-  for (let i = 0; i < b.length; i++) {
-    diff |= (a[i] ?? 0) ^ b[i];
-  }
-  return diff === 0;
-}
-
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
   }
 
-  const expected = Deno.env.get("PURGE_STORAGE_QUEUE_SECRET") ?? "";
-  if (expected.length < 32) {
-    console.error("purge-storage-queue: PURGE_STORAGE_QUEUE_SECRET is not set (or shorter than 32 characters)");
-    return json({ error: "Not configured" }, 500);
-  }
-  if (!secretsMatch(req.headers.get("x-purge-secret") ?? "", expected)) {
+  const given = req.headers.get("x-purge-secret") ?? "";
+  if (given.length < 32) {
     return json({ error: "Unauthorized" }, 401);
   }
 
@@ -84,6 +70,18 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+
+  // The secret lives only in Vault; the database compares it.
+  const { data: authorized, error: authError } = await supabase.rpc("purge_storage_queue_secret_ok", {
+    p_secret: given,
+  });
+  if (authError) {
+    console.error(`purge-storage-queue: checking the secret failed: ${authError.message}`);
+    return json({ error: "Not configured" }, 500);
+  }
+  if (authorized !== true) {
+    return json({ error: "Unauthorized" }, 401);
+  }
 
   const started = Date.now();
   const summary: Summary = { batches: 0, removed: 0, alreadyAbsent: 0, failed: 0 };

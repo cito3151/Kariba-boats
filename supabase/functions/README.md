@@ -14,37 +14,43 @@ Each run reads pending rows in batches of 100, oldest first (at most 10 batches 
 absent. Anything else is logged by queue row id (never by path) and left for the
 next run.
 
+### How the caller is authenticated
+
+The function is deployed with JWT verification off. pg_cron's call carries an
+`x-purge-secret` header, and the function asks the database
+(`purge_storage_queue_secret_ok`, service role only) whether it matches the Vault
+secret `purge_storage_queue_secret`. Migration 35 generates that secret in SQL, so
+it exists only in Vault: there is no function secret to set and nothing to keep out
+of the repository. `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provided to
+the function by the platform.
+
 ### Deploy
 
-It needs one secret of its own, shared with the database. Generate a random value
-of at least 32 characters (for example `openssl rand -hex 32`) and keep it out of
-the repository.
+1. Apply `supabase/migrations/35_purge_storage_queue_schedule.sql`. It enables
+   pg_net, creates the secret, the two functions and the cron job.
 
-1. Give the function the secret, then deploy it. JWT verification is off because
-   the caller authenticates with the shared secret in the `x-purge-secret` header;
-   `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provided by the platform.
-
-   ```bash
-   supabase secrets set PURGE_STORAGE_QUEUE_SECRET=<value> --project-ref sbrsptgpnjljnongklus
-   ```
+2. Deploy the function with JWT verification off:
 
    ```bash
    supabase functions deploy purge-storage-queue --no-verify-jwt --project-ref sbrsptgpnjljnongklus
    ```
 
-2. Store the project URL and the same secret in Vault (SQL editor, once):
+3. Store the project's API URL in Vault (SQL editor, once). It is not secret; it
+   lives in Vault so the migration stays the same for every project:
 
    ```sql
    select vault.create_secret('https://sbrsptgpnjljnongklus.supabase.co', 'project_url');
-   select vault.create_secret('<value>', 'purge_storage_queue_secret');
    ```
 
-   To rotate the secret later, change both sides: `supabase secrets set ...` and
-   `select vault.update_secret(id, '<new value>') from vault.secrets where name = 'purge_storage_queue_secret';`
-
-3. Apply `supabase/migrations/35_purge_storage_queue_schedule.sql`.
+To rotate the shared secret, delete it and re-run the migration's step 2, or
+`select vault.update_secret(id, <new value>) from vault.secrets where name = 'purge_storage_queue_secret';`
+Nothing else needs changing.
 
 ### Verify
+
+```sql
+select jobname, schedule, command, active from cron.job where jobname = 'purge-storage-queue';
+```
 
 Trigger a run without waiting for 02:47:
 
@@ -53,8 +59,9 @@ select public.invoke_purge_storage_queue();   -- returns the pg_net request id
 ```
 
 A few seconds later, read the response. A healthy run is status 200 with a body like
-`{"batches":0,"removed":0,"alreadyAbsent":0,"failed":0}`; 401 means the two copies
-of the secret differ, 500 means a function secret is missing (see the function logs).
+`{"batches":0,"removed":0,"alreadyAbsent":0,"failed":0}`; 401 means the header did
+not match the Vault secret, 500 means the function could not reach the database
+(see the function logs), 404 means the function is not deployed.
 
 ```sql
 select id, status_code, content, error_msg, created
