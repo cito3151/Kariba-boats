@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
-  Anchor, Building2, ClipboardCheck, ShieldCheck, LogOut, Ticket, Briefcase, Menu, X,
+  Anchor, Building2, ClipboardCheck, ShieldCheck, LogOut, Ticket, Briefcase, Menu, X, UserRound,
 } from 'lucide-react';
 import { useAuth } from '../data/AuthContext';
 import BrandMark from './BrandMark';
 import Reveal from './Reveal';
+import AccountDeletionBanner from './AccountDeletionBanner';
 
 const allNavItems = [
   { to: '/', label: 'Browse Boats', icon: Anchor, end: true },
@@ -123,7 +124,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       id: 'footer-account',
       heading: 'Your account',
       links: currentUser
-        ? []
+        ? [{ to: '/account', label: 'Account settings' }]
         : [
             { to: '/login', label: 'Log in' },
             { to: '/signup', label: 'Sign up' },
@@ -179,10 +180,18 @@ export default function Layout({ children }: { children: ReactNode }) {
 
           {currentUser ? (
             <div className="hidden shrink-0 items-center gap-3 lg:flex">
-              <div className="min-w-0 text-right leading-tight">
-                <p className="max-w-[10rem] truncate text-sm font-semibold text-lake-950">{currentUser.name}</p>
-                <p className="text-xs capitalize text-lake-600">{currentUser.role}</p>
-              </div>
+              {/* The name opens the Account page (details, terms, delete account). */}
+              <Link
+                to="/account"
+                aria-label={`Account: ${currentUser.name}`}
+                className="group flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-right leading-tight outline-none transition-colors hover:bg-lake-50 focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2"
+              >
+                <span className="min-w-0">
+                  <span className="block max-w-[10rem] truncate text-sm font-semibold text-lake-950 group-hover:underline group-hover:underline-offset-2">{currentUser.name}</span>
+                  <span className="block text-xs capitalize text-lake-600">{currentUser.role}</span>
+                </span>
+                <UserRound size={18} aria-hidden className="shrink-0 text-lake-700" />
+              </Link>
               <button
                 type="button"
                 onClick={handleLogout}
@@ -261,10 +270,17 @@ export default function Layout({ children }: { children: ReactNode }) {
                   <div className="mt-3 border-t border-lake-100 pt-3">
                     {currentUser ? (
                       <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0 leading-tight">
-                          <p className="truncate text-sm font-semibold text-lake-950">{currentUser.name}</p>
-                          <p className="text-xs capitalize text-lake-600">{currentUser.role}</p>
-                        </div>
+                        <Link
+                          to="/account"
+                          onClick={() => closeMenu(true)}
+                          className="flex min-w-0 items-center gap-2.5 rounded-md py-1.5 pr-2 leading-tight outline-none focus-visible:ring-2 focus-visible:ring-lake-500"
+                        >
+                          <UserRound size={18} aria-hidden className="shrink-0 text-lake-700" />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-semibold text-lake-950 underline-offset-2 hover:underline">{currentUser.name}</span>
+                            <span className="block text-xs text-lake-600"><span className="capitalize">{currentUser.role}</span> · Account</span>
+                          </span>
+                        </Link>
                         <button
                           type="button"
                           onClick={() => {
@@ -301,6 +317,8 @@ export default function Layout({ children }: { children: ReactNode }) {
           </AnimatePresence>
         </div>
       </header>
+
+      {currentUser && <AccountDeletionBanner />}
 
       {/* Scrim sits under the z-40 header but over the page, so tapping the page
           dismisses the panel instead of the panel sitting there permanently. */}
@@ -372,9 +390,15 @@ export default function Layout({ children }: { children: ReactNode }) {
             ))}
           </div>
 
-          <div className="mt-12 flex flex-col gap-2 border-t border-white/15 pt-6 text-xs text-lake-200 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-12 flex flex-col gap-3 border-t border-white/15 pt-6 text-[13px] text-lake-200 sm:flex-row sm:items-center sm:justify-between">
             <p>&copy; {new Date().getFullYear()} Kariba Lake Connect. All rights reserved.</p>
-            <p>Lake Kariba, Zimbabwe</p>
+            <nav aria-label="Legal">
+              <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                <li><Link to="/terms" className={footerLinkClass}>Terms and Conditions</Link></li>
+                <li><Link to="/privacy" className={footerLinkClass}>Privacy Policy</Link></li>
+                <li>Lake Kariba, Zimbabwe</li>
+              </ul>
+            </nav>
           </div>
         </div>
       </footer>

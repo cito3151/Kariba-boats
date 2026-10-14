@@ -20,6 +20,8 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import LegalPage from './pages/LegalPage';
+import AccountPage from './pages/AccountPage';
 
 const authRoutes = ['/login', '/signup', '/forgot-password', '/reset-password'];
 
@@ -33,6 +35,16 @@ function App() {
         <Route path="/" element={<TouristHome />} />
         <Route path="/boats/:id" element={<BoatDetail />} />
         <Route path="/track" element={<TrackBookingPage />} />
+        <Route path="/terms" element={<LegalPage docType="terms" />} />
+        <Route path="/privacy" element={<LegalPage docType="privacy" />} />
+        <Route
+          path="/account"
+          element={
+            <ProtectedRoute allow={['tourist', 'hotel', 'owner', 'agency', 'admin']}>
+              <AccountPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/trips"
           element={

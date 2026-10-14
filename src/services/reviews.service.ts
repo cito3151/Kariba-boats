@@ -120,6 +120,8 @@ const LEGACY_COLS = `id, boat_id, booking_id, tourist_id, rating, comment, opera
 const LIST_EXTRAS = ', boats(name), bookings(reference)';
 
 /** First name only, for privacy, from whatever the database holds. */
+const FORMER_GUEST = 'Former guest';
+
 function firstName(name: string | null | undefined): string {
   const first = (name ?? '').trim().split(/\s+/)[0] ?? '';
   return first ? first.slice(0, 40) : 'Guest';
@@ -144,7 +146,9 @@ function toReview(r: any): Review {
     operatorResponse: r.operator_response,
     operatorRespondedAt: r.operator_responded_at ?? null,
     createdAt: r.created_at,
-    reviewerName: firstName(r.reviewer_name ?? r.profiles?.full_name),
+    // A deleted account's reviews are signed "Former guest" (migration 33), which
+    // must not be cut down to its first word like a real name.
+    reviewerName: r.reviewer_name === FORMER_GUEST ? FORMER_GUEST : firstName(r.reviewer_name ?? r.profiles?.full_name),
     tripMonth: r.trip_month ?? null,
     categories,
     hidden: r.hidden === true,

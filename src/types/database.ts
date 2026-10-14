@@ -1183,6 +1183,14 @@ export type Database = {
       }
     }
     Functions: {
+      account_deletion_status: {
+        Args: never
+        Returns: {
+          active_bookings: number
+          requested_at: string | null
+          scheduled_for: string | null
+        }[]
+      }
       admin_list_audit: {
         Args: { p_action?: string; p_entity_type?: string; p_limit?: number }
         Returns: {
@@ -1511,6 +1519,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cancel_account_deletion: {
+        Args: never
+        Returns: undefined
+      }
       cancel_booking: {
         Args: { p_booking_id: string }
         Returns: {
@@ -1835,6 +1847,13 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      request_account_deletion: {
+        Args: never
+        Returns: {
+          requested_at: string
+          scheduled_for: string
+        }[]
       }
       soft_delete_boat: {
         Args: { p_boat_id: string }

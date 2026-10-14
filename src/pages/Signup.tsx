@@ -64,7 +64,7 @@ export default function Signup() {
       return;
     }
     if (!acceptTerms) {
-      setError('Please accept the Terms of Service and Privacy Policy to continue.');
+      setError('Please accept the Terms and Conditions and Privacy Policy to continue.');
       return;
     }
     if (needsOperator && !acceptOperator) {
@@ -250,9 +250,14 @@ export default function Signup() {
                 className="mt-0.5" />
               <span>
                 I accept the{' '}
-                <button type="button" className="font-semibold text-lake-700 underline" onClick={() => setViewDoc('terms')}>Terms of Service</button>
+                {/* New tab, so the half-filled form is still here when they come back. */}
+                <Link to="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-lake-700 underline">
+                  Terms and Conditions<span className="sr-only"> (opens in a new tab)</span>
+                </Link>
                 {' '}and{' '}
-                <button type="button" className="font-semibold text-lake-700 underline" onClick={() => setViewDoc('privacy')}>Privacy Policy</button>.
+                <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold text-lake-700 underline">
+                  Privacy Policy<span className="sr-only"> (opens in a new tab)</span>
+                </Link>.
               </span>
             </label>
             {needsOperator && (

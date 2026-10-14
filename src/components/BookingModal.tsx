@@ -373,6 +373,19 @@ export default function BookingModal({
                         onClick={() => setShowWaiver(true)}>booking liability waiver</button>.
                     </span>
                   </label>
+                  {/* New tabs, so the filled-in request is still here afterwards. */}
+                  <p className="-mt-2 text-sm leading-normal text-lake-700">
+                    Deposits, cancellations and refunds are covered by our{' '}
+                    <Link to="/terms" target="_blank" rel="noopener noreferrer"
+                      className="rounded-sm font-semibold text-lake-800 underline underline-offset-2 outline-none hover:text-lake-950 focus-visible:ring-2 focus-visible:ring-lake-800">
+                      Terms and Conditions<span className="sr-only"> (opens in a new tab)</span>
+                    </Link>
+                    . How we use your details:{' '}
+                    <Link to="/privacy" target="_blank" rel="noopener noreferrer"
+                      className="rounded-sm font-semibold text-lake-800 underline underline-offset-2 outline-none hover:text-lake-950 focus-visible:ring-2 focus-visible:ring-lake-800">
+                      Privacy Policy<span className="sr-only"> (opens in a new tab)</span>
+                    </Link>.
+                  </p>
 
                   <button type="submit" className={`${portalButtonPrimaryLarge} w-full`}>
                     Send request to {boat.operatorName || 'the operator'}

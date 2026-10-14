@@ -6,6 +6,8 @@ export type LegalDocType = 'terms' | 'privacy' | 'operator_agreement' | 'booking
 export interface LegalDocument {
   id: string; docType: LegalDocType; version: number; title: string; body: string;
   isRequired: boolean; appliesToRoles: string[] | null; isCurrent: boolean;
+  /** When this version took effect (ISO timestamp). */
+  effectiveAt: string;
 }
 export interface OutstandingConsent {
   docType: LegalDocType; version: number; title: string; body: string;
@@ -16,6 +18,7 @@ function mapDoc(r: any): LegalDocument {
   return {
     id: r.id, docType: r.doc_type, version: r.version, title: r.title, body: r.body,
     isRequired: r.is_required, appliesToRoles: r.applies_to_roles, isCurrent: r.is_current,
+    effectiveAt: r.effective_at,
   };
 }
 
