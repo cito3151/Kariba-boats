@@ -9,6 +9,7 @@ import PortalSection from '../components/portal/PortalSection';
 import { portalCard, portalButtonPrimary, portalButtonSecondary } from '../components/portal/styles';
 import StatusBadge from '../components/StatusBadge';
 import BookingFigures from '../components/BookingFigures';
+import BookingRef from '../components/BookingRef';
 import ReviewForm from '../components/ReviewForm';
 import CancelBookingButton from '../components/CancelBookingButton';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
@@ -77,6 +78,7 @@ export default function TouristTripsPage() {
                             <span className="min-w-0 break-words">{b.boatLocation}</span>
                           </p>
                         )}
+                        <BookingRef reference={b.reference} className="mt-2" />
                       </div>
                       <StatusBadge status={b.status} />
                     </div>

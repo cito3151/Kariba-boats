@@ -14,7 +14,8 @@ export interface BookingInput {
 }
 
 export interface BookingRow {
-  id: string; boatId: string; guestName: string; startDate: string; days: number;
+  /** Customer-facing reference, e.g. KLC-7H3QXK (migration 31). Assigned by the server. */
+  id: string; reference: string; boatId: string; guestName: string; startDate: string; days: number;
   startTime: string | null; durationHours: number | null; status: BookingStatus;
   priceTotal: number; depositAmount: number; groupSize: number; hotelId: string | null;
   createdAt: string; boatName: string; boatLocation: string;
@@ -22,12 +23,12 @@ export interface BookingRow {
 }
 
 const BOOKING_SELECT =
-  'id, boat_id, guest_name, start_date, days, start_time, duration_hours, status, price_total, deposit_amount, group_size, hotel_id, captain_name, captain_phone, created_at, boats(name, location)';
+  'id, reference, boat_id, guest_name, start_date, days, start_time, duration_hours, status, price_total, deposit_amount, group_size, hotel_id, captain_name, captain_phone, created_at, boats(name, location)';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function toBookingRow(r: any): BookingRow {
   return {
-    id: r.id, boatId: r.boat_id, guestName: r.guest_name, startDate: r.start_date,
+    id: r.id, reference: r.reference ?? '', boatId: r.boat_id, guestName: r.guest_name, startDate: r.start_date,
     days: r.days, startTime: r.start_time,
     durationHours: r.duration_hours === null ? null : Number(r.duration_hours),
     status: r.status, priceTotal: Number(r.price_total), depositAmount: Number(r.deposit_amount),
@@ -61,8 +62,8 @@ export async function createBooking(input: BookingInput, touristId: string | nul
     p_waiver_version: input.waiverVersion, p_waiver_accepted: input.waiverAccepted,
   }).single();
   if (error) throw new Error(humanizeError(error.message));
-  const row = data as { id: string; deposit_amount: number };
-  return { id: row.id, depositAmount: Number(row.deposit_amount) };
+  const row = data as { id: string; deposit_amount: number; reference?: string | null };
+  return { id: row.id, depositAmount: Number(row.deposit_amount), reference: row.reference ?? undefined };
 }
 
 export async function listBookingsForBoat(boatId: string): Promise<BookingRow[]> {
@@ -159,4 +160,30 @@ export async function setOwnerBookingStatus(id: string, status: BookingStatus) {
 export async function cancelBooking(id: string) {
   const { error } = await supabase.rpc('cancel_booking', { p_booking_id: id });
   if (error) throw new Error(humanizeError(error.message));
+}
+
+/** What the public tracker shows: status and trip logistics, never the guest's name or phone. */
+export interface TrackedBooking {
+  reference: string; status: BookingStatus; boatName: string; boatLocation: string;
+  startDate: string; startTime: string | null; days: number; durationHours: number | null;
+  groupSize: number; priceTotal: number; depositAmount: number; createdAt: string;
+}
+
+/**
+ * Look a booking up by its reference and the phone number it was booked with, for
+ * the public /track page. track_booking (migration 31) answers only when both
+ * match, so null means "no booking with those details", whichever part was wrong.
+ */
+export async function trackBooking(reference: string, phone: string): Promise<TrackedBooking | null> {
+  const { data, error } = await supabase.rpc('track_booking', { p_reference: reference, p_phone: phone });
+  if (error) throw new Error(humanizeError(error.message));
+  const r = data?.[0];
+  if (!r) return null;
+  return {
+    reference: r.reference, status: r.status, boatName: r.boat_name, boatLocation: r.boat_location ?? '',
+    startDate: r.start_date, startTime: r.start_time ?? null, days: r.days,
+    durationHours: r.duration_hours === null ? null : Number(r.duration_hours),
+    groupSize: r.group_size, priceTotal: Number(r.price_total), depositAmount: Number(r.deposit_amount),
+    createdAt: r.created_at,
+  };
 }

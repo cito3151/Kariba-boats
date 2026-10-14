@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { X, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import type { PublicBoat } from '../services/boats.service';
@@ -97,11 +98,10 @@ export default function BookingModal({
   const [error, setError] = useState('');
   const [depositAmount, setDepositAmount] = useState(0);
   const [bookingId, setBookingId] = useState('');
-  // The customer-facing booking reference, shown as its own box on the success
-  // screen (BookingConfirmation's bookingReference prop) only once it has a
-  // value. Nothing sets it yet: fill it from the createBooking result in submit,
-  // beside setBookingId, when the service returns one.
-  const [bookingReference] = useState<string | undefined>(undefined);
+  // The customer-facing booking reference (KLC-XXXXXX, from create_booking), shown
+  // as its own box on the success screen. Undefined only if the server did not
+  // return one, when the screen falls back to the short booking id.
+  const [bookingReference, setBookingReference] = useState<string | undefined>(undefined);
   const { get: getDoc } = useCurrentDocuments();
   const [waiverAccepted, setWaiverAccepted] = useState(false);
   const [showWaiver, setShowWaiver] = useState(false);
@@ -155,6 +155,7 @@ export default function BookingModal({
         touristId,
       );
       setBookingId(result.id);
+      setBookingReference(result.reference);
       setDepositAmount(result.depositAmount);
       setStep('success');
       onBooked?.();
@@ -473,6 +474,13 @@ function BookingConfirmation({
             {bookingReference}
           </p>
           <p className="mt-1 text-sm text-lake-700">Quote it whenever you contact the operator.</p>
+          <p className="mt-3 border-t border-lake-200 pt-3 text-[15px] leading-snug text-lake-800">
+            Keep this number to track your booking.{' '}
+            <Link to={`/track?ref=${encodeURIComponent(bookingReference)}`} onClick={onDone}
+              className="rounded-sm font-semibold text-lake-800 underline underline-offset-2 outline-none hover:text-lake-950 focus-visible:ring-2 focus-visible:ring-lake-800 focus-visible:ring-offset-1">
+              Track your booking
+            </Link>
+          </p>
         </motion.div>
       )}
 

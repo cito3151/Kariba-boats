@@ -2,13 +2,15 @@ import { AnimatePresence, useReducedMotion } from 'framer-motion';
 import Reveal from '../Reveal';
 import StatusBadge from '../StatusBadge';
 import BookingFigures from '../BookingFigures';
+import BookingRef from '../BookingRef';
 import { portalCard } from '../portal/styles';
 import type { BookingRow } from '../../services/bookings.service';
 
 /**
  * The bookings a hotel or agency has made for its guests, one portal card each:
- * boat as the title, status badge, then the labelled Guest / When / Group / Total
- * figures. `boatName` resolves the title the way each dashboard always has.
+ * boat as the title with the booking reference chip under it, status badge,
+ * then the labelled Guest / When / Group / Total figures. `boatName` resolves
+ * the title the way each dashboard always has.
  * Each card rises in as it scrolls into view.
  */
 export default function PartnerBookingList({
@@ -38,7 +40,10 @@ export default function PartnerBookingList({
             transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
             className={`${portalCard} p-4 sm:p-5`}>
             <div className="flex flex-wrap items-start justify-between gap-2">
-              <h3 className="min-w-0 break-words text-lg font-bold leading-snug tracking-[-0.01em] text-lake-950">{boatName(b)}</h3>
+              <div className="min-w-0">
+                <h3 className="break-words text-lg font-bold leading-snug tracking-[-0.01em] text-lake-950">{boatName(b)}</h3>
+                <BookingRef reference={b.reference} className="mt-1.5" />
+              </div>
               <StatusBadge status={b.status} />
             </div>
             <BookingFigures booking={b} />

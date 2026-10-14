@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ConsentGate from './components/legal/ConsentGate';
 import TouristHome from './pages/TouristHome';
 import TouristTripsPage from './pages/TouristTripsPage';
+import TrackBookingPage from './pages/TrackBookingPage';
 import BoatDetail from './pages/BoatDetail';
 import HotelDashboard from './pages/HotelDashboard';
 import AgencyDashboard from './pages/AgencyDashboard';
@@ -30,6 +31,7 @@ function App() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<TouristHome />} />
         <Route path="/boats/:id" element={<BoatDetail />} />
+        <Route path="/track" element={<TrackBookingPage />} />
         <Route
           path="/trips"
           element={

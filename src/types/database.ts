@@ -449,6 +449,7 @@ export type Database = {
           notes: string | null
           period: unknown
           price_total: number
+          reference: string
           start_date: string
           start_time: string | null
           status: Database["public"]["Enums"]["booking_status"]
@@ -472,6 +473,7 @@ export type Database = {
           notes?: string | null
           period?: unknown
           price_total: number
+          reference?: string
           start_date: string
           start_time?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
@@ -495,6 +497,7 @@ export type Database = {
           notes?: string | null
           period?: unknown
           price_total?: number
+          reference?: string
           start_date?: string
           start_time?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
@@ -1545,6 +1548,7 @@ export type Database = {
         Returns: {
           deposit_amount: number
           id: string
+          reference: string
         }[]
       }
       current_user_company: { Args: never; Returns: string }
@@ -1838,6 +1842,23 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      track_booking: {
+        Args: { p_phone: string; p_reference: string }
+        Returns: {
+          boat_location: string
+          boat_name: string
+          created_at: string
+          days: number
+          deposit_amount: number
+          duration_hours: number
+          group_size: number
+          price_total: number
+          reference: string
+          start_date: string
+          start_time: string
+          status: Database["public"]["Enums"]["booking_status"]
+        }[]
       }
     }
     Enums: {

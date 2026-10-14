@@ -107,6 +107,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       links: [
         { to: '/', label: 'Browse boats' },
         ...(currentUser ? [{ to: '/trips', label: 'My trips' }] : []),
+        { to: '/track', label: 'Track a booking' },
       ],
     },
     {

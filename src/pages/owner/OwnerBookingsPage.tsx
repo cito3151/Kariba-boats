@@ -9,6 +9,7 @@ import StatusBadge from '../../components/StatusBadge';
 import CancelBookingButton from '../../components/CancelBookingButton';
 import CaptainManager from '../../components/owner/CaptainManager';
 import BookingFigures from '../../components/BookingFigures';
+import BookingRef from '../../components/BookingRef';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
 import { useAuth } from '../../data/AuthContext';
 import { useAsync } from '../../hooks/useAsync';
@@ -102,7 +103,10 @@ export default function OwnerBookingsPage() {
                   exit={{ opacity: 0 }} transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
                   className={`${portalCard} p-4 sm:p-5`}>
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <h3 className="min-w-0 break-words text-lg font-bold leading-snug tracking-[-0.01em] text-lake-950">{b.boatName}</h3>
+                    <div className="min-w-0">
+                      <h3 className="break-words text-lg font-bold leading-snug tracking-[-0.01em] text-lake-950">{b.boatName}</h3>
+                      <BookingRef reference={b.reference} className="mt-1.5" />
+                    </div>
                     <StatusBadge status={b.status} />
                   </div>
 

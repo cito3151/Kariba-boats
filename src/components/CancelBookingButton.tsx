@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Ban } from 'lucide-react';
 import { cancelBooking, tripWhen } from '../services/bookings.service';
 import type { BookingRow } from '../services/bookings.service';
+import BookingRef from './BookingRef';
 
 // The server's cancel_booking has no undo, so a stray tap must never be enough.
 // The first press swaps the button for an inline "Are you sure" panel in the same
@@ -11,7 +12,7 @@ import type { BookingRow } from '../services/bookings.service';
 // and the admin bookings table.
 
 interface Props {
-  booking: Pick<BookingRow, 'id' | 'boatName' | 'startDate' | 'days' | 'startTime' | 'durationHours'>;
+  booking: Pick<BookingRow, 'id' | 'reference' | 'boatName' | 'startDate' | 'days' | 'startTime' | 'durationHours'>;
   /** Runs once the server has cancelled the booking. Normally the list's reload. */
   onCancelled: () => void;
   /** Disables the first button, e.g. while another action on the same booking runs. */
@@ -33,7 +34,7 @@ export default function CancelBookingButton({ booking, onCancelled, disabled = f
   // once it is on screen again. Not set on success, where the booking moves on.
   const restoreFocus = useRef(false);
 
-  const what = `${booking.boatName}, ${tripWhen(booking)}`;
+  const what = `${booking.reference ? `${booking.reference}, ` : ''}${booking.boatName}, ${tripWhen(booking)}`;
 
   useEffect(() => {
     if (open) confirmRef.current?.focus();
@@ -101,6 +102,7 @@ export default function CancelBookingButton({ booking, onCancelled, disabled = f
           className="max-w-sm rounded-lg border border-red-200 bg-red-50 p-3.5"
         >
           <p className="text-base font-semibold text-red-900">Cancel this booking?</p>
+          <BookingRef reference={booking.reference} className="mt-1.5" />
           <p className="mt-1 break-words text-[15px] leading-snug text-lake-800">{booking.boatName} · {tripWhen(booking)}</p>
           <p className="mt-0.5 text-[15px] leading-snug text-lake-700">This cannot be undone.</p>
 
