@@ -2,11 +2,13 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Gauge, MapPin, ShieldCheck, Users } from 'lucide-react';
 import AutoCarousel from './AutoCarousel';
+import RatingBadge from './reviews/RatingBadge';
 import { revealSpring, useReveal } from './motion';
 import { useAsync } from '../hooks/useAsync';
 import * as imagesSvc from '../services/images.service';
 import type { BoatImage } from '../services/images.service';
 import type { PublicBoat, BoatKind } from '../services/boats.service';
+import type { RatingSummary } from '../services/reviews.service';
 
 const MotionLink = motion.create(Link);
 
@@ -44,7 +46,14 @@ export function priceLabels(boat: Pick<PublicBoat, 'pricePerHour' | 'pricePerDay
   return out;
 }
 
-export default function BoatCard({ boat, images: providedImages }: { boat: PublicBoat; images?: BoatImage[] }) {
+/**
+ * `rating` is the boat's public rating summary from the parent's batched fetch
+ * (getRatingSummaries). Undefined while it loads, when the card keeps the line's
+ * height empty; a boat with no review shows "New", never a made-up 0.
+ */
+export default function BoatCard({
+  boat, images: providedImages, rating,
+}: { boat: PublicBoat; images?: BoatImage[]; rating?: RatingSummary }) {
   const reduce = useReducedMotion();
   const reveal = useReveal();
   // When the parent list supplies images (batched, no N+1), use them; otherwise fetch
@@ -110,6 +119,7 @@ export default function BoatCard({ boat, images: providedImages }: { boat: Publi
             {BOAT_TYPE_LABELS[boat.boatType]}
           </p>
           <h3 className="mt-1 line-clamp-2 text-lg font-bold leading-6 text-lake-950">{boat.name}</h3>
+          <RatingBadge summary={rating} className="mt-1" />
           <p className="mt-1 flex items-center gap-1 text-xs leading-4 text-lake-600">
             <MapPin size={12} className="shrink-0" aria-hidden />
             <span className="truncate">Departs from {boat.location}</span>

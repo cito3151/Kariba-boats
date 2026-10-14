@@ -6,7 +6,6 @@ import {
   MapPin, Ship, Gauge, Check, Info, CalendarDays, type LucideIcon,
 } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
-import StarRating from '../components/StarRating';
 import BookingModal from '../components/BookingModal';
 import Reveal from '../components/Reveal';
 import AutoCarousel from '../components/AutoCarousel';
@@ -15,7 +14,7 @@ import { LoadingState, ErrorState } from '../components/StateViews';
 import { BOAT_TYPE_LABELS, priceView, priceLabels } from '../components/BoatCard';
 import EmergencyContacts from '../components/EmergencyContacts';
 import LakeBackdrop from '../components/LakeBackdrop';
-import { portalCard, portalButtonPrimaryLarge } from '../components/portal/styles';
+import { portalCard, portalButtonPrimaryLarge, portalButtonSecondary } from '../components/portal/styles';
 import { reducedFade, revealSpring, riseOnMount } from '../components/motion';
 import { useAuth } from '../data/AuthContext';
 import { useAsync } from '../hooks/useAsync';
@@ -23,7 +22,11 @@ import * as boats from '../services/boats.service';
 import type { PublicBoat } from '../services/boats.service';
 import * as imagesSvc from '../services/images.service';
 import { listBusyPeriodsForBoat } from '../services/bookings.service';
-import { listReviewsForBoat } from '../services/reviews.service';
+import { EMPTY_SUMMARY, getRatingSummary, listReviewsForBoat, summarize } from '../services/reviews.service';
+import type { RatingSummary } from '../services/reviews.service';
+import RatingBadge from '../components/reviews/RatingBadge';
+import RatingSummaryPanel from '../components/reviews/RatingSummaryPanel';
+import ReviewCard from '../components/reviews/ReviewCard';
 import {
   activeBookingsForBoat, bookingCoversDate, checkRangeSelectable, dayStatus, inclusiveDays, toISODate,
 } from '../data/availability';
@@ -54,6 +57,15 @@ const GOOD_FOR: Record<string, string[]> = {
 // How many of the next free days the booking summary offers as date chips.
 const NEXT_DATES = 3;
 
+// Reviews are listed a page at a time, with "Show more" for the rest.
+const REVIEWS_PAGE = 5;
+type ReviewSort = 'newest' | 'highest' | 'lowest';
+const REVIEW_SORTS: { value: ReviewSort; label: string }[] = [
+  { value: 'newest', label: 'Newest' },
+  { value: 'highest', label: 'Highest rated' },
+  { value: 'lowest', label: 'Lowest rated' },
+];
+
 export default function BoatDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -77,7 +89,16 @@ export default function BoatDetail() {
   const { data: bookingRows, reload: reloadBookings } = useAsync(
     () => (id ? listBusyPeriodsForBoat(id) : Promise.resolve([])), [id],
   );
-  const { data: reviews } = useAsync(() => (id ? listReviewsForBoat(id) : Promise.resolve([])), [id]);
+  const { data: reviews, error: reviewsError, reload: reloadReviews } = useAsync(
+    () => (id ? listReviewsForBoat(id) : Promise.resolve([])), [id],
+  );
+  // The public figures (boat_rating_summary, visible reviews only), the same
+  // source as the cards, so the header and the card never disagree.
+  const { data: ratingSummary } = useAsync(
+    () => (id ? getRatingSummary(id) : Promise.resolve(EMPTY_SUMMARY)), [id],
+  );
+  const [reviewSort, setReviewSort] = useState<ReviewSort>('newest');
+  const [reviewsShown, setReviewsShown] = useState(REVIEWS_PAGE);
 
   // Date selection. A boat with no usable rate ("On request") has nothing to price a
   // range against, so it keeps the read-only calendar. Hourly-only boats pick one date.
@@ -124,9 +145,12 @@ export default function BoatDetail() {
     : [`illustration:${boat.boatType}`];
 
   const reviewList = reviews ?? [];
-  const avgRating = reviewList.length
-    ? reviewList.reduce((s, r) => s + r.rating, 0) / reviewList.length
-    : null;
+  // Newest is the order they arrive in; the others fall back to newest on a tie.
+  const sortedReviews = reviewSort === 'newest' ? reviewList : [...reviewList].sort((a, b) =>
+    (reviewSort === 'highest' ? b.rating - a.rating : a.rating - b.rating)
+    || b.createdAt.localeCompare(a.createdAt));
+  const visibleReviews = sortedReviews.slice(0, reviewsShown);
+  const moreReviews = sortedReviews.length - visibleReviews.length;
   const goodFor = GOOD_FOR[boat.boatType] ?? [];
   const descLong = boat.description.length > 320;
   const descShown = descLong && !descExpanded ? `${boat.description.slice(0, 320).trimEnd()}...` : boat.description;
@@ -223,8 +247,7 @@ export default function BoatDetail() {
             images={galleryImages}
             hasPhotos={sorted.length > 0}
             unit={price?.unit ?? null}
-            avgRating={avgRating}
-            reviewCount={reviewList.length}
+            rating={ratingSummary ?? undefined}
           />
 
           <div className="mt-6 grid grid-cols-1 gap-6 lg:mt-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
@@ -386,37 +409,58 @@ export default function BoatDetail() {
                 </p>
               </Reveal>
 
-              <Reveal className={`${portalCard} p-5 sm:p-7`}>
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                  <SectionTitle>Reviews</SectionTitle>
-                  {avgRating != null && (
-                    <p className="inline-flex items-center gap-1.5 pb-0.5 text-base text-lake-800">
-                      <Star size={18} className="fill-sunset-500 text-sunset-500" aria-hidden />
-                      <span className="text-xl font-extrabold tabular-nums text-lake-950">{avgRating.toFixed(1)}</span>
-                      <span className="tabular-nums">({reviewList.length} review{reviewList.length !== 1 ? 's' : ''})</span>
+              {/* The review summary, then the reviews themselves, as a cruise site
+                  sets its guest ratings: the score large, its spread, then the words. */}
+              <Reveal id="reviews" className={`${portalCard} scroll-mt-24 p-5 sm:p-7`}>
+                <SectionTitle>Guest reviews</SectionTitle>
+                {reviewsError ? (
+                  <div className="mt-4"><ErrorState message={reviewsError} onRetry={reloadReviews} /></div>
+                ) : reviews == null ? (
+                  <p className="mt-4 text-base text-lake-800">Loading reviews…</p>
+                ) : reviewList.length === 0 ? (
+                  <div className="mt-4 flex items-start gap-3 rounded-lg bg-lake-50 px-4 py-3.5">
+                    <Star size={20} className="mt-0.5 shrink-0 text-lake-700" aria-hidden />
+                    <p className="text-base leading-relaxed text-lake-800">
+                      <span className="font-bold text-lake-950">No reviews yet.</span> Only guests whose trip on this boat
+                      was completed can review it, so every review here comes from a real booking.
                     </p>
-                  )}
-                </div>
-                {reviewList.length === 0 ? (
-                  <p className="mt-4 text-base text-lake-800">No reviews yet. Guests can review a trip once it is completed.</p>
+                  </div>
                 ) : (
-                  <ul className="mt-4 divide-y divide-lake-100">
-                    {reviewList.map((r) => (
-                      <Reveal as="li" key={r.id} y={12} className="py-4 first:pt-1 last:pb-0">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-base font-bold text-lake-950">{r.touristName}</span>
-                          <StarRating rating={r.rating} size={16} showNumber={false} />
-                        </div>
-                        {r.comment && <p className="mt-1.5 text-base leading-relaxed text-lake-800">{r.comment}</p>}
-                        {r.operatorResponse && (
-                          <p className="mt-3 rounded-lg bg-lake-50 px-3.5 py-2.5 text-[15px] leading-relaxed text-lake-800">
-                            <span className="font-bold text-lake-950">Operator: </span>{r.operatorResponse}
-                          </p>
-                        )}
-                        <p className="mt-2 text-sm tabular-nums text-lake-700">{r.createdAt.slice(0, 10)}</p>
-                      </Reveal>
-                    ))}
-                  </ul>
+                  <>
+                    <div className="mt-5">
+                      <RatingSummaryPanel summary={ratingSummary && ratingSummary.count > 0 ? ratingSummary : summarize(reviewList)} />
+                    </div>
+
+                    <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-lake-100 pt-5">
+                      <p className="text-sm font-semibold text-lake-700">
+                        <span className="inline-flex items-center gap-1"><BadgeCheck size={16} className="text-emerald-700" aria-hidden /> Every review is from a completed trip</span>
+                      </p>
+                      {reviewList.length > 1 && (
+                        <label className="flex items-center gap-2 text-sm font-semibold text-lake-800">
+                          Sort by
+                          <select value={reviewSort}
+                            onChange={(e) => { setReviewSort(e.target.value as ReviewSort); setReviewsShown(REVIEWS_PAGE); }}
+                            className="min-h-11 rounded-lg border border-lake-200 bg-white px-3 py-2 text-base font-normal text-lake-950 outline-none focus:border-lake-500 focus-visible:ring-2 focus-visible:ring-lake-500/30">
+                            {REVIEW_SORTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                          </select>
+                        </label>
+                      )}
+                    </div>
+
+                    <ul className="mt-2 divide-y divide-lake-100">
+                      {visibleReviews.map((r) => (
+                        <Reveal as="li" key={r.id} y={12} className="py-5 last:pb-0">
+                          <ReviewCard review={r} />
+                        </Reveal>
+                      ))}
+                    </ul>
+                    {moreReviews > 0 && (
+                      <button type="button" onClick={() => setReviewsShown((n) => n + REVIEWS_PAGE)}
+                        className={`${portalButtonSecondary} mt-5 min-h-11 w-full text-base sm:w-auto`}>
+                        Show more reviews <span className="font-normal tabular-nums text-lake-700">({moreReviews} more)</span>
+                      </button>
+                    )}
+                  </>
                 )}
               </Reveal>
             </div>
@@ -514,14 +558,14 @@ function describeRange(range: DateRange, singleDate: boolean) {
  * the frame settles in on load; under reduced motion both are still.
  */
 function BoatHero({
-  boat, images, hasPhotos, unit, avgRating, reviewCount,
+  boat, images, hasPhotos, unit, rating,
 }: {
   boat: PublicBoat;
   images: string[];
   hasPhotos: boolean;
   unit: 'hour' | 'day' | null;
-  avgRating: number | null;
-  reviewCount: number;
+  /** Undefined while loading. */
+  rating: RatingSummary | undefined;
 }) {
   const reduce = useReducedMotion();
   const chip = 'rounded-sm bg-white px-2.5 py-1 text-[13px] font-bold uppercase leading-none tracking-[0.06em] text-lake-950';
@@ -552,12 +596,14 @@ function BoatHero({
         <h1 className="mt-3 max-w-3xl text-balance text-[32px] font-extrabold leading-[1.05] text-white [text-shadow:0_1px_12px_rgb(13_37_50/0.35)] sm:text-[40px]">
           {boat.name}
         </h1>
-        {avgRating != null && (
-          <p className="mt-2 flex items-center gap-1.5 text-base text-white">
-            <Star size={18} className="fill-sunset-400 text-sunset-400" aria-hidden />
-            <span className="font-bold tabular-nums">{avgRating.toFixed(1)}</span>
-            <span className="tabular-nums">({reviewCount} review{reviewCount !== 1 ? 's' : ''})</span>
-          </p>
+        {/* Links down to the reviews, so the figure can be checked. Only the
+            rated line is a link; "New" has nothing to jump to. */}
+        {rating && rating.count > 0 ? (
+          <a href="#reviews" className="pointer-events-auto mt-2 inline-flex rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-white">
+            <RatingBadge summary={rating} tone="dark" />
+          </a>
+        ) : (
+          <RatingBadge summary={rating} tone="dark" className="mt-2" />
         )}
       </motion.div>
     </motion.header>

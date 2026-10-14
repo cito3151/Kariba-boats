@@ -1,6 +1,6 @@
 /**
  * Placeholder that mirrors BoatCard's actual shape: a 176px photo band, then the
- * type label, name, location, two detail lines and the price / button footer, at
+ * type label, name, rating, location, two detail lines and the price / button footer, at
  * the same line heights the card uses. A centred spinner tells the reader only
  * that something is happening; a skeleton in the grid's own geometry tells them
  * what is arriving and stops the page reflowing when it does.
@@ -24,6 +24,8 @@ export default function BoatCardSkeleton() {
             centred in the same space the real text will occupy. */}
         <div className="flex h-4 items-center"><Line className="h-2.5 w-20" /></div>
         <div className="mt-1 flex h-6 items-center"><Line className="h-4 w-2/3" /></div>
+        {/* The rating line. */}
+        <div className="mt-1 flex h-6 items-center"><Line className="h-3 w-28" /></div>
         <div className="mt-1 flex h-4 items-center"><Line className="h-2.5 w-2/5" /></div>
         <div className="mt-3 space-y-1">
           <div className="flex h-4 items-center"><Line className="h-2.5 w-24" /></div>

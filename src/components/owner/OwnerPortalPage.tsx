@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Anchor, Building2, CalendarDays, Gauge, LayoutGrid } from 'lucide-react';
+import { Anchor, Building2, CalendarDays, Gauge, LayoutGrid, Star } from 'lucide-react';
 import PortalPage from '../portal/PortalPage';
 import { portalPhotos } from '../../data/photos';
 import type { Crumb } from '../portal/PortalHeader';
@@ -10,6 +10,7 @@ const OWNER_TABS: PortalTab[] = [
   { to: '/owner', label: 'Overview', icon: LayoutGrid, activeFor: ['/owner/boats/*'] },
   { to: '/owner/bookings', label: 'Bookings', icon: CalendarDays },
   { to: '/owner/maintenance', label: 'Maintenance', icon: Gauge },
+  { to: '/owner/reviews', label: 'Reviews', icon: Star },
   { to: '/owner/company', label: 'Company', icon: Building2 },
 ];
 

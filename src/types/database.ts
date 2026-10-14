@@ -946,32 +946,72 @@ export type Database = {
           booking_id: string
           comment: string | null
           created_at: string
+          hidden: boolean
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
           id: string
+          operator_responded_at: string | null
           operator_response: string | null
           rating: number
+          rating_condition: number | null
+          rating_crew: number | null
+          rating_safety: number | null
+          rating_value: number | null
+          reviewer_name: string | null
           tourist_id: string
+          trip_month: string | null
         }
         Insert: {
           boat_id: string
           booking_id: string
           comment?: string | null
           created_at?: string
+          hidden?: boolean
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
           id?: string
+          operator_responded_at?: string | null
           operator_response?: string | null
           rating: number
+          rating_condition?: number | null
+          rating_crew?: number | null
+          rating_safety?: number | null
+          rating_value?: number | null
+          reviewer_name?: string | null
           tourist_id: string
+          trip_month?: string | null
         }
         Update: {
           boat_id?: string
           booking_id?: string
           comment?: string | null
           created_at?: string
+          hidden?: boolean
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
           id?: string
+          operator_responded_at?: string | null
           operator_response?: string | null
           rating?: number
+          rating_condition?: number | null
+          rating_crew?: number | null
+          rating_safety?: number | null
+          rating_value?: number | null
+          reviewer_name?: string | null
           tourist_id?: string
+          trip_month?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "reviews_hidden_by_fkey"
+            columns: ["hidden_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reviews_boat_id_fkey"
             columns: ["boat_id"]
@@ -1074,6 +1114,38 @@ export type Database = {
       }
     }
     Views: {
+      boat_rating_summary: {
+        Row: {
+          average_rating: number | null
+          avg_condition: number | null
+          avg_crew: number | null
+          avg_safety: number | null
+          avg_value: number | null
+          boat_id: string | null
+          count_1: number | null
+          count_2: number | null
+          count_3: number | null
+          count_4: number | null
+          count_5: number | null
+          review_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_boat_id_fkey"
+            columns: ["boat_id"]
+            isOneToOne: false
+            referencedRelation: "boats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_boat_id_fkey"
+            columns: ["boat_id"]
+            isOneToOne: false
+            referencedRelation: "public_boats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_boats: {
         Row: {
           boat_type: Database["public"]["Enums"]["boat_kind"] | null
@@ -1308,6 +1380,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      admin_set_review_visibility: {
+        Args: { p_hidden: boolean; p_reason?: string; p_review_id: string }
+        Returns: undefined
       }
       admin_set_role: {
         Args: {
@@ -1561,6 +1637,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_boat_manager: { Args: { p_boat_id: string }; Returns: boolean }
       is_company_member: { Args: { p_company_id: string }; Returns: boolean }
       is_sensitive_change: { Args: { p_changes: Json }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
@@ -1728,6 +1805,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      reply_to_review: {
+        Args: { p_reply: string; p_review_id: string }
+        Returns: undefined
       }
       record_consent: {
         Args: {

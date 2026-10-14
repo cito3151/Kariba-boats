@@ -15,6 +15,7 @@ import EditorialBand from '../components/landing/EditorialBand';
 import { heroPhoto } from '../data/photos';
 import * as boats from '../services/boats.service';
 import * as imagesSvc from '../services/images.service';
+import * as reviewsSvc from '../services/reviews.service';
 import type { BoatKind } from '../services/boats.service';
 
 const TYPE_OPTIONS: (BoatKind | 'all')[] = ['all', 'houseboat', 'speedboat', 'fishing', 'cruiser', 'pontoon'];
@@ -26,11 +27,17 @@ export default function TouristHome() {
     () => imagesSvc.listImagesForBoats(idsKey ? idsKey.split(',') : []),
     [idsKey],
   );
+  // Every card's rating in one request (boat_rating_summary, or computed from the
+  // visible reviews before migration 32). Undefined per card until it answers.
+  const { data: ratingsByBoat } = useAsync(
+    () => reviewsSvc.getRatingSummaries(idsKey ? idsKey.split(',') : []),
+    [idsKey],
+  );
   const [groupSize, setGroupSize] = useState(2);
   const [boatType, setBoatType] = useState<BoatKind | 'all'>('all');
   const [maxPrice, setMaxPrice] = useState(700);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [sort, setSort] = useState<'recommended' | 'price_low' | 'capacity'>('recommended');
+  const [sort, setSort] = useState<'recommended' | 'price_low' | 'capacity' | 'top_rated'>('recommended');
 
   const resetFilters = () => {
     setBoatType('all'); setGroupSize(1); setMaxPrice(700); setVerifiedOnly(false);
@@ -92,11 +99,18 @@ export default function TouristHome() {
       arr.sort((a, b) => (priceView(a)?.amount ?? Infinity) - (priceView(b)?.amount ?? Infinity));
     } else if (sort === 'capacity') {
       arr.sort((a, b) => b.capacity - a.capacity);
+    } else if (sort === 'top_rated') {
+      // The real average over visible reviews. Boats with no reviews yet go after
+      // every rated boat rather than counting as 0; ties go to the boat with more
+      // reviews, then to the operator's trust score.
+      const avg = (id: string) => ratingsByBoat?.[id]?.average ?? -1;
+      const count = (id: string) => ratingsByBoat?.[id]?.count ?? 0;
+      arr.sort((a, b) => avg(b.id) - avg(a.id) || count(b.id) - count(a.id) || b.operatorTrustScore - a.operatorTrustScore);
     } else {
       arr.sort((a, b) => b.operatorTrustScore - a.operatorTrustScore);
     }
     return arr;
-  }, [filtered, sort]);
+  }, [filtered, sort, ratingsByBoat]);
 
   return (
     <PageTransition>
@@ -310,6 +324,7 @@ export default function TouristHome() {
                     <option value="recommended">Recommended</option>
                     <option value="price_low">Price: low to high</option>
                     <option value="capacity">Largest first</option>
+                    <option value="top_rated">Top rated</option>
                   </select>
                 </label>
               </div>
@@ -358,7 +373,8 @@ export default function TouristHome() {
           {sorted.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {sorted.map((boat) => (
-                <BoatCard key={boat.id} boat={boat} images={imagesByBoat?.[boat.id] ?? []} />
+                <BoatCard key={boat.id} boat={boat} images={imagesByBoat?.[boat.id] ?? []}
+                  rating={ratingsByBoat ? ratingsByBoat[boat.id] ?? reviewsSvc.EMPTY_SUMMARY : undefined} />
               ))}
             </div>
           )}

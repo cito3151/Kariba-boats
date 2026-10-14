@@ -15,6 +15,7 @@ import BoatFormPage from './pages/owner/BoatFormPage';
 import MaintenancePage from './pages/owner/MaintenancePage';
 import CompanyPage from './pages/owner/CompanyPage';
 import OwnerBookingsPage from './pages/owner/OwnerBookingsPage';
+import OwnerReviewsPage from './pages/owner/OwnerReviewsPage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
@@ -101,6 +102,14 @@ function App() {
           element={
             <ProtectedRoute allow={['owner']}>
               <OwnerBookingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/reviews"
+          element={
+            <ProtectedRoute allow={['owner']}>
+              <OwnerReviewsPage />
             </ProtectedRoute>
           }
         />

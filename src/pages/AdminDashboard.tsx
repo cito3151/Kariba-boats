@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText, FileText, LifeBuoy, Building2 } from 'lucide-react';
+import { Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText, FileText, LifeBuoy, Building2, Star } from 'lucide-react';
 import AdminPortalPage from '../components/admin/AdminPortalPage';
 import PortalSection from '../components/portal/PortalSection';
 import { portalCard } from '../components/portal/styles';
@@ -15,6 +15,7 @@ import RoleManagement from '../components/admin/RoleManagement';
 import AuditLog from '../components/admin/AuditLog';
 import LegalDocuments from '../components/admin/LegalDocuments';
 import EmergencyContactsAdmin from '../components/admin/EmergencyContactsAdmin';
+import AdminReviews from '../components/admin/AdminReviews';
 import { BOAT_TYPE_LABELS } from '../components/BoatCard';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import Reveal from '../components/Reveal';
@@ -27,7 +28,7 @@ import { listOwnersAndHotels, listAllUsers } from '../services/users.service';
 import { countCompaniesAwaitingReview } from '../services/companies.service';
 import type { OwnerBoat, BoatStatus } from '../services/boats.service';
 
-type View = 'companies' | 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users' | 'roles' | 'audit' | 'legal' | 'emergency';
+type View = 'companies' | 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users' | 'roles' | 'audit' | 'legal' | 'emergency' | 'reviews';
 
 // The PortalSection title for each view. The approval queue titles its own two
 // sections (the queue and maintenance attention), so it is not listed.
@@ -42,6 +43,7 @@ const VIEW_TITLES: Record<Exclude<View, 'queue'>, string> = {
   audit: 'Activity log',
   legal: 'Legal documents',
   emergency: 'Emergency contacts',
+  reviews: 'Reviews and moderation',
 };
 
 const STATUS_CHIP: Record<BoatStatus, string> = {
@@ -124,6 +126,7 @@ export default function AdminDashboard() {
     { key: 'bookings', label: 'Active bookings', value: loadedFigure(bookingData, bookingsLoading, activeBookings), icon: CalendarCheck },
     { key: 'users', label: 'Unverified owners/hotels', value: loadedFigure(userData, usersLoading, unverified), icon: UserCheck },
     { key: 'companies', label: 'Company documents', value: loadedFigure(companiesAwaiting, companiesLoading, companiesAwaiting ?? 0), icon: Building2 },
+    { key: 'reviews', label: 'Reviews', icon: Star },
     { key: 'audit', label: 'Activity log', icon: ScrollText },
     { key: 'emergency', label: 'Emergency contacts', icon: LifeBuoy },
   ];
@@ -143,6 +146,7 @@ export default function AdminDashboard() {
       case 'audit': return <AuditLog />;
       case 'legal': return isSuper ? <LegalDocuments /> : null;
       case 'emergency': return <EmergencyContactsAdmin />;
+      case 'reviews': return <AdminReviews />;
       default:
         return (
           <>
