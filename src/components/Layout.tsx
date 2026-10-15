@@ -43,7 +43,9 @@ export default function Layout({ children }: { children: ReactNode }) {
     if (item.to === '/') return true;
     // Admin is oversight only: Browse Boats and the Admin panel, nothing else.
     if (currentUser?.role === 'admin') return item.to === '/admin';
-    if (item.to === '/trips') return !!currentUser;
+    // Hotels and agencies book for guests and clients, never for themselves, so
+    // they have no trips of their own; their bookings live in their portal.
+    if (item.to === '/trips') return !!currentUser && currentUser.role !== 'hotel' && currentUser.role !== 'agency';
     // Checked before the logged-out passthrough below, which would otherwise
     // advertise the admin panel to the public. The route itself is guarded, but
     // the link should not be there at all, and dropping it also takes the
@@ -107,7 +109,8 @@ export default function Layout({ children }: { children: ReactNode }) {
       heading: 'Book a boat',
       links: [
         { to: '/', label: 'Browse boats' },
-        ...(currentUser ? [{ to: '/trips', label: 'My trips' }] : []),
+        ...(currentUser && currentUser.role !== 'hotel' && currentUser.role !== 'agency'
+          ? [{ to: '/trips', label: 'My trips' }] : []),
         { to: '/track', label: 'Track a booking' },
       ],
     },

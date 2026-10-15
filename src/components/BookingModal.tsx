@@ -107,6 +107,9 @@ export default function BookingModal({
   initialStartDate = '', initialEndDate = '', onClose, onBooked, editing, onSaved,
 }: Props) {
   const onBehalf = onBehalfOfGuest || hotelId !== null;
+  // A hotel books for its guests, a travel agency for its clients: the copy uses
+  // the word each portal uses.
+  const party = hotelId !== null ? 'guest' : 'client';
   const isEdit = editing !== undefined;
   const editHourly = Boolean(editing?.startTime && editing?.durationHours);
   const nameHintId = useId();
@@ -322,8 +325,8 @@ export default function BookingModal({
       : formatDay(date);
 
   const title = isEdit
-    ? onBehalf ? "Change the guest's request" : 'Change your request'
-    : onBehalf ? 'Book on behalf of guest' : 'Request to book';
+    ? onBehalf ? `Change the ${party}'s request` : 'Change your request'
+    : onBehalf ? `Book on behalf of a ${party}` : 'Request to book';
 
   return (
     <AnimatePresence>
@@ -361,7 +364,7 @@ export default function BookingModal({
             {step === 'form' && (
               <motion.form key="form" {...stepMotion} onSubmit={submit} className="mt-6 space-y-7">
                 <section aria-labelledby={`${nameHintId}-trip`} className="space-y-4">
-                  <h3 id={`${nameHintId}-trip`} className={stepHeading}>{onBehalf ? "The guest's trip" : 'Your trip'}</h3>
+                  <h3 id={`${nameHintId}-trip`} className={stepHeading}>{onBehalf ? `The ${party}'s trip` : 'Your trip'}</h3>
                   {editing?.reference && (
                     <p className="text-[15px] leading-snug text-lake-800">
                       Booking{' '}
@@ -404,7 +407,7 @@ export default function BookingModal({
                         />
                       )}
                       <p className="mt-2 px-2 text-sm leading-snug text-lake-700 sm:px-0">
-                        {onBehalf ? "The guest's" : 'Your'} current {editHourly ? 'slot shows' : 'days show'} as free, so you can move within {editHourly ? 'it' : 'them'}.
+                        {onBehalf ? `The ${party}'s` : 'Your'} current {editHourly ? 'slot shows' : 'days show'} as free, so you can move within {editHourly ? 'it' : 'them'}.
                       </p>
                     </div>
                   )}
@@ -483,11 +486,11 @@ export default function BookingModal({
 
                 <section aria-labelledby={`${nameHintId}-details`} className="space-y-4">
                   <h3 id={`${nameHintId}-details`} className={stepHeading}>
-                    {onBehalf ? "Guest's details" : 'Your details'}
+                    {onBehalf ? `${party === 'guest' ? 'Guest' : 'Client'}'s details` : 'Your details'}
                   </h3>
                   <div>
                     <label htmlFor={`${nameHintId}-name`} className={fieldLabel}>
-                      {onBehalf ? "Guest's full name" : 'Your full name'}
+                      {onBehalf ? `${party === 'guest' ? 'Guest' : 'Client'}'s full name` : 'Your full name'}
                     </label>
                     <input id={`${nameHintId}-name`} required value={guestName}
                       onChange={(e) => setGuestName(e.target.value)}
@@ -504,7 +507,7 @@ export default function BookingModal({
                   </div>
                   <div>
                     <label htmlFor={`${nameHintId}-phone`} className={fieldLabel}>
-                      {onBehalf ? "Guest's phone / WhatsApp" : 'Your phone / WhatsApp'}
+                      {onBehalf ? `${party === 'guest' ? 'Guest' : 'Client'}'s phone / WhatsApp` : 'Your phone / WhatsApp'}
                     </label>
                     <input id={`${nameHintId}-phone`} required value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)}
                       aria-describedby={isEdit ? `${nameHintId}-phone-hint` : undefined}
@@ -642,6 +645,7 @@ export default function BookingModal({
                 <BookingConfirmation
                   edited={isEdit}
                   onBehalf={onBehalf}
+                  party={party}
                   phoneChanged={phoneChanged}
                   bookingReference={bookingReference}
                   bookingId={bookingId}
@@ -674,7 +678,7 @@ export default function BookingModal({
  * short booking id it has always shown.
  */
 function BookingConfirmation({
-  edited = false, onBehalf = false, phoneChanged = false,
+  edited = false, onBehalf = false, party = 'guest', phoneChanged = false,
   bookingReference, bookingId, operatorName, boatName, when, groupSize, priceTotal, depositAmount, onDone,
 }: {
   /** The confirmation of a change to an existing request, not a new one. */
@@ -684,6 +688,8 @@ function BookingConfirmation({
    * who passes the reference on, not to the guest.
    */
   onBehalf?: boolean;
+  /** Who the staff member booked for: a hotel's guest or an agency's client. */
+  party?: 'guest' | 'client';
   /** Edit only: the guest's phone changed, which is what the Track page matches on. */
   phoneChanged?: boolean;
   bookingReference?: string;
@@ -725,7 +731,7 @@ function BookingConfirmation({
           {edited ? (
             <>{operatorName || 'The operator'} will see the changed request and is still to confirm it.</>
           ) : bookingReference && onBehalf ? (
-            <>You have sent the guest's request to {operatorName || 'the operator'}. It is awaiting their confirmation and is listed with your bookings in the portal.</>
+            <>You have sent the {party}'s request to {operatorName || 'the operator'}. It is awaiting their confirmation and is listed with your bookings in the portal.</>
           ) : bookingReference ? (
             <>Your request is with {operatorName || 'the operator'} and is awaiting their confirmation.</>
           ) : (
@@ -746,8 +752,8 @@ function BookingConfirmation({
           <p className="mt-3 border-t border-lake-200 pt-3 text-[15px] leading-snug text-lake-800">
             {onBehalf
               ? edited && phoneChanged
-                ? 'Give the guest this reference and the new phone number; they can track it at /track.'
-                : 'Give the guest this reference and the phone number used; they can track it at /track.'
+                ? `Give the ${party} this reference and the new phone number; they can track it at /track.`
+                : `Give the ${party} this reference and the phone number used; they can track it at /track.`
               : edited && phoneChanged
                 ? 'Track it with this reference and the new phone number.'
                 : 'Keep this number to track your booking.'}{' '}
