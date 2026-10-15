@@ -101,16 +101,24 @@ interface Props {
    */
   selectedRange?: DateRange | null;
   onRangeChange?: (range: DateRange | null) => void;
+  /** h2 on a page; h3 inside a dialog whose title is already the h2. */
+  headingLevel?: 'h2' | 'h3';
+  /** An ISO day whose month the calendar opens on (default: this month). */
+  initialMonth?: string;
 }
 
 export default function AvailabilityCalendar({
-  boat, bookings, showGuestNames = false, selectedRange = null, onRangeChange,
+  boat, bookings, showGuestNames = false, selectedRange = null, onRangeChange, headingLevel = 'h2', initialMonth,
 }: Props) {
+  const Heading = headingLevel;
   const reduce = useReducedMotion();
   const today = toISODate(new Date());
   const thisYear = new Date().getFullYear();
-  const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
-  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth()); // 0-indexed
+  // Opens on initialMonth when it is given and not in the past, else on this month.
+  const [viewYear, setViewYear] = useState(() =>
+    initialMonth && initialMonth >= today ? parseISO(initialMonth).y : new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(() =>
+    initialMonth && initialMonth >= today ? parseISO(initialMonth).m - 1 : new Date().getMonth()); // 0-indexed
   const [selected, setSelected] = useState<string | null>(null);
   const [slideDir, setSlideDir] = useState(1);
   const [notice, setNotice] = useState('');
@@ -266,9 +274,9 @@ export default function AvailabilityCalendar({
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 px-1 sm:px-0">
         <div className="min-w-0">
           <span aria-hidden className="block h-1 w-10 rounded-full bg-sunset-500" />
-          <h2 className="mt-3 flex items-center gap-2 text-xl font-extrabold uppercase tracking-[0.04em] text-lake-950 sm:text-2xl">
+          <Heading className="mt-3 flex items-center gap-2 text-xl font-extrabold uppercase tracking-[0.04em] text-lake-950 sm:text-2xl">
             <CalendarDays size={22} className="shrink-0 text-lake-700" aria-hidden /> Availability
-          </h2>
+          </Heading>
         </div>
         <div className="flex items-center gap-1">
           <button

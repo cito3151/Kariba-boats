@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Check, X, Wallet, CheckCircle2, UserCheck } from 'lucide-react';
+import { Check, X, Wallet, CheckCircle2, UserCheck, PencilLine } from 'lucide-react';
 import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
 import PortalSection from '../../components/portal/PortalSection';
 import Reveal from '../../components/Reveal';
@@ -49,6 +49,32 @@ function AssignCaptain({ booking, captains, onAssigned }: {
         </div>
       )}
     </div>
+  );
+}
+
+/** "15 Oct, 09:58" in the viewer's time, with the year when it is not this one. */
+function changedAt(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleString('en-GB', {
+    day: 'numeric', month: 'short',
+    year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+/**
+ * "Changed by guest, 15 Oct, 09:58": the request was edited by the guest (or the
+ * hotel or agency that booked it) through update_booking_request. The figures
+ * below are the changed ones; the audit log keeps what they were before.
+ * amber-900 on amber-50 is well over 7:1.
+ */
+function GuestChangedChip({ at }: { at: string }) {
+  return (
+    <p className="mt-2 flex w-fit max-w-full flex-wrap items-center gap-x-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-sm leading-snug text-amber-900">
+      <PencilLine size={14} className="shrink-0" aria-hidden />
+      <span className="font-semibold">Changed by guest</span>
+      <time dateTime={at} className="tabular-nums">{changedAt(at)}</time>
+    </p>
   );
 }
 
@@ -106,6 +132,7 @@ export default function OwnerBookingsPage() {
                     <div className="min-w-0">
                       <h3 className="break-words text-lg font-bold leading-snug tracking-[-0.01em] text-lake-950">{b.boatName}</h3>
                       <BookingRef reference={b.reference} className="mt-1.5" />
+                      {b.updatedByGuestAt && <GuestChangedChip at={b.updatedByGuestAt} />}
                     </div>
                     <StatusBadge status={b.status} />
                   </div>
@@ -115,12 +142,15 @@ export default function OwnerBookingsPage() {
                   <div className="mt-3.5 flex flex-wrap items-start gap-2">
                     {b.status === 'requested' && (
                       <>
-                        <button onClick={() => run(b.id, () => bookingsSvc.setOwnerBookingStatus(b.id, 'confirmed'))}
+                        {/* updatedByGuestAt is what this card shows. If the guest has
+                            changed the request since, the server refuses, and the
+                            reload brings the new details. */}
+                        <button onClick={() => run(b.id, () => bookingsSvc.setOwnerBookingStatus(b.id, 'confirmed', b.updatedByGuestAt))}
                           disabled={busyId === b.id}
                           className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
                           <Check size={15} /> Confirm
                         </button>
-                        <button onClick={() => run(b.id, () => bookingsSvc.setOwnerBookingStatus(b.id, 'declined'))}
+                        <button onClick={() => run(b.id, () => bookingsSvc.setOwnerBookingStatus(b.id, 'declined', b.updatedByGuestAt))}
                           disabled={busyId === b.id}
                           className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-3 py-2 text-sm font-semibold text-lake-700 hover:bg-lake-50 disabled:opacity-50">
                           <X size={15} /> Decline

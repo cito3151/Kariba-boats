@@ -4,6 +4,7 @@ import StatusBadge from '../StatusBadge';
 import BookingFigures from '../BookingFigures';
 import BookingRef from '../BookingRef';
 import CancelBookingButton from '../CancelBookingButton';
+import EditBookingButton from '../EditBookingButton';
 import { portalCard } from '../portal/styles';
 import type { BookingRow } from '../../services/bookings.service';
 
@@ -16,7 +17,9 @@ const CANCELLABLE = new Set(['requested', 'confirmed', 'deposit_paid']);
  * then the labelled Guest / When / Group / Total figures. `boatName` resolves
  * the title the way each dashboard always has. With `onCancelled`, an open
  * booking gets the shared Cancel button (cancel_booking lets the hotel or agency
- * that made it cancel it).
+ * that made it cancel it), and a request still awaiting the operator gets Edit
+ * request (update_booking_request lets the same hotel or agency change it). The
+ * callback reloads the list after either.
  * Each card rises in as it scrolls into view.
  */
 export default function PartnerBookingList({
@@ -62,6 +65,9 @@ export default function PartnerBookingList({
             )}
             {onCancelled && CANCELLABLE.has(b.status) && (
               <div className="mt-3.5 flex flex-wrap items-start gap-2 border-t border-lake-100 pt-3.5">
+                {/* A request the operator has not answered yet can be changed by the
+                    hotel or agency that made it (update_booking_request). */}
+                <EditBookingButton booking={{ ...b, boatName: boatName(b) }} onBehalfOfGuest onSaved={onCancelled} />
                 <CancelBookingButton booking={{ ...b, boatName: boatName(b) }} onCancelled={onCancelled} />
               </div>
             )}

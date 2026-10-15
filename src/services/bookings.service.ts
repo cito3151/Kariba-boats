@@ -20,10 +20,14 @@ export interface BookingRow {
   priceTotal: number; depositAmount: number; groupSize: number; hotelId: string | null;
   createdAt: string; boatName: string; boatLocation: string;
   captainName: string | null; captainPhone: string | null;
+  /** The rest of the request, so the edit form can start from what was sent. */
+  guestPhone: string; experienceType: string; notes: string;
+  /** When the booking party last changed the request (migration 39), or null. */
+  updatedByGuestAt: string | null;
 }
 
 const BOOKING_SELECT =
-  'id, reference, boat_id, guest_name, start_date, days, start_time, duration_hours, status, price_total, deposit_amount, group_size, hotel_id, captain_name, captain_phone, created_at, boats(name, location)';
+  'id, reference, boat_id, guest_name, guest_phone, start_date, days, start_time, duration_hours, status, price_total, deposit_amount, group_size, experience_type, notes, hotel_id, captain_name, captain_phone, created_at, updated_by_guest_at, boats(name, location)';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function toBookingRow(r: any): BookingRow {
@@ -35,6 +39,8 @@ function toBookingRow(r: any): BookingRow {
     groupSize: r.group_size, hotelId: r.hotel_id, createdAt: r.created_at,
     boatName: r.boats?.name ?? 'Boat', boatLocation: r.boats?.location ?? '',
     captainName: r.captain_name ?? null, captainPhone: r.captain_phone ?? null,
+    guestPhone: r.guest_phone ?? '', experienceType: r.experience_type ?? '', notes: r.notes ?? '',
+    updatedByGuestAt: r.updated_by_guest_at ?? null,
   };
 }
 
@@ -64,6 +70,68 @@ export async function createBooking(input: BookingInput, touristId: string | nul
   if (error) throw new Error(humanizeError(error.message));
   const row = data as { id: string; deposit_amount: number; reference?: string | null };
   return { id: row.id, depositAmount: Number(row.deposit_amount), reference: row.reference ?? undefined };
+}
+
+export interface BookingEditInput {
+  bookingId: string; guestName: string; guestPhone: string; startDate: string;
+  days: number; startTime: string | null; durationHours: number | null;
+  groupSize: number; experienceType: string; notes?: string;
+  waiverVersion: number; waiverAccepted: boolean;
+}
+
+export interface BookingEditResult {
+  id: string; reference: string; priceTotal: number; depositAmount: number; updatedByGuestAt: string | null;
+}
+
+/**
+ * Change a booking that is still 'requested' (update_booking_request, migration 39).
+ * Only the tourist who made it, or the hotel or agency that booked it, may. The server
+ * re-checks everything create_booking checks and sets the price itself, so no price is
+ * sent; the reference never changes. A clash with another booking leaves the booking
+ * exactly as it was.
+ */
+export async function updateBookingRequest(input: BookingEditInput): Promise<BookingEditResult> {
+  const { data, error } = await supabase.rpc('update_booking_request', {
+    p_booking_id: input.bookingId, p_guest_name: input.guestName, p_guest_phone: input.guestPhone,
+    p_start_date: input.startDate, p_days: input.days,
+    p_start_time: input.startTime ?? undefined, p_duration_hours: input.durationHours ?? undefined,
+    p_group_size: input.groupSize, p_experience_type: input.experienceType,
+    p_notes: input.notes ?? undefined,
+    p_waiver_version: input.waiverVersion, p_waiver_accepted: input.waiverAccepted,
+  }).single();
+  if (error) throw new Error(humanizeError(error.message));
+  const row = data as {
+    id: string; reference: string; price_total: number; deposit_amount: number; updated_by_guest_at: string | null;
+  };
+  return {
+    id: row.id, reference: row.reference, priceTotal: Number(row.price_total),
+    depositAmount: Number(row.deposit_amount), updatedByGuestAt: row.updated_by_guest_at ?? null,
+  };
+}
+
+/**
+ * The boat's busy periods without the booking being edited, so its own slot shows as
+ * free in the edit form's calendar. boat_busy_periods returns no ids, so the booking's
+ * block is matched on its exact slot (start date, days, start time, duration);
+ * bookings_no_overlap makes that slot unique among a boat's blocking bookings. Only
+ * the first match is removed. Rows from the table fallback carry real ids and are
+ * matched on id.
+ */
+export function withoutOwnBooking(
+  busy: Booking[], own: Pick<BookingRow, 'id' | 'startDate' | 'days' | 'startTime' | 'durationHours'>,
+): Booking[] {
+  const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : null);
+  let removed = false;
+  return busy.filter((b) => {
+    if (removed) return true;
+    const same = b.id === own.id || (
+      b.date === own.startDate && b.days === own.days
+      && hhmm(b.startTime) === hhmm(own.startTime)
+      && (b.durationHours ?? null) === (own.durationHours ?? null)
+    );
+    if (same) removed = true;
+    return !same;
+  });
 }
 
 export async function listBookingsForBoat(boatId: string): Promise<BookingRow[]> {
@@ -150,10 +218,14 @@ export async function listAllBookings(): Promise<BookingRow[]> {
   return (data ?? []).map(toBookingRow);
 }
 
-// Owner (or admin) status transitions go through the RPC, which enforces the
-// legal transition graph. Direct table updates are revoked.
-export async function setOwnerBookingStatus(id: string, status: BookingStatus) {
-  const { error } = await supabase.rpc('owner_set_booking_status', { p_booking_id: id, p_status: status });
+// Owner status transitions go through the RPC, which enforces the legal transition
+// graph. Direct table updates are revoked. `seenGuestChange` is the booking's
+// updatedByGuestAt as the operator saw it: if the guest has changed the request since,
+// the server refuses rather than confirm details the operator has not seen.
+export async function setOwnerBookingStatus(id: string, status: BookingStatus, seenGuestChange?: string | null) {
+  const { error } = await supabase.rpc('owner_set_booking_status', {
+    p_booking_id: id, p_status: status, p_seen_guest_change: seenGuestChange ?? undefined,
+  });
   if (error) throw new Error(humanizeError(error.message));
 }
 

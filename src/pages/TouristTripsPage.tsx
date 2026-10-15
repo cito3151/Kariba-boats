@@ -13,6 +13,7 @@ import BookingRef from '../components/BookingRef';
 import ReviewForm from '../components/ReviewForm';
 import ReviewCard from '../components/reviews/ReviewCard';
 import CancelBookingButton from '../components/CancelBookingButton';
+import EditBookingButton from '../components/EditBookingButton';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import EmergencyContacts from '../components/EmergencyContacts';
 import { useAuth } from '../data/AuthContext';
@@ -110,6 +111,9 @@ export default function TouristTripsPage() {
 
                     {canCancel && (
                       <div className="mt-3.5 flex flex-wrap items-start gap-2 border-t border-lake-100 pt-3.5">
+                        {/* Only while the operator has not answered (it renders nothing
+                            otherwise); after that the guest asks them, or cancels. */}
+                        <EditBookingButton booking={b} onSaved={reload} />
                         <CancelBookingButton booking={b} onCancelled={reload} />
                       </div>
                     )}

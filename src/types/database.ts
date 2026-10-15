@@ -470,6 +470,7 @@ export type Database = {
           start_time: string | null
           status: Database["public"]["Enums"]["booking_status"]
           tourist_id: string | null
+          updated_by_guest_at: string | null
         }
         Insert: {
           agency_id?: string | null
@@ -494,6 +495,7 @@ export type Database = {
           start_time?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           tourist_id?: string | null
+          updated_by_guest_at?: string | null
         }
         Update: {
           agency_id?: string | null
@@ -518,6 +520,7 @@ export type Database = {
           start_time?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           tourist_id?: string | null
+          updated_by_guest_at?: string | null
         }
         Relationships: [
           {
@@ -1564,10 +1567,12 @@ export type Database = {
           notes: string | null
           period: unknown
           price_total: number
+          reference: string
           start_date: string
           start_time: string | null
           status: Database["public"]["Enums"]["booking_status"]
           tourist_id: string | null
+          updated_by_guest_at: string | null
         }
         SetofOptions: {
           from: "*"
@@ -1600,10 +1605,12 @@ export type Database = {
           notes: string | null
           period: unknown
           price_total: number
+          reference: string
           start_date: string
           start_time: string | null
           status: Database["public"]["Enums"]["booking_status"]
           tourist_id: string | null
+          updated_by_guest_at: string | null
         }
         SetofOptions: {
           from: "*"
@@ -1771,6 +1778,7 @@ export type Database = {
       owner_set_booking_status: {
         Args: {
           p_booking_id: string
+          p_seen_guest_change?: string
           p_status: Database["public"]["Enums"]["booking_status"]
         }
         Returns: {
@@ -1791,10 +1799,12 @@ export type Database = {
           notes: string | null
           period: unknown
           price_total: number
+          reference: string
           start_date: string
           start_time: string | null
           status: Database["public"]["Enums"]["booking_status"]
           tourist_id: string | null
+          updated_by_guest_at: string | null
         }
         SetofOptions: {
           from: "*"
@@ -1802,6 +1812,22 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      price_booking_request: {
+        Args: {
+          p_boat_id: string
+          p_days: number
+          p_duration_hours: number
+          p_group_size: number
+          p_guest_name: string
+          p_guest_phone: string
+          p_start_date: string
+          p_start_time: string
+        }
+        Returns: {
+          deposit: number
+          total: number
+        }[]
       }
       propose_boat_changes: {
         Args: { p_boat_id: string; p_changes: Json }
@@ -2015,6 +2041,29 @@ export type Database = {
           start_date: string
           start_time: string
           status: Database["public"]["Enums"]["booking_status"]
+        }[]
+      }
+      update_booking_request: {
+        Args: {
+          p_booking_id: string
+          p_days: number
+          p_duration_hours?: number
+          p_experience_type: string
+          p_group_size: number
+          p_guest_name: string
+          p_guest_phone: string
+          p_notes?: string
+          p_start_date: string
+          p_start_time?: string
+          p_waiver_accepted: boolean
+          p_waiver_version: number
+        }
+        Returns: {
+          deposit_amount: number
+          id: string
+          price_total: number
+          reference: string
+          updated_by_guest_at: string
         }[]
       }
       void_operating_hours: {

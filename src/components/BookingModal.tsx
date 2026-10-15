@@ -3,8 +3,15 @@ import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { X, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import type { PublicBoat } from '../services/boats.service';
-import { createBooking } from '../services/bookings.service';
-import { DAY_END, DAY_START, minutesToTime, toISODate } from '../data/availability';
+import {
+  createBooking, listBusyPeriodsForBoat, updateBookingRequest, withoutOwnBooking,
+} from '../services/bookings.service';
+import type { BookingEditResult, BookingRow } from '../services/bookings.service';
+import {
+  DAY_END, DAY_START, addDays, checkAvailability, minutesToTime, toISODate,
+} from '../data/availability';
+import { useAsync } from '../hooks/useAsync';
+import AvailabilityCalendar, { type DateRange } from './AvailabilityCalendar';
 import { useCurrentDocuments } from './legal/useCurrentDocuments';
 import DocumentModal from './legal/DocumentModal';
 import { portalButtonPrimaryLarge } from './portal/styles';
@@ -48,6 +55,21 @@ function formatDay(iso: string) {
   });
 }
 
+/** "HH:MM" from a database time ("HH:MM:SS"), or null. */
+function hhmm(t: string | null | undefined) {
+  return t ? t.slice(0, 5) : null;
+}
+
+/** The fixed choices, plus the booking's own value when it is not one of them. */
+function withCurrent<T>(choices: T[], current: T | null | undefined): T[] {
+  return current == null || choices.includes(current) ? choices : [...choices, current];
+}
+
+/** The last day of a booking's day range, inclusive. */
+function lastDay(b: Pick<BookingRow, 'startDate' | 'days'>) {
+  return addDays(b.startDate, Math.max(1, b.days) - 1);
+}
+
 interface Props {
   boat: PublicBoat;
   touristId: string | null;
@@ -67,15 +89,26 @@ interface Props {
   onClose: () => void;
   /** Fired once the server has accepted the request, before the success screen. */
   onBooked?: () => void;
+  /**
+   * Edit mode: the 'requested' booking to change through update_booking_request. The
+   * form starts from what was sent, shows the boat's calendar without this booking's
+   * own slot, prices the change before it is saved, and confirms with the same
+   * reference. The boat, and whose booking it is, cannot change.
+   */
+  editing?: BookingRow;
+  /** Edit mode: fired once the server has saved the change, before the success screen. */
+  onSaved?: (result: BookingEditResult) => void;
 }
 
 type Step = 'form' | 'submitting' | 'success';
 
 export default function BookingModal({
   boat, touristId, hotelId = null, onBehalfOfGuest = false, initialName = '', initialPhone = '',
-  initialStartDate = '', initialEndDate = '', onClose, onBooked,
+  initialStartDate = '', initialEndDate = '', onClose, onBooked, editing, onSaved,
 }: Props) {
   const onBehalf = onBehalfOfGuest || hotelId !== null;
+  const isEdit = editing !== undefined;
+  const editHourly = Boolean(editing?.startTime && editing?.durationHours);
   const nameHintId = useId();
   const reduce = useReducedMotion();
   // `> 0`, not just non-null: a rate of 0 means the owner did not offer that
@@ -85,16 +118,20 @@ export default function BookingModal({
   const hasDaily = boat.pricePerDay != null && boat.pricePerDay > 0;
 
   const [step, setStep] = useState<Step>('form');
-  const [guestName, setGuestName] = useState(onBehalf ? '' : initialName);
-  const [guestPhone, setGuestPhone] = useState(onBehalf ? '' : initialPhone);
-  const [date, setDate] = useState(initialStartDate);
+  // In edit mode every field starts from the booking as it was sent.
+  const [guestName, setGuestName] = useState(editing ? editing.guestName : onBehalf ? '' : initialName);
+  const [guestPhone, setGuestPhone] = useState(editing ? editing.guestPhone : onBehalf ? '' : initialPhone);
+  const [date, setDate] = useState(editing ? editing.startDate : initialStartDate);
   // A one-day daily trip arrives with no end date; the end defaults to the start.
-  const [endDate, setEndDate] = useState(initialEndDate || (hasDaily ? initialStartDate : ''));
-  const [startTime, setStartTime] = useState('16:00');
-  const [durationHours, setDurationHours] = useState(2);
-  const [groupSize, setGroupSize] = useState(2);
-  const [experienceType, setExperienceType] = useState('sunset');
-  const [notes, setNotes] = useState('');
+  const [endDate, setEndDate] = useState(() => {
+    if (editing) return editHourly ? editing.startDate : lastDay(editing);
+    return initialEndDate || (hasDaily ? initialStartDate : '');
+  });
+  const [startTime, setStartTime] = useState(hhmm(editing?.startTime) ?? '16:00');
+  const [durationHours, setDurationHours] = useState(editing?.durationHours ?? 2);
+  const [groupSize, setGroupSize] = useState(editing?.groupSize ?? 2);
+  const [experienceType, setExperienceType] = useState(editing?.experienceType || 'sunset');
+  const [notes, setNotes] = useState(editing?.notes ?? '');
   const [error, setError] = useState('');
   const [depositAmount, setDepositAmount] = useState(0);
   const [bookingId, setBookingId] = useState('');
@@ -102,12 +139,17 @@ export default function BookingModal({
   // as its own box on the success screen. Undefined only if the server did not
   // return one, when the screen falls back to the short booking id.
   const [bookingReference, setBookingReference] = useState<string | undefined>(undefined);
+  // The total the server saved for an edit, for the confirmation.
+  const [savedTotal, setSavedTotal] = useState<number | null>(null);
   const { get: getDoc } = useCurrentDocuments();
   const [waiverAccepted, setWaiverAccepted] = useState(false);
   const [showWaiver, setShowWaiver] = useState(false);
   // Default to daily when available (so a range picked on the calendar lands in daily
-  // mode); hourly only otherwise. Tourist can switch when both exist.
-  const [rateMode, setRateMode] = useState<'hour' | 'day'>(hasDaily ? 'day' : 'hour');
+  // mode); hourly only otherwise. Tourist can switch when both exist. An edit starts on
+  // the basis the booking was made on.
+  const [rateMode, setRateMode] = useState<'hour' | 'day'>(
+    editing ? (editHourly ? 'hour' : 'day') : hasDaily ? 'day' : 'hour',
+  );
 
   const isHourly = rateMode === 'hour';
   const amount = isHourly ? (boat.pricePerHour ?? 0) : (boat.pricePerDay ?? 0);
@@ -117,8 +159,64 @@ export default function BookingModal({
     const ms = new Date(endDate).getTime() - new Date(date).getTime();
     return ms >= 0 ? Math.round(ms / 86_400_000) + 1 : 1;
   })();
-  const priceTotal = isHourly ? amount * durationHours : amount * days;
-  const deposit = Math.round((priceTotal * boat.depositPercent) / 100);
+  const sentStartTime = isHourly ? startTime : null;
+  const sentDuration = isHourly ? durationHours : null;
+
+  // update_booking_request re-prices only when the trip itself moves (date, days, start
+  // time, duration); a change to contact details, notes, group or experience keeps the
+  // price already quoted. Mirrored here so the summary shows what will be saved.
+  const tripChanged = !editing || date !== editing.startDate || days !== editing.days
+    || sentStartTime !== hhmm(editing.startTime) || sentDuration !== (editing.durationHours ?? null);
+  const priceTotal = editing && !tripChanged
+    ? editing.priceTotal
+    : isHourly ? amount * durationHours : amount * days;
+  const deposit = editing && !tripChanged
+    ? editing.depositAmount
+    : Math.round((priceTotal * boat.depositPercent) / 100);
+  const priceMoved = editing !== undefined && priceTotal !== editing.priceTotal;
+
+  const nothingChanged = editing !== undefined && !tripChanged
+    && guestName === editing.guestName && guestPhone === editing.guestPhone
+    && groupSize === editing.groupSize && experienceType === editing.experienceType
+    && notes.trim() === editing.notes.trim();
+  const phoneChanged = editing !== undefined && guestPhone.trim() !== editing.guestPhone.trim();
+
+  // Edit mode draws the boat's calendar, with this booking's own slot taken out so its
+  // current days read as free to move within. Create mode never loads it: the boat
+  // page already shows the calendar.
+  const { data: busy, loading: busyLoading } = useAsync(
+    () => (editing ? listBusyPeriodsForBoat(boat.id) : Promise.resolve([])), [editing?.id, boat.id],
+  );
+  const calendarBookings = editing ? withoutOwnBooking(busy ?? [], editing) : [];
+  const calendarBoat = { id: boat.id, priceUnit: rateMode };
+  const [calRange, setCalRange] = useState<DateRange | null>(() => (editing
+    ? { start: editing.startDate, end: editHourly ? editing.startDate : lastDay(editing) }
+    : null));
+
+  // The calendar and the date inputs edit the same dates, each keeping the other in step.
+  const pickRange = (r: DateRange | null) => {
+    setCalRange(r);
+    if (!r) return;
+    setDate(r.start);
+    setEndDate(r.end ?? r.start);
+  };
+  const changeStart = (v: string) => {
+    setDate(v);
+    const end = !isHourly && endDate >= v ? endDate : v;
+    if (end !== endDate) setEndDate(end);
+    setCalRange(v ? { start: v, end } : null);
+  };
+  const changeEnd = (v: string) => {
+    setEndDate(v);
+    if (date) setCalRange({ start: date, end: v >= date ? v : date });
+  };
+  const changeMode = (mode: 'hour' | 'day') => {
+    setRateMode(mode);
+    if (!date) return;
+    const end = mode === 'hour' ? date : endDate && endDate >= date ? endDate : date;
+    if (end !== endDate) setEndDate(end);
+    setCalRange({ start: date, end });
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,6 +225,21 @@ export default function BookingModal({
       setError('Choose an end date on or after the start date.');
       return;
     }
+    if (nothingChanged) {
+      setError('Nothing has changed yet. Change the trip or the details, then save.');
+      return;
+    }
+    if (editing) {
+      // The calendar's own overlap check, so a clash is named before the round trip.
+      // The server's overlap constraint stays the final word.
+      const check = checkAvailability(calendarBoat, calendarBookings, {
+        date, days, startTime: sentStartTime ?? undefined, durationHours: sentDuration ?? undefined,
+      });
+      if (!check.ok) {
+        setError(check.reason ?? 'Those dates are not free.');
+        return;
+      }
+    }
     if (!waiverAccepted) {
       setError('Please accept the booking waiver to continue.');
       return;
@@ -134,6 +247,29 @@ export default function BookingModal({
     const waiverDoc = getDoc('booking_waiver');
     setStep('submitting');
     try {
+      if (editing) {
+        const result = await updateBookingRequest({
+          bookingId: editing.id,
+          guestName,
+          guestPhone,
+          startDate: date,
+          days,
+          startTime: sentStartTime,
+          durationHours: sentDuration,
+          groupSize,
+          experienceType,
+          notes,
+          waiverVersion: waiverDoc?.version ?? 1,
+          waiverAccepted: true,
+        });
+        setBookingId(result.id);
+        setBookingReference(result.reference);
+        setDepositAmount(result.depositAmount);
+        setSavedTotal(result.priceTotal);
+        setStep('success');
+        onSaved?.(result);
+        return;
+      }
       const result = await createBooking(
         {
           boatId: boat.id,
@@ -142,8 +278,8 @@ export default function BookingModal({
           hotelId,
           startDate: date,
           days,
-          startTime: isHourly ? startTime : null,
-          durationHours: isHourly ? durationHours : null,
+          startTime: sentStartTime,
+          durationHours: sentDuration,
           groupSize,
           experienceType,
           priceTotal,
@@ -160,7 +296,9 @@ export default function BookingModal({
       setStep('success');
       onBooked?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'That slot is no longer available.');
+      setError(err instanceof Error
+        ? err.message
+        : isEdit ? 'Your changes could not be saved.' : 'That slot is no longer available.');
       setStep('form');
     }
   };
@@ -182,6 +320,10 @@ export default function BookingModal({
     : days > 1 && endDate
       ? `${formatDay(date)} to ${formatDay(endDate)} (${days} days)`
       : formatDay(date);
+
+  const title = isEdit
+    ? onBehalf ? "Change the guest's request" : 'Change your request'
+    : onBehalf ? 'Book on behalf of guest' : 'Request to book';
 
   return (
     <AnimatePresence>
@@ -206,7 +348,7 @@ export default function BookingModal({
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold uppercase tracking-[0.06em] text-lake-700">{boat.name}</p>
               <h2 id={`${nameHintId}-title`} className="mt-1 text-2xl font-extrabold text-lake-950 sm:text-[28px]">
-                {onBehalf ? 'Book on behalf of guest' : 'Request to book'}
+                {title}
               </h2>
             </div>
             <button type="button" onClick={onClose} aria-label="Close"
@@ -220,25 +362,58 @@ export default function BookingModal({
               <motion.form key="form" {...stepMotion} onSubmit={submit} className="mt-6 space-y-7">
                 <section aria-labelledby={`${nameHintId}-trip`} className="space-y-4">
                   <h3 id={`${nameHintId}-trip`} className={stepHeading}>Your trip</h3>
+                  {editing?.reference && (
+                    <p className="text-[15px] leading-snug text-lake-800">
+                      Booking{' '}
+                      <span className="select-all font-mono font-semibold tracking-[0.04em] text-lake-950">{editing.reference}</span>
+                      {' '}keeps its reference. Only a request the operator has not confirmed yet can change.
+                    </p>
+                  )}
                   {hasHourly && hasDaily && (
                     <div role="group" aria-label="Hire by the day or by the hour" className="grid grid-cols-2 gap-2">
-                      <button type="button" aria-pressed={rateMode === 'day'} onClick={() => setRateMode('day')}
+                      <button type="button" aria-pressed={rateMode === 'day'} onClick={() => changeMode('day')}
                         className={`${rateOption} ${rateMode === 'day' ? rateOn : rateOff}`}>
                         <span className="block text-sm font-semibold">Daily</span>
                         <span className="block text-lg font-bold tabular-nums">${boat.pricePerDay}<span className="text-sm font-medium"> / day</span></span>
                       </button>
-                      <button type="button" aria-pressed={rateMode === 'hour'} onClick={() => setRateMode('hour')}
+                      <button type="button" aria-pressed={rateMode === 'hour'} onClick={() => changeMode('hour')}
                         className={`${rateOption} ${rateMode === 'hour' ? rateOn : rateOff}`}>
                         <span className="block text-sm font-semibold">Hourly</span>
                         <span className="block text-lg font-bold tabular-nums">${boat.pricePerHour}<span className="text-sm font-medium"> / hour</span></span>
                       </button>
                     </div>
                   )}
+
+                  {editing && (
+                    // -mx-2 lends the calendar part of the sheet's gutter on a 375px
+                    // phone, where its seven 40px days need the room.
+                    <div className="-mx-2 sm:mx-0">
+                      {busyLoading && busy == null ? (
+                        <p role="status" className="rounded-lg border border-lake-100 bg-lake-50 px-4 py-6 text-center text-[15px] text-lake-800">
+                          Loading availability…
+                        </p>
+                      ) : (
+                        <AvailabilityCalendar
+                          key={rateMode}
+                          boat={calendarBoat}
+                          bookings={calendarBookings}
+                          selectedRange={calRange}
+                          onRangeChange={pickRange}
+                          headingLevel="h3"
+                          initialMonth={editing.startDate}
+                        />
+                      )}
+                      <p className="mt-2 px-2 text-sm leading-snug text-lake-700 sm:px-0">
+                        Your current {editHourly ? 'slot shows' : 'days show'} as free, so you can move within {editHourly ? 'it' : 'them'}.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-3">
                     <div className="min-w-0">
                       <label htmlFor={`${nameHintId}-date`} className={fieldLabel}>{isHourly ? 'Date' : 'Start date'}</label>
                       <input id={`${nameHintId}-date`} required type="date" min={toISODate(new Date())} value={date}
-                        onChange={(e) => setDate(e.target.value)}
+                        onChange={(e) => changeStart(e.target.value)}
                         className={fieldInput} />
                     </div>
                     <div className="min-w-0">
@@ -255,14 +430,14 @@ export default function BookingModal({
                         <label htmlFor={`${nameHintId}-time`} className={fieldLabel}>Start time</label>
                         <select id={`${nameHintId}-time`} value={startTime} onChange={(e) => setStartTime(e.target.value)}
                           className={`${fieldInput} tabular-nums`}>
-                          {START_TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                          {withCurrent(START_TIMES, hhmm(editing?.startTime)).map((t) => <option key={t} value={t}>{t}</option>)}
                         </select>
                       </div>
                       <div className="min-w-0">
                         <label htmlFor={`${nameHintId}-duration`} className={fieldLabel}>Duration</label>
                         <select id={`${nameHintId}-duration`} value={durationHours} onChange={(e) => setDurationHours(Number(e.target.value))}
                           className={fieldInput}>
-                          {DURATIONS.map((d) => <option key={d} value={d}>{d} hours</option>)}
+                          {withCurrent(DURATIONS, editing?.durationHours).map((d) => <option key={d} value={d}>{d} hours</option>)}
                         </select>
                       </div>
                     </div>
@@ -270,7 +445,7 @@ export default function BookingModal({
                     <div>
                       <label htmlFor={`${nameHintId}-end`} className={fieldLabel}>End date</label>
                       <input id={`${nameHintId}-end`} required type="date" min={date || toISODate(new Date())} value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
+                        onChange={(e) => changeEnd(e.target.value)}
                         aria-describedby={`${nameHintId}-days`}
                         className={fieldInput} />
                       <p id={`${nameHintId}-days`} className={fieldHint}>
@@ -284,6 +459,9 @@ export default function BookingModal({
                     <select id={`${nameHintId}-experience`} value={experienceType} onChange={(e) => setExperienceType(e.target.value)}
                       className={fieldInput}>
                       {EXPERIENCES.map((exp) => <option key={exp.value} value={exp.value}>{exp.label}</option>)}
+                      {editing?.experienceType && !EXPERIENCES.some((exp) => exp.value === editing.experienceType) && (
+                        <option value={editing.experienceType}>{editing.experienceType}</option>
+                      )}
                     </select>
                   </div>
                 </section>
@@ -298,12 +476,12 @@ export default function BookingModal({
                     </label>
                     <input id={`${nameHintId}-name`} required value={guestName}
                       onChange={(e) => setGuestName(e.target.value)}
-                      aria-describedby={!onBehalf && initialName ? nameHintId : undefined}
+                      aria-describedby={!isEdit && !onBehalf && initialName ? nameHintId : undefined}
                       className={fieldInput}
                       placeholder="e.g. Jane Moyo" />
                     {/* Only when the name came from the profile, so it never reads as a
                         question about a field the user typed into themselves. */}
-                    {!onBehalf && initialName && (
+                    {!isEdit && !onBehalf && initialName && (
                       <p id={nameHintId} className={fieldHint}>
                         Booking for yourself? Check your name is right.
                       </p>
@@ -314,8 +492,18 @@ export default function BookingModal({
                       {onBehalf ? "Guest's phone / WhatsApp" : 'Your phone / WhatsApp'}
                     </label>
                     <input id={`${nameHintId}-phone`} required value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)}
+                      aria-describedby={isEdit ? `${nameHintId}-phone-hint` : undefined}
                       className={`${fieldInput} tabular-nums`}
                       placeholder="+263 77 000 0000" />
+                    {/* track_booking finds a booking by its reference and this number,
+                        so a new number changes what the Track page needs. */}
+                    {isEdit && (
+                      <p id={`${nameHintId}-phone-hint`} className={fieldHint}>
+                        {phoneChanged
+                          ? <><span className="font-semibold text-lake-950">New number:</span> track this booking with it once you save.</>
+                          : 'The Track page finds this booking with this number.'}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label htmlFor={`${nameHintId}-notes`} className={fieldLabel}>
@@ -330,14 +518,32 @@ export default function BookingModal({
                 <section aria-labelledby={`${nameHintId}-price`}>
                   <h3 id={`${nameHintId}-price`} className={stepHeading}>Price summary</h3>
                   <dl className="mt-3 rounded-lg border border-lake-200 bg-lake-50 px-4 text-[15px]">
-                    <div className="flex items-baseline justify-between gap-4 py-3">
-                      <dt className="text-lake-800">
-                        {isHourly ? `$${amount} per hour × ${durationHours} hours` : `$${amount} per day × ${days} day${days > 1 ? 's' : ''}`}
-                      </dt>
-                      <dd className="font-semibold tabular-nums text-lake-950">${priceTotal}</dd>
-                    </div>
-                    <div className="flex items-end justify-between gap-4 border-t-2 border-lake-950 py-3">
-                      <dt className="pb-1 text-base font-extrabold uppercase tracking-[0.05em] text-lake-950">Total</dt>
+                    {editing && (
+                      <div className="flex items-baseline justify-between gap-4 py-3">
+                        <dt className="text-lake-800">Current total</dt>
+                        <dd className={`tabular-nums ${priceMoved ? 'text-lake-700 line-through' : 'font-semibold text-lake-950'}`}>
+                          ${editing.priceTotal}
+                        </dd>
+                      </div>
+                    )}
+                    {tripChanged ? (
+                      <div className={`flex items-baseline justify-between gap-4 py-3 ${editing ? 'border-t border-lake-200' : ''}`}>
+                        <dt className="text-lake-800">
+                          {isHourly ? `$${amount} per hour × ${durationHours} hours` : `$${amount} per day × ${days} day${days > 1 ? 's' : ''}`}
+                        </dt>
+                        <dd className="font-semibold tabular-nums text-lake-950">${priceTotal}</dd>
+                      </div>
+                    ) : (
+                      <div className="flex items-baseline justify-between gap-4 border-t border-lake-200 py-3">
+                        <dt className="text-lake-800">Same dates and times</dt>
+                        <dd className="text-right text-lake-800">Price stays as quoted</dd>
+                      </div>
+                    )}
+                    {/* The new figures are announced as they change, so a screen reader
+                        hears the price move while the dates are being edited. */}
+                    <div className="flex items-end justify-between gap-4 border-t-2 border-lake-950 py-3"
+                      aria-live={isEdit ? 'polite' : undefined} aria-atomic={isEdit || undefined}>
+                      <dt className="pb-1 text-base font-extrabold uppercase tracking-[0.05em] text-lake-950">{isEdit ? 'New total' : 'Total'}</dt>
                       <dd className="text-[32px] font-extrabold leading-none tabular-nums text-lake-950">${priceTotal}</dd>
                     </div>
                     <div className="flex items-baseline justify-between gap-4 border-t border-lake-200 py-3">
@@ -349,6 +555,11 @@ export default function BookingModal({
                       <dd className="font-semibold tabular-nums text-lake-950">${priceTotal - deposit}</dd>
                     </div>
                   </dl>
+                  {editing && tripChanged && (
+                    <p className={fieldHint}>
+                      Priced at the boat's current rate. The operator confirms the final price.
+                    </p>
+                  )}
                 </section>
 
                 <div className="space-y-4">
@@ -361,7 +572,8 @@ export default function BookingModal({
 
                   {/* The whole row is the target (48px tall, full width), not just the box.
                       leading-6 with the box 2px down sets the first line level with it, and a
-                      wrapped line stays under the text, not under the box. */}
+                      wrapped line stays under the text, not under the box. An edit is a new
+                      offer to the operator, so the waiver is accepted again (ADR-001). */}
                   <label className="flex min-h-12 cursor-pointer items-start gap-3 rounded-lg border border-lake-200 bg-white p-3.5 text-base leading-6 text-lake-800 transition-colors has-checked:border-lake-700 has-checked:bg-lake-50">
                     <input type="checkbox" checked={waiverAccepted}
                       onChange={(e) => setWaiverAccepted(e.target.checked)}
@@ -370,7 +582,8 @@ export default function BookingModal({
                       I accept the{' '}
                       <button type="button"
                         className="rounded-sm font-semibold text-lake-800 underline underline-offset-2 outline-none hover:text-lake-950 focus-visible:ring-2 focus-visible:ring-lake-800 focus-visible:ring-offset-1"
-                        onClick={() => setShowWaiver(true)}>booking liability waiver</button>.
+                        onClick={() => setShowWaiver(true)}>booking liability waiver</button>
+                      {isEdit ? ' for the changed trip.' : '.'}
                     </span>
                   </label>
                   {/* New tabs, so the filled-in request is still here afterwards. */}
@@ -388,9 +601,13 @@ export default function BookingModal({
                   </p>
 
                   <button type="submit" className={`${portalButtonPrimaryLarge} w-full`}>
-                    Send request to {boat.operatorName || 'the operator'}
+                    {isEdit ? 'Save changes' : `Send request to ${boat.operatorName || 'the operator'}`}
                   </button>
-                  <p className="text-center text-sm text-lake-700">No charge until the operator confirms.</p>
+                  <p className="text-center text-sm text-lake-700">
+                    {isEdit
+                      ? `${boat.operatorName || 'The operator'} will see that this request changed. No charge until they confirm.`
+                      : 'No charge until the operator confirms.'}
+                  </p>
                 </div>
               </motion.form>
             )}
@@ -399,20 +616,24 @@ export default function BookingModal({
               <motion.div key="submitting" {...stepMotion} role="status"
                 className="my-12 flex flex-col items-center gap-4 text-center">
                 <Loader2 size={36} className="animate-spin text-lake-700" aria-hidden />
-                <p className="text-base font-semibold text-lake-900">Sending request to operator…</p>
+                <p className="text-base font-semibold text-lake-900">
+                  {isEdit ? 'Saving your changes…' : 'Sending request to operator…'}
+                </p>
               </motion.div>
             )}
 
             {step === 'success' && (
               <motion.div key="success" {...stepMotion}>
                 <BookingConfirmation
+                  edited={isEdit}
+                  phoneChanged={phoneChanged}
                   bookingReference={bookingReference}
                   bookingId={bookingId}
                   operatorName={boat.operatorName}
                   boatName={boat.name}
                   when={whenText}
                   groupSize={groupSize}
-                  priceTotal={priceTotal}
+                  priceTotal={savedTotal ?? priceTotal}
                   depositAmount={depositAmount}
                   onDone={onClose}
                 />
@@ -429,15 +650,21 @@ export default function BookingModal({
 /**
  * The success step, set out as a booking confirmation: a calm tick, the heading,
  * the booking reference in its own box, then what was requested as labelled
- * figures and the deposit due.
+ * figures and the deposit due. After an edit it says the request was updated and
+ * that the reference is the same one.
  *
  * `bookingReference` is the slot for the customer-facing reference number. The
  * box is drawn only when it is present; until then the screen falls back to the
  * short booking id it has always shown.
  */
 function BookingConfirmation({
+  edited = false, phoneChanged = false,
   bookingReference, bookingId, operatorName, boatName, when, groupSize, priceTotal, depositAmount, onDone,
 }: {
+  /** The confirmation of a change to an existing request, not a new one. */
+  edited?: boolean;
+  /** Edit only: the guest's phone changed, which is what the Track page matches on. */
+  phoneChanged?: boolean;
   bookingReference?: string;
   bookingId: string;
   operatorName: string | null | undefined;
@@ -470,9 +697,13 @@ function BookingConfirmation({
         >
           <CheckCircle2 size={36} className="text-emerald-700" aria-hidden />
         </motion.span>
-        <motion.h3 {...part(0)} className="mt-4 text-2xl font-extrabold text-lake-950">Request sent</motion.h3>
+        <motion.h3 {...part(0)} className="mt-4 text-2xl font-extrabold text-lake-950">
+          {edited ? 'Request updated' : 'Request sent'}
+        </motion.h3>
         <motion.p {...part(1)} className="mt-2 max-w-sm text-base leading-relaxed text-lake-800">
-          {bookingReference ? (
+          {edited ? (
+            <>{operatorName || 'The operator'} will see the changed request and is still to confirm it.</>
+          ) : bookingReference ? (
             <>Your request is with {operatorName || 'the operator'} and is awaiting their confirmation.</>
           ) : (
             <>Booking <span className="font-mono font-semibold text-lake-950">{bookingId.slice(0, 8)}</span> is awaiting operator confirmation.</>
@@ -482,13 +713,17 @@ function BookingConfirmation({
 
       {bookingReference && (
         <motion.div {...part(2)} className="mt-6 rounded-lg border-2 border-lake-950 bg-lake-50 px-4 py-4 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.06em] text-lake-700">Booking reference</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.06em] text-lake-700">
+            {edited ? 'Same booking reference' : 'Booking reference'}
+          </p>
           <p className="mt-1 select-all break-all text-[28px] font-extrabold leading-tight tracking-[0.06em] tabular-nums text-lake-950">
             {bookingReference}
           </p>
           <p className="mt-1 text-sm text-lake-700">Quote it whenever you contact the operator.</p>
           <p className="mt-3 border-t border-lake-200 pt-3 text-[15px] leading-snug text-lake-800">
-            Keep this number to track your booking.{' '}
+            {edited && phoneChanged
+              ? 'Track it with this reference and the new phone number.'
+              : 'Keep this number to track your booking.'}{' '}
             <Link to={`/track?ref=${encodeURIComponent(bookingReference)}`} onClick={onDone}
               className="rounded-sm font-semibold text-lake-800 underline underline-offset-2 outline-none hover:text-lake-950 focus-visible:ring-2 focus-visible:ring-lake-800 focus-visible:ring-offset-1">
               Track your booking
