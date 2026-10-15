@@ -1191,6 +1191,32 @@ export type Database = {
           scheduled_for: string | null
         }[]
       }
+      admin_link_partner: {
+        Args: { p_kind: string; p_org_id: string | null; p_user_id: string }
+        Returns: {
+          agency_id: string | null
+          business_name: string | null
+          created_at: string
+          full_name: string
+          hotel_id: string | null
+          id: string
+          is_super_admin: boolean
+          phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          trust_score: number
+          updated_at: string
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["verification_status"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_list_audit: {
         Args: { p_action?: string; p_entity_type?: string; p_limit?: number }
         Returns: {
@@ -1425,9 +1451,10 @@ export type Database = {
       }
       admin_verify_agency: {
         Args: {
-          p_agency_name: string
+          p_agency_id?: string
+          p_agency_name?: string
           p_commission?: number
-          p_location: string
+          p_location?: string
           p_trust_score?: number
           p_user_id: string
         }
@@ -1458,8 +1485,9 @@ export type Database = {
       admin_verify_hotel: {
         Args: {
           p_commission?: number
-          p_hotel_name: string
-          p_location: string
+          p_hotel_id?: string
+          p_hotel_name?: string
+          p_location?: string
           p_trust_score?: number
           p_user_id: string
         }

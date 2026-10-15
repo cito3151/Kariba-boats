@@ -8,7 +8,7 @@ import { useAsync } from '../../hooks/useAsync';
 import { listAudit } from '../../services/audit.service';
 import type { AuditEntry } from '../../services/audit.service';
 
-const ENTITY_TYPES = ['boats', 'bookings', 'profiles', 'boat_images', 'reviews', 'hotels', 'consent_records', 'legal_documents'];
+const ENTITY_TYPES = ['boats', 'bookings', 'profiles', 'boat_images', 'reviews', 'hotels', 'agencies', 'consent_records', 'legal_documents'];
 const ACTIONS = ['insert', 'update', 'delete'];
 
 // White, not lake-50: the filters sit on the lake-50 page, not inside a card.

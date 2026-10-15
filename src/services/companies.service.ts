@@ -47,6 +47,8 @@ export interface Company {
   verificationStatus: CompanyVerificationStatus;
   verificationNote: string | null;
   verifiedAt: string | null;
+  /** Why a verified company went back to review (an expired or removed proof, or changed details). */
+  verificationLapseReason: string | null;
   createdAt: string;
 }
 
@@ -69,7 +71,7 @@ const MAX_BYTES = 10 * 1024 * 1024;
 const ALLOWED = ['application/pdf', 'image/jpeg', 'image/png'];
 
 const COMPANY_SELECT =
-  'id, name, registration_number, contact_email, contact_phone, verification_status, verification_note, verified_at, created_at';
+  'id, name, registration_number, contact_email, contact_phone, verification_status, verification_note, verified_at, verification_lapse_reason, created_at';
 const DOC_SELECT =
   'id, company_id, user_id, doc_kind, storage_path, file_name, label, review_status, review_note, reviewed_at, expires_at, uploaded_at';
 
@@ -97,7 +99,8 @@ function mapCompany(r: any): Company {
     // verified, nor tell an operator to re-upload proofs they already filed.
     verificationStatus: oneOf(COMPANY_STATUSES, r.verification_status, 'pending'),
     verificationNote: r.verification_note,
-    verifiedAt: r.verified_at, createdAt: r.created_at,
+    verifiedAt: r.verified_at, verificationLapseReason: r.verification_lapse_reason ?? null,
+    createdAt: r.created_at,
   };
 }
 

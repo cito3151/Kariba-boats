@@ -1,7 +1,7 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { AlertCircle, CalendarClock, Trash2, UserRound } from 'lucide-react';
+import { AlertCircle, CalendarClock, CheckCircle2, Lock, Pencil, Trash2, UserRound } from 'lucide-react';
 import PortalPage from '../components/portal/PortalPage';
 import PortalSection from '../components/portal/PortalSection';
 import Reveal from '../components/Reveal';
@@ -9,14 +9,16 @@ import {
   portalCard, portalButtonDanger, portalButtonPrimary, portalButtonSecondary,
 } from '../components/portal/styles';
 import { LoadingState } from '../components/StateViews';
-import { useAuth } from '../data/AuthContext';
+import { useAuth, type AppUser } from '../data/AuthContext';
+import { updateMyProfile } from '../services/auth.service';
 import { formatLongDate, useAccountDeletion } from '../hooks/useAccountDeletion';
 import { portalPhotos } from '../data/photos';
 
-// The signed-in user's account: who they are signed in as, the legal documents,
-// and deleting the account. Deletion has a 30-day grace period (migration 33):
-// the request is two deliberate steps, and while it is pending this page shows
-// the date and a Cancel deletion button.
+// The signed-in user's account: who they are signed in as (and editing their name,
+// phone and business name), the legal documents, and deleting the account.
+// Deletion has a 30-day grace period (migration 33): the request is two
+// deliberate steps, and while it is pending this page shows the date and a
+// Cancel deletion button.
 
 const ROLE_LABEL: Record<string, string> = {
   tourist: 'Guest', owner: 'Boat operator', hotel: 'Hotel or lodge', agency: 'Travel agency', admin: 'Administrator',
@@ -29,14 +31,6 @@ export default function AccountPage() {
   const { currentUser } = useAuth();
   if (!currentUser) return null;
 
-  const rows: [string, string][] = [
-    ['Name', currentUser.name || 'Not given'],
-    ['Email', currentUser.email],
-    ['Account type', ROLE_LABEL[currentUser.role] ?? currentUser.role],
-    ...(currentUser.phone ? [['Phone', currentUser.phone] as [string, string]] : []),
-    ...(currentUser.businessName ? [['Business', currentUser.businessName] as [string, string]] : []),
-  ];
-
   return (
     <PortalPage
       eyebrow="Your account"
@@ -48,19 +42,7 @@ export default function AccountPage() {
     >
       <div className="grid max-w-3xl gap-10">
         <PortalSection title="Your details">
-          <Reveal className={`${portalCard} p-4 sm:p-5`}>
-            <dl className="divide-y divide-lake-100">
-              {rows.map(([label, value]) => (
-                <div key={label} className="grid gap-0.5 py-3 first:pt-0 last:pb-0 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-4">
-                  <dt className="text-sm font-semibold text-lake-700">{label}</dt>
-                  <dd className="break-words text-base text-lake-950">{value}</dd>
-                </div>
-              ))}
-            </dl>
-            <p className="mt-4 text-[15px] leading-normal text-lake-700">
-              To correct these details, <Link to="/privacy#contact-us" className={textLink}>contact us</Link>.
-            </p>
-          </Reveal>
+          <YourDetails user={currentUser} />
         </PortalSection>
 
         <PortalSection title="Terms and privacy">
@@ -78,6 +60,223 @@ export default function AccountPage() {
         </PortalSection>
       </div>
     </PortalPage>
+  );
+}
+
+// Business roles: the ones whose profile carries a business name.
+const BUSINESS_ROLES = new Set(['owner', 'hotel', 'agency']);
+
+const fieldLabel = 'block text-sm font-semibold text-lake-800';
+const fieldInput =
+  'mt-1.5 w-full min-w-0 rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base text-lake-950 outline-none transition-colors focus:border-lake-500 focus-visible:ring-2 focus-visible:ring-lake-500/40 aria-invalid:border-red-600';
+
+// Loose on purpose: international numbers are written many ways. Digits with an
+// optional leading +, spaces, dots, dashes and brackets, and 7 to 15 digits in
+// all (the E.164 maximum).
+function phoneProblem(raw: string): string | null {
+  const v = raw.trim();
+  if (!v) return null;
+  if (!/^\+?[\d\s().-]+$/.test(v)) return 'Use digits, spaces and an optional + at the start.';
+  const digits = v.replace(/\D/g, '').length;
+  if (digits < 7 || digits > 15) return 'Enter a phone number with 7 to 15 digits.';
+  return null;
+}
+
+function YourDetails({ user }: { user: AppUser }) {
+  const { refreshProfile } = useAuth();
+  const reduce = useReducedMotion();
+  const [editing, setEditing] = useState(false);
+  const [fullName, setFullName] = useState(user.name);
+  const [phone, setPhone] = useState(user.phone ?? '');
+  const [businessName, setBusinessName] = useState(user.businessName ?? '');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [saved, setSaved] = useState(false);
+  // Set when the form closes, so the Edit details button takes focus as soon as
+  // it is back on the page (it mounts only after the form's exit fade).
+  const refocusEdit = useRef(false);
+  const firstField = useRef<HTMLInputElement>(null);
+  const nameId = useId();
+  const phoneId = useId();
+  const businessId = useId();
+  const businessNoteId = useId();
+
+  const isBusiness = BUSINESS_ROLES.has(user.role);
+  // guard_profile_privileges refuses this change for a verified business
+  // (migration 37), so the field is read-only rather than refused on save.
+  const businessLocked = isBusiness && user.isVerified;
+
+  useEffect(() => {
+    if (editing) firstField.current?.focus();
+  }, [editing]);
+
+  const rows: [string, string][] = [
+    ['Name', user.name || 'Not given'],
+    ['Email', user.email],
+    ['Account type', ROLE_LABEL[user.role] ?? user.role],
+    ['Phone', user.phone || 'Not given'],
+    ...(isBusiness ? [['Business', user.businessName || 'Not given'] as [string, string]] : []),
+  ];
+
+  const start = () => {
+    setFullName(user.name);
+    setPhone(user.phone ?? '');
+    setBusinessName(user.businessName ?? '');
+    setError(''); setNameError(''); setPhoneError('');
+    setSaved(false);
+    setEditing(true);
+  };
+
+  const finish = () => {
+    refocusEdit.current = true;
+    setEditing(false);
+  };
+
+  const save = async (e: FormEvent) => {
+    e.preventDefault();
+    if (busy) return;
+    const nameMsg = fullName.trim().length < 2 ? 'Enter your name.' : '';
+    const phoneMsg = phoneProblem(phone) ?? '';
+    setNameError(nameMsg);
+    setPhoneError(phoneMsg);
+    if (nameMsg || phoneMsg) return;
+
+    setBusy(true); setError('');
+    try {
+      await updateMyProfile({
+        fullName,
+        phone,
+        businessName: isBusiness && !businessLocked ? businessName : undefined,
+      });
+      await refreshProfile();
+      setSaved(true);
+      finish();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save your details.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // A short cross-fade between the summary and the form; under reduced motion
+  // there is no travel, only the fade.
+  const swap = reduce
+    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.15 } }
+    : {
+      initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -4 },
+      transition: { duration: 0.2, ease: 'easeOut' as const },
+    };
+
+  return (
+    <Reveal className={`${portalCard} p-4 sm:p-5`}>
+      <AnimatePresence mode="wait" initial={false}>
+        {!editing ? (
+          <motion.div key="view" {...swap}>
+            <dl className="divide-y divide-lake-100">
+              {rows.map(([label, value]) => (
+                <div key={label} className="grid gap-0.5 py-3 first:pt-0 last:pb-0 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-4">
+                  <dt className="text-sm font-semibold text-lake-700">{label}</dt>
+                  <dd className="break-words text-base text-lake-950">{value}</dd>
+                </div>
+              ))}
+            </dl>
+            {saved && (
+              <p role="status" className="mt-4 flex items-start gap-2 rounded-lg bg-emerald-50 px-3.5 py-2.5 text-[15px] leading-normal text-emerald-900">
+                <CheckCircle2 size={18} className="mt-0.5 shrink-0" aria-hidden /> Your details are saved.
+              </p>
+            )}
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3">
+              <button
+                ref={(el) => { if (el && refocusEdit.current) { refocusEdit.current = false; el.focus(); } }}
+                type="button" onClick={start} className={portalButtonSecondary}>
+                <Pencil size={15} aria-hidden /> Edit details
+              </button>
+              <p className="text-[15px] leading-normal text-lake-700">
+                To change your email address, <Link to="/privacy#contact-us" className={textLink}>contact us</Link>.
+              </p>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.form key="edit" {...swap} onSubmit={save} noValidate aria-label="Edit your details">
+            <div className="grid gap-4">
+              <div>
+                <label htmlFor={nameId} className={fieldLabel}>Full name</label>
+                <input
+                  ref={firstField} id={nameId} value={fullName} autoComplete="name"
+                  onChange={(e) => { setFullName(e.target.value); if (nameError) setNameError(''); }}
+                  aria-invalid={nameError ? true : undefined}
+                  aria-describedby={nameError ? `${nameId}-error` : undefined}
+                  className={fieldInput}
+                />
+                {nameError && <p id={`${nameId}-error`} className="mt-1.5 text-sm font-medium text-red-700">{nameError}</p>}
+              </div>
+
+              <div>
+                <label htmlFor={phoneId} className={fieldLabel}>
+                  Phone <span className="font-normal text-lake-700">(optional)</span>
+                </label>
+                <input
+                  id={phoneId} type="tel" inputMode="tel" autoComplete="tel" value={phone}
+                  placeholder="+263 77 123 4567"
+                  onChange={(e) => { setPhone(e.target.value); if (phoneError) setPhoneError(''); }}
+                  onBlur={() => setPhoneError(phoneProblem(phone) ?? '')}
+                  aria-invalid={phoneError ? true : undefined}
+                  aria-describedby={phoneError ? `${phoneId}-error` : user.role === 'owner' ? `${phoneId}-hint` : undefined}
+                  className={`${fieldInput} tabular-nums`}
+                />
+                {phoneError ? (
+                  <p id={`${phoneId}-error`} className="mt-1.5 text-sm font-medium text-red-700">{phoneError}</p>
+                ) : user.role === 'owner' && (
+                  <p id={`${phoneId}-hint`} className="mt-1.5 text-sm text-lake-700">Guests see this number on your boat listings.</p>
+                )}
+              </div>
+
+              {isBusiness && (
+                <div>
+                  <label htmlFor={businessId} className={fieldLabel}>Business name</label>
+                  <input
+                    id={businessId}
+                    value={businessLocked ? (user.businessName ?? '') : businessName}
+                    autoComplete="organization"
+                    readOnly={businessLocked}
+                    aria-describedby={businessLocked ? businessNoteId : undefined}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    className={`${fieldInput} ${businessLocked ? 'cursor-default bg-lake-50 text-lake-800' : ''}`}
+                  />
+                  {businessLocked && (
+                    <p id={businessNoteId} className="mt-1.5 flex items-start gap-1.5 text-sm leading-normal text-lake-700">
+                      <Lock size={14} className="mt-0.5 shrink-0" aria-hidden />
+                      <span>
+                        Your business is verified under this name{user.role === 'owner' ? ', and guests see it on your listings' : ''}.
+                        To change it, <Link to="/privacy#contact-us" className={textLink}>contact us</Link> so an administrator can
+                        check the new name.
+                      </span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {error && (
+              <p role="alert" className="mt-4 flex items-start gap-2 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-800">
+                <AlertCircle size={18} className="mt-0.5 shrink-0" aria-hidden /> {error}
+              </p>
+            )}
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button type="submit" disabled={busy} className={portalButtonPrimary}>
+                {busy ? 'Saving' : 'Save details'}
+              </button>
+              <button type="button" onClick={finish} disabled={busy} className={portalButtonSecondary}>
+                Cancel
+              </button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
+    </Reveal>
   );
 }
 

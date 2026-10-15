@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import * as authService from '../services/auth.service';
 import type { AppUser, Role, SignupInput } from '../services/auth.service';
@@ -13,6 +13,8 @@ interface AuthValue {
   logout: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   resetPassword: (newPassword: string) => Promise<void>;
+  /** Re-reads the signed-in user's profile, e.g. after they edit their details. */
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -36,6 +38,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { active = false; sub.subscription.unsubscribe(); };
   }, []);
 
+  const refreshProfile = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+    const user = data.session?.user;
+    if (!user) { setCurrentUser(null); return; }
+    const profile = await authService.fetchProfile(user.id, user.email ?? '');
+    // A failed read keeps the profile already on screen rather than signing the
+    // user out of the interface.
+    if (profile) setCurrentUser(profile);
+  }, []);
+
   const value: AuthValue = {
     currentUser,
     loading,
@@ -44,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout: async () => { await authService.signOut(); setCurrentUser(null); },
     requestPasswordReset: authService.requestPasswordReset,
     resetPassword: authService.updatePassword,
+    refreshProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { humanizeError } from './errors';
 
 export type Role = 'tourist' | 'owner' | 'hotel' | 'admin' | 'agency';
 export type VerificationStatus = 'pending' | 'verified' | 'rejected';
@@ -78,4 +79,30 @@ export async function fetchProfile(userId: string, email: string): Promise<AppUs
     isVerified: data.verification_status === 'verified',
     isSuperAdmin: data.is_super_admin,
   };
+}
+
+export interface ProfileEdit {
+  fullName: string;
+  phone: string;
+  /** Left out (undefined) to keep the stored value, e.g. a tourist or a verified business. */
+  businessName?: string;
+}
+
+/**
+ * Saves the signed-in user's own name, phone and business name. The column grant
+ * allows only these three columns, profiles_update_own_or_admin limits the row to
+ * the caller's own, and guard_profile_privileges refuses a business-name change
+ * on a verified owner, hotel or agency (migration 37).
+ */
+export async function updateMyProfile(input: ProfileEdit): Promise<void> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user.id;
+  if (!userId) throw new Error('Your session has expired. Please log in again.');
+  const row: { full_name: string; phone: string | null; business_name?: string | null } = {
+    full_name: input.fullName.trim(),
+    phone: input.phone.trim() || null,
+  };
+  if (input.businessName !== undefined) row.business_name = input.businessName.trim() || null;
+  const { error } = await supabase.from('profiles').update(row).eq('id', userId);
+  if (error) throw new Error(humanizeError(error.message));
 }

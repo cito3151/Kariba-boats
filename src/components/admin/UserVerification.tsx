@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ShieldCheck, ShieldAlert, Clock, X, ExternalLink } from 'lucide-react';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
@@ -10,6 +10,7 @@ import * as usersSvc from '../../services/users.service';
 import type { AppUserRow, VerificationStatus } from '../../services/users.service';
 import { listUserDocuments } from '../../services/documents.service';
 import { openDocument } from '../../services/documentStorage.service';
+import { listPartnerOrgs, type PartnerKind } from '../../services/partners.service';
 
 // Sub-heading inside the section: the small uppercase label portal cards use, so
 // it reads as part of "Owner and hotel verification" rather than a rival title.
@@ -30,9 +31,6 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
   const [error, setError] = useState('');
   const [trust, setTrust] = useState(user.trustScore);
   const [reason, setReason] = useState('');
-  const [hotelName, setHotelName] = useState(user.businessName ?? '');
-  const [location, setLocation] = useState('');
-  const [commission, setCommission] = useState(8);
   const { data: docsData } = useAsync(() => listUserDocuments(user.id), [user.id]);
   const docs = docsData ?? [];
   const hasDocs = docs.length > 0;
@@ -57,14 +55,6 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
   const submitReject = () => {
     if (reason.trim().length < 5) { setError('A rejection reason needs at least 5 characters.'); return; }
     run(() => usersSvc.reviewAccount(user.id, 'rejected', undefined, reason.trim()));
-  };
-  const submitHotel = () => {
-    if (hotelName.trim().length < 2 || location.trim().length < 2) { setError('Enter a hotel name and location.'); return; }
-    run(() => usersSvc.verifyHotel(user.id, { hotelName: hotelName.trim(), location: location.trim(), commission, trustScore: trust }));
-  };
-  const submitAgency = () => {
-    if (hotelName.trim().length < 2 || location.trim().length < 2) { setError('Enter an agency name and location.'); return; }
-    run(() => usersSvc.verifyAgency(user.id, { agencyName: hotelName.trim(), location: location.trim(), commission, trustScore: trust }));
   };
 
   const chip = STATUS_CHIP[user.verificationStatus];
@@ -164,44 +154,100 @@ function AccountRow({ user, onDone }: { user: AppUserRow; onDone: () => void }) 
         </div>
       )}
 
-      {mode === 'hotel' && (
-        <div className="mt-3 space-y-2 rounded-lg bg-lake-50 p-3 sm:p-4">
-          <p className="text-base font-bold text-lake-950">Verify and link this hotel</p>
-          <div className="grid gap-2 sm:grid-cols-3">
-            <input value={hotelName} onChange={(e) => setHotelName(e.target.value)} placeholder="Hotel name"
-              aria-label="Hotel name" className={inputClass} />
-            <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location"
-              aria-label="Location" className={inputClass} />
-            <input type="number" min={0} max={30} value={commission} onChange={(e) => setCommission(Number(e.target.value))}
-              placeholder="Commission %" title="Commission %" aria-label="Commission %"
-              className={`${inputClass} tabular-nums`} />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button onClick={submitHotel} disabled={busy} className={adminButtonCommit}>Verify and link</button>
-            <button onClick={() => { setMode('none'); setError(''); }} className={portalButtonSecondary}>Cancel</button>
-          </div>
-        </div>
-      )}
-
-      {mode === 'agency' && (
-        <div className="mt-3 space-y-2 rounded-lg bg-lake-50 p-3 sm:p-4">
-          <p className="text-base font-bold text-lake-950">Verify and link this travel agency</p>
-          <div className="grid gap-2 sm:grid-cols-3">
-            <input value={hotelName} onChange={(e) => setHotelName(e.target.value)} placeholder="Agency name"
-              aria-label="Agency name" className={inputClass} />
-            <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location"
-              aria-label="Location" className={inputClass} />
-            <input type="number" min={0} max={30} value={commission} onChange={(e) => setCommission(Number(e.target.value))}
-              placeholder="Commission %" title="Commission %" aria-label="Commission %"
-              className={`${inputClass} tabular-nums`} />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button onClick={submitAgency} disabled={busy} className={adminButtonCommit}>Verify and link</button>
-            <button onClick={() => { setMode('none'); setError(''); }} className={portalButtonSecondary}>Cancel</button>
-          </div>
-        </div>
+      {(mode === 'hotel' || mode === 'agency') && (
+        <VerifyPartnerForm
+          user={user} kind={mode} trust={trust} busy={busy}
+          onSubmit={(fn) => run(fn)} onCancel={() => { setMode('none'); setError(''); }} onError={setError}
+        />
       )}
     </motion.div>
+  );
+}
+
+const NEW_ORG = 'new';
+
+// Verify-and-link for a hotel or agency account. The admin either links an
+// existing organisation (the one already linked is preselected, so re-verifying
+// after a revoke does not make a second copy) or creates a new one from a name,
+// location and commission. Deactivated organisations are not offered:
+// admin_verify_hotel / admin_verify_agency refuse them.
+function VerifyPartnerForm({
+  user, kind, trust, busy, onSubmit, onCancel, onError,
+}: {
+  user: AppUserRow; kind: PartnerKind; trust: number; busy: boolean;
+  onSubmit: (fn: () => Promise<void>) => void; onCancel: () => void; onError: (msg: string) => void;
+}) {
+  const noun = kind === 'hotel' ? 'hotel' : 'agency';
+  const linkedId = kind === 'hotel' ? user.hotelId : user.agencyId;
+  const { data: orgData, loading, error: loadError } = useAsync(() => listPartnerOrgs(kind), [kind]);
+  const orgs = (orgData ?? []).filter((o) => o.isActive || o.id === linkedId);
+  const [choice, setChoice] = useState<string>(linkedId ?? NEW_ORG);
+  const [name, setName] = useState(user.businessName ?? '');
+  const [location, setLocation] = useState('');
+  const [commission, setCommission] = useState(8);
+  const id = useId();
+  const linked = orgs.find((o) => o.id === choice) ?? null;
+  const creating = choice === NEW_ORG;
+
+  const submit = () => {
+    if (creating) {
+      if (name.trim().length < 2 || location.trim().length < 2) { onError(`Enter ${kind === 'hotel' ? 'a hotel' : 'an agency'} name and location.`); return; }
+      if (commission < 0 || commission > 30) { onError('Commission must be between 0 and 30 percent.'); return; }
+    } else if (linked && !linked.isActive) {
+      onError(`That ${noun} is deactivated. Reactivate it under Hotels and agencies first.`); return;
+    }
+    const orgInput = creating
+      ? { location: location.trim(), commission, trustScore: trust }
+      : { trustScore: trust };
+    onSubmit(() => (kind === 'hotel'
+      ? usersSvc.verifyHotel(user.id, creating ? { ...orgInput, hotelName: name.trim() } : { ...orgInput, hotelId: choice })
+      : usersSvc.verifyAgency(user.id, creating ? { ...orgInput, agencyName: name.trim() } : { ...orgInput, agencyId: choice })));
+  };
+
+  return (
+    <div className="mt-3 space-y-3 rounded-lg bg-lake-50 p-3 sm:p-4">
+      <p className="text-base font-bold text-lake-950">Verify and link this {kind === 'hotel' ? 'hotel' : 'travel agency'}</p>
+      <div>
+        <label htmlFor={`${id}-org`} className="block text-sm font-medium text-lake-700">Link to</label>
+        <select id={`${id}-org`} value={choice} onChange={(e) => setChoice(e.target.value)} disabled={loading}
+          className={`${inputClass} mt-1.5 w-full sm:max-w-md`}>
+          <option value={NEW_ORG}>Create a new {noun}</option>
+          {orgs.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.name} ({o.location}){o.id === linkedId ? ' - linked now' : ''}{o.isActive ? '' : ' - deactivated'}
+            </option>
+          ))}
+        </select>
+        {loading && <p className="mt-1.5 text-sm text-lake-700">Loading existing {kind === 'hotel' ? 'hotels' : 'agencies'}</p>}
+        {loadError && <p className="mt-1.5 text-sm text-red-700">Could not load existing {kind === 'hotel' ? 'hotels' : 'agencies'}: {loadError}</p>}
+      </div>
+      {creating ? (
+        <div className="grid gap-2 sm:grid-cols-3">
+          <div className="min-w-0">
+            <label htmlFor={`${id}-name`} className="block text-sm font-medium text-lake-700">{kind === 'hotel' ? 'Hotel' : 'Agency'} name</label>
+            <input id={`${id}-name`} value={name} onChange={(e) => setName(e.target.value)} className={`${inputClass} mt-1.5 w-full`} />
+          </div>
+          <div className="min-w-0">
+            <label htmlFor={`${id}-loc`} className="block text-sm font-medium text-lake-700">Location</label>
+            <input id={`${id}-loc`} value={location} onChange={(e) => setLocation(e.target.value)} className={`${inputClass} mt-1.5 w-full`} />
+          </div>
+          <div className="min-w-0">
+            <label htmlFor={`${id}-com`} className="block text-sm font-medium text-lake-700">Commission %</label>
+            <input id={`${id}-com`} type="number" min={0} max={30} step="0.5" value={commission}
+              onChange={(e) => setCommission(Number(e.target.value))} className={`${inputClass} mt-1.5 w-full tabular-nums`} />
+          </div>
+        </div>
+      ) : linked && (
+        <p className="text-[15px] leading-normal text-lake-800">
+          Links to <span className="font-semibold text-lake-950">{linked.name}</span>, {linked.location},
+          at <span className="tabular-nums">{linked.commissionRate}</span>% commission. Edit its details under Hotels and agencies.
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button onClick={submit} disabled={busy || loading} className={adminButtonCommit}>Verify and link</button>
+        <button onClick={onCancel} className={portalButtonSecondary}>Cancel</button>
+      </div>
+    </div>
   );
 }
 

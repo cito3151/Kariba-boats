@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
-  ShieldCheck, Clock, ShieldAlert, Upload, Trash2, Eye, CheckCircle2,
+  ShieldCheck, Clock, ShieldAlert, Upload, Trash2, Eye, CheckCircle2, AlertTriangle,
 } from 'lucide-react';
 import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
 import PortalSection from '../../components/portal/PortalSection';
@@ -173,11 +174,39 @@ function CompanyDetails({ company, onSaved }: { company: Company; onSaved: () =>
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const reduce = useReducedMotion();
+  const saveButton = useRef<HTMLButtonElement>(null);
+  const confirmButton = useRef<HTMLButtonElement>(null);
+
+  // A verified company that changes the name or number its documents were checked
+  // against goes back to review (migration 37), so that save is confirmed first.
+  // Compared the way updateCompany stores them: trimmed, and blank as null.
+  const identityChanged =
+    name.trim() !== company.name
+    || (registrationNumber.trim() || null) !== (company.registrationNumber ?? null);
+  const needsConfirm = company.verificationStatus === 'verified' && identityChanged;
+
+  useEffect(() => {
+    if (confirming) confirmButton.current?.focus();
+  }, [confirming]);
+
+  const requestSave = () => {
+    setError(null); setSaved(false);
+    if (needsConfirm) { setConfirming(true); return; }
+    void save();
+  };
+
+  const cancelConfirm = () => {
+    setConfirming(false);
+    requestAnimationFrame(() => saveButton.current?.focus());
+  };
 
   const save = async () => {
     setSaving(true); setError(null); setSaved(false);
     try {
       await companies.updateCompany(company.id, { name, registrationNumber, contactEmail, contactPhone });
+      setConfirming(false);
       setSaved(true);
       onSaved();
     } catch (e) {
@@ -213,8 +242,47 @@ function CompanyDetails({ company, onSaved }: { company: Company; onSaved: () =>
       {error && (
         <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{error}</p>
       )}
+      {company.verificationStatus === 'verified' && !confirming && (
+        <p className="mt-3 text-sm leading-normal text-lake-700">
+          Your company is verified under this name and registration number. Changing either sends it back for review.
+        </p>
+      )}
+      <AnimatePresence initial={false}>
+        {confirming && (
+          <motion.div
+            initial={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
+            animate={reduce ? { opacity: 1 } : { opacity: 1, height: 'auto' }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
+            transition={{ duration: reduce ? 0.15 : 0.24, ease: 'easeOut' }}
+            className="overflow-hidden"
+          >
+            <div role="alertdialog" aria-labelledby="company-confirm-title" aria-describedby="company-confirm-body"
+              className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
+              <h3 id="company-confirm-title" className="flex items-center gap-2 text-base font-bold text-lake-950">
+                <AlertTriangle size={18} className="shrink-0 text-amber-700" aria-hidden /> Your company will need to be verified again
+              </h3>
+              <p id="company-confirm-body" className="mt-1.5 text-[15px] leading-relaxed text-lake-900">
+                You changed the {name.trim() !== company.name ? 'company name' : 'registration number'}
+                {name.trim() !== company.name && (registrationNumber.trim() || null) !== (company.registrationNumber ?? null) ? ' and registration number' : ''}.
+                Your documents were checked against the old details, so your company goes back to Under review until an
+                administrator checks them again. Your listings show without the verified badge until then.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button ref={confirmButton} type="button" onClick={() => void save()} disabled={saving}
+                  className="rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white outline-none hover:bg-lake-800 focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 disabled:opacity-50">
+                  {saving ? 'Saving' : 'Save and send for review'}
+                </button>
+                <button type="button" onClick={cancelConfirm} disabled={saving}
+                  className="rounded-lg border border-lake-200 bg-white px-4 py-2.5 text-sm font-semibold text-lake-700 outline-none hover:bg-lake-50 focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 disabled:opacity-50">
+                  Keep editing
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <button onClick={save} disabled={saving || !name.trim()}
+        <button ref={saveButton} onClick={requestSave} disabled={saving || confirming || !name.trim()}
           className="rounded-lg bg-lake-700 px-5 py-2.5 text-base font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
           {saving ? 'Saving' : 'Save details'}
         </button>
@@ -280,6 +348,11 @@ export default function CompanyPage() {
                 <h2 className="min-w-0 break-words text-xl font-bold leading-snug tracking-[-0.015em] text-lake-950">{company.name}</h2>
               </div>
               <p className="mt-2 text-base leading-normal text-lake-700">{STATUS_VIEW[company.verificationStatus].blurb}</p>
+              {company.verificationStatus === 'pending' && company.verificationLapseReason && (
+                <p className="mt-3 break-words rounded-lg bg-amber-50 px-3.5 py-2.5 text-[15px] leading-normal text-amber-900">
+                  {company.verificationLapseReason}
+                </p>
+              )}
               {company.verificationNote && (
                 <p className="mt-3 break-words rounded-lg bg-lake-50 px-3.5 py-2.5 text-[15px] leading-normal text-lake-800">
                   Administrator: {company.verificationNote}
