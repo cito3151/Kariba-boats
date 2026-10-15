@@ -258,10 +258,10 @@ export interface OwnerReviews {
   reviews: Review[];
 }
 
-/** Every review of the owner's boats, hidden ones included, newest first. */
-export async function listReviewsForOwner(ownerId: string): Promise<OwnerReviews> {
+/** Every review of the company's boats, hidden ones included, newest first. */
+export async function listReviewsForOwner(companyId: string): Promise<OwnerReviews> {
   const { data: boats, error: bErr } = await supabase.from('boats')
-    .select('id, name').eq('owner_id', ownerId).eq('is_deleted', false)
+    .select('id, name').eq('company_id', companyId).eq('is_deleted', false)
     .order('name', { ascending: true });
   if (bErr) throw new Error(humanizeError(bErr.message));
   const list = (boats ?? []).map((b) => ({ id: b.id, name: b.name }));

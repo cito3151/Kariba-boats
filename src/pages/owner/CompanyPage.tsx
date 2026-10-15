@@ -1,25 +1,28 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
-  ShieldCheck, Clock, ShieldAlert, Upload, Trash2, Eye, CheckCircle2, AlertTriangle,
+  ShieldCheck, Clock, ShieldAlert, Upload, Trash2, Eye, CheckCircle2, AlertTriangle, Building2, UserRound,
 } from 'lucide-react';
 import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
+import TeamSection from '../../components/owner/TeamSection';
+import RoleNotice from '../../components/owner/RoleNotice';
 import PortalSection from '../../components/portal/PortalSection';
-import { portalCard } from '../../components/portal/styles';
+import { portalCard, portalButtonPrimary, portalButtonSecondary } from '../../components/portal/styles';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
 import Reveal from '../../components/Reveal';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../data/AuthContext';
+import { useOperatorAccess } from '../../data/operatorAccess';
 import * as companies from '../../services/companies.service';
 import type {
-  Company, CompanyDocument, DocumentKind, CompanyVerificationStatus,
+  Company, CompanyDocument, DocumentKind, CompanyVerificationStatus, OperatorType,
 } from '../../services/companies.service';
 
 const STATUS_VIEW: Record<CompanyVerificationStatus, { label: string; chip: string; blurb: string }> = {
   unverified: {
     label: 'Not yet submitted',
     chip: 'bg-gray-100 text-gray-700',
-    blurb: 'Upload the four proofs below so an administrator can verify your company.',
+    blurb: 'Upload the proofs below so an administrator can verify your business.',
   },
   pending: {
     label: 'Under review',
@@ -45,10 +48,12 @@ const DOC_STATUS_CHIP: Record<CompanyDocument['reviewStatus'], string> = {
 };
 
 function DocumentSlot({
-  kind, label, hint, documents, companyId, userId, onChanged,
+  kind, label, hint, documents, companyId, userId, canManage, onChanged,
 }: {
   kind: DocumentKind; label: string; hint: string;
   documents: CompanyDocument[]; companyId: string; userId: string;
+  /** Owners and managers file proofs (manage_documents, migration 40); staff only view them. */
+  canManage: boolean;
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -127,7 +132,9 @@ function DocumentSlot({
                   className="inline-flex items-center gap-1 rounded-md border border-lake-200 px-3 py-2 text-sm font-semibold text-lake-700 hover:bg-white">
                   <Eye size={15} /> View
                 </button>
-                {doc.reviewStatus !== 'approved' && (
+                {/* Only the uploader can withdraw an unapproved document: the file
+                    lives in their own storage folder. */}
+                {canManage && doc.reviewStatus !== 'approved' && doc.userId === userId && (
                   <button onClick={() => remove(doc)} disabled={busy}
                     className="inline-flex items-center gap-1 rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
                     <Trash2 size={15} /> Remove
@@ -143,6 +150,7 @@ function DocumentSlot({
           display:none to hide the browser's own control, and that takes it out of
           the tab order, while a <label> is not focusable at all. Keyboard users
           could reach View and Remove but never the upload itself. */}
+      {canManage && <>
       <button
         type="button" onClick={() => fileRef.current?.click()} disabled={busy}
         aria-label={`${uploadLabel} for ${label}`}
@@ -158,10 +166,35 @@ function DocumentSlot({
         onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = ''; }}
       />
       <p id={`upload-hint-${kind}`} className="mt-2 text-sm text-lake-700">PDF, JPEG or PNG, up to 10 MB.</p>
+      </>}
 
       {error && (
         <p role="alert" className="mt-2 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{error}</p>
       )}
+    </div>
+  );
+}
+
+/** The details as text, for a member whose role cannot change them. */
+function CompanyDetailsReadOnly({ company }: { company: Company }) {
+  const row = (label: string, value: string | null) => (
+    <div className="min-w-0">
+      <dt className="text-sm font-medium text-lake-700">{label}</dt>
+      <dd className="mt-0.5 break-words text-base text-lake-950">{value || 'Not given'}</dd>
+    </div>
+  );
+  return (
+    <div className={`${portalCard} p-4 sm:p-5`}>
+      <h2 className="text-lg font-bold tracking-[-0.01em] text-lake-950">
+        {company.operatorType === 'individual' ? 'Business details' : 'Company details'}
+      </h2>
+      <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+        {row(company.operatorType === 'individual' ? 'Business name' : 'Registered company name', company.name)}
+        {company.operatorType === 'company' && row('Registration number', company.registrationNumber)}
+        {row('Contact email', company.contactEmail)}
+        {row('Contact phone', company.contactPhone)}
+      </dl>
+      <p className="mt-3 text-sm leading-normal text-lake-700">Only a team owner can change these details.</p>
     </div>
   );
 }
@@ -217,19 +250,25 @@ function CompanyDetails({ company, onSaved }: { company: Company; onSaved: () =>
   };
 
   const field = 'mt-1.5 w-full rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base text-lake-950 outline-none focus:border-lake-500';
+  const individual = company.operatorType === 'individual';
 
   return (
     <div className={`${portalCard} p-4 sm:p-5`}>
-      <h2 className="text-lg font-bold tracking-[-0.01em] text-lake-950">Company details</h2>
+      <h2 className="text-lg font-bold tracking-[-0.01em] text-lake-950">{individual ? 'Business details' : 'Company details'}</h2>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor="company-name" className="block text-sm font-medium text-lake-700">Registered company name</label>
+          <label htmlFor="company-name" className="block text-sm font-medium text-lake-700">
+            {individual ? 'Business or trading name' : 'Registered company name'}
+          </label>
           <input id="company-name" value={name} onChange={(e) => setName(e.target.value)} className={field} />
         </div>
-        <div>
-          <label htmlFor="company-reg" className="block text-sm font-medium text-lake-700">Registration number</label>
-          <input id="company-reg" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} className={field} />
-        </div>
+        {/* A sole trader has no company registration number to give. */}
+        {!individual && (
+          <div>
+            <label htmlFor="company-reg" className="block text-sm font-medium text-lake-700">Registration number</label>
+            <input id="company-reg" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} className={field} />
+          </div>
+        )}
         <div>
           <label htmlFor="company-email" className="block text-sm font-medium text-lake-700">Contact email</label>
           <input id="company-email" type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className={field} />
@@ -244,7 +283,9 @@ function CompanyDetails({ company, onSaved }: { company: Company; onSaved: () =>
       )}
       {company.verificationStatus === 'verified' && !confirming && (
         <p className="mt-3 text-sm leading-normal text-lake-700">
-          Your company is verified under this name and registration number. Changing either sends it back for review.
+          {individual
+            ? 'You are verified under this name. Changing it sends your account back for review.'
+            : 'Your company is verified under this name and registration number. Changing either sends it back for review.'}
         </p>
       )}
       <AnimatePresence initial={false}>
@@ -294,19 +335,104 @@ function CompanyDetails({ company, onSaved }: { company: Company; onSaved: () =>
         {/* A disabled button is skipped by the tab order and fires no tooltip, so
             the reason it is unavailable has to be on the page. */}
         {!name.trim() && (
-          <p className="w-full text-[15px] text-lake-700">Enter the registered company name before saving.</p>
+          <p className="w-full text-[15px] text-lake-700">Enter the {individual ? 'business' : 'registered company'} name before saving.</p>
         )}
       </div>
     </div>
   );
 }
 
+/**
+ * An individual operator becomes a registered company (upgrade_to_company,
+ * migration 40). One way only. A verified individual goes back to review: a company
+ * also files its registration, and the name changes to the registered one.
+ */
+function UpgradeToCompany({ company, onUpgraded }: { company: Company; onUpgraded: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(company.name);
+  const [registrationNumber, setRegistrationNumber] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const reduce = useReducedMotion();
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { if (open) nameRef.current?.focus(); }, [open]);
+
+  const field = 'mt-1.5 w-full rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base text-lake-950 outline-none focus:border-lake-500';
+
+  const submit = async () => {
+    if (!name.trim()) { setError('Enter the registered company name.'); return; }
+    setBusy(true); setError('');
+    try {
+      await companies.upgradeToCompany(company.id, name, registrationNumber);
+      setOpen(false);
+      onUpgraded();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not switch to a company account.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={`${portalCard} p-4 sm:p-5`}>
+      <h2 className="flex items-center gap-2 text-lg font-bold tracking-[-0.01em] text-lake-950">
+        <Building2 size={18} aria-hidden /> Grown into a company?
+      </h2>
+      <p className="mt-1.5 text-[15px] leading-normal text-lake-700">
+        Switch to a company account to add managers and crew to your workspace. Your boats, bookings and documents
+        stay as they are. A company also files its registration certificate
+        {company.verificationStatus === 'verified' ? ', so your verification goes back to review until it is checked' : ''}.
+        This cannot be undone from here.
+      </p>
+      {!open && (
+        <button type="button" onClick={() => { setOpen(true); setError(''); }} className={`${portalButtonSecondary} mt-3`}>
+          Switch to a company account
+        </button>
+      )}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
+            animate={reduce ? { opacity: 1 } : { opacity: 1, height: 'auto' }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
+            transition={{ duration: reduce ? 0.15 : 0.24, ease: 'easeOut' }}
+            className="overflow-hidden"
+          >
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="min-w-0">
+                <label htmlFor="upgrade-name" className="block text-sm font-medium text-lake-700">Registered company name</label>
+                <input ref={nameRef} id="upgrade-name" value={name} onChange={(e) => setName(e.target.value)} className={field} />
+              </div>
+              <div className="min-w-0">
+                <label htmlFor="upgrade-reg" className="block text-sm font-medium text-lake-700">Registration number</label>
+                <input id="upgrade-reg" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} className={field} />
+              </div>
+            </div>
+            {error && (
+              <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{error}</p>
+            )}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" onClick={() => void submit()} disabled={busy || !name.trim()} className={portalButtonPrimary}>
+                {busy ? 'Switching' : 'Switch to a company account'}
+              </button>
+              <button type="button" onClick={() => setOpen(false)} disabled={busy} className={portalButtonSecondary}>
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+const TYPE_ICON: Record<OperatorType, typeof Building2> = { individual: UserRound, company: Building2 };
+
 export default function CompanyPage() {
   const { currentUser } = useAuth();
-  const ownerId = currentUser?.id ?? '';
-  const { data: company, loading, error, reload } = useAsync(
-    () => companies.getMyCompany(ownerId), [ownerId],
-  );
+  const access = useOperatorAccess();
+  const company = access.company;
   const [docsKey, setDocsKey] = useState(0);
   const {
     data: documents, loading: docsLoading, error: docsError,
@@ -314,17 +440,31 @@ export default function CompanyPage() {
     () => (company ? companies.listCompanyDocuments(company.id) : Promise.resolve([])),
     [company?.id, docsKey],
   );
+  const [leftMessage, setLeftMessage] = useState('');
 
-  // Bumping docsKey re-runs the documents hook on its own; calling its reload as
-  // well would fire the same query twice and leave the first uncancellable.
-  const refreshAll = () => { setDocsKey((k) => k + 1); reload(); };
+  // Bumping docsKey re-runs the documents hook on its own; reloading the workspace
+  // re-reads the company (its status may have lapsed) and the team.
+  const refreshAll = () => { setDocsKey((k) => k + 1); access.reload(); };
+
+  const canEditCompany = access.can('edit_company');
+  const canManageDocs = access.can('manage_documents');
+  const loading = access.loading && !company;
+  const slots = company ? companies.requiredDocuments(company.operatorType) : [];
+  const TypeIcon = company ? TYPE_ICON[company.operatorType] : Building2;
 
   return (
-    <OwnerPortalPage title="Your company" crumb="Company">
+    <OwnerPortalPage
+      title={company?.operatorType === 'individual' ? 'Your business' : 'Your company'}
+      crumb={company?.operatorType === 'individual' ? 'Business' : 'Company'}
+    >
       {loading && <LoadingState large label="Loading your company" />}
-      {error && <ErrorState large message={error} onRetry={reload} />}
+      {access.error && <ErrorState large message={access.error} onRetry={access.reload} />}
 
-      {!loading && !error && !company && (
+      {leftMessage && (
+        <p role="status" className="mb-4 rounded-lg bg-lake-50 px-3.5 py-2.5 text-[15px] leading-normal text-lake-800">{leftMessage}</p>
+      )}
+
+      {!access.loading && !access.error && !company && (
         <EmptyState large
           title="No company on your account"
           hint="Your login is not linked to a company yet. Contact an administrator so your fleet can be moved onto one."
@@ -333,14 +473,27 @@ export default function CompanyPage() {
 
       {company && (
         <>
+          {access.role && access.role !== 'owner' && (
+            <RoleNotice role={access.role}>
+              {canManageDocs
+                ? 'You can upload and view the proofs below. Only a team owner changes the company details and the team.'
+                : 'You can view the company, its proofs and the team. Only a team owner or manager files documents.'}
+            </RoleNotice>
+          )}
+
           {/* Verification status beside the editable details on a wide screen,
               the way an account page sets the summary next to the form. Both rise
               in when the company has loaded. */}
           <div className="grid items-start gap-4 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-6">
             <Reveal className={`${portalCard} min-w-0 p-4 sm:p-5`}>
-              <span className={`inline-flex rounded-full px-2.5 py-1 text-[13px] font-semibold leading-none ${STATUS_VIEW[company.verificationStatus].chip}`}>
-                {STATUS_VIEW[company.verificationStatus].label}
-              </span>
+              <div className="flex flex-wrap gap-1.5">
+                <span className={`inline-flex rounded-full px-2.5 py-1 text-[13px] font-semibold leading-none ${STATUS_VIEW[company.verificationStatus].chip}`}>
+                  {STATUS_VIEW[company.verificationStatus].label}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-lake-50 px-2.5 py-1 text-[13px] font-semibold leading-none text-lake-900 ring-1 ring-lake-200">
+                  <TypeIcon size={13} aria-hidden /> {companies.OPERATOR_TYPE_LABELS[company.operatorType]}
+                </span>
+              </div>
               <div className="mt-3 flex min-w-0 items-start gap-2">
                 {company.verificationStatus === 'verified' ? <ShieldCheck size={20} className="mt-1 shrink-0 text-lake-600" />
                   : company.verificationStatus === 'rejected' ? <ShieldAlert size={20} className="mt-1 shrink-0 text-red-600" />
@@ -360,18 +513,25 @@ export default function CompanyPage() {
               )}
             </Reveal>
 
-            <Reveal className="min-w-0">
-              <CompanyDetails company={company} onSaved={reload} />
+            <Reveal className="min-w-0 space-y-4">
+              {canEditCompany
+                ? <CompanyDetails key={`${company.id}-${company.operatorType}`} company={company} onSaved={access.reload} />
+                : <CompanyDetailsReadOnly company={company} />}
+              {canEditCompany && company.operatorType === 'individual' && (
+                <UpgradeToCompany key={company.id} company={company} onUpgraded={refreshAll} />
+              )}
             </Reveal>
           </div>
 
           <PortalSection
-            title="Proof of company ownership"
-            description="An administrator reviews each document separately, so you only replace the one that fails."
+            title={company.operatorType === 'individual' ? 'Proof that you can operate' : 'Proof of company ownership'}
+            description={company.operatorType === 'individual'
+              ? `As an individual operator you file ${slots.length} proofs, and no company registration. An administrator reviews each one separately, so you only replace the one that fails.`
+              : 'An administrator reviews each document separately, so you only replace the one that fails.'}
             className="mt-10"
           >
             {/* Without this, a failed document fetch would leave every slot showing
-                "Not uploaded" and an owner would reasonably re-upload all four. */}
+                "Not uploaded" and an owner would reasonably re-upload all of them. */}
             {docsLoading && <LoadingState large label="Loading your documents" />}
             {docsError && (
               <ErrorState large message={docsError} onRetry={() => setDocsKey((k) => k + 1)} />
@@ -379,19 +539,32 @@ export default function CompanyPage() {
 
             <div className={`grid items-start gap-4 md:grid-cols-2 ${docsLoading || docsError ? 'hidden' : ''}`}>
               {/* The slots rise in once the documents are in and the grid is shown. */}
-              {companies.REQUIRED_DOCUMENTS.map((slot) => (
+              {slots.map((slot) => (
                 <Reveal key={slot.kind} className="min-w-0">
                   <DocumentSlot
                     kind={slot.kind} label={slot.label} hint={slot.hint}
                     documents={documents ?? []}
                     companyId={company.id}
                     userId={currentUser?.id ?? ''}
+                    canManage={canManageDocs}
                     onChanged={refreshAll}
                   />
                 </Reveal>
               ))}
             </div>
           </PortalSection>
+
+          <TeamSection
+            company={company}
+            role={access.role}
+            members={access.members}
+            loading={access.loading}
+            onChanged={access.reload}
+            onLeft={() => {
+              setLeftMessage('You left the team. You now have an empty workspace of your own.');
+              access.reload();
+            }}
+          />
         </>
       )}
     </OwnerPortalPage>

@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Send, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
-import { portalCard, portalButtonPrimary } from '../../components/portal/styles';
+import { portalCard, portalButtonPrimary, portalButtonSecondary } from '../../components/portal/styles';
 import { BOAT_STATUS_CHIP } from '../../components/owner/boatStatus';
 import BoatForm from '../../components/owner/BoatForm';
 import ImageUploader from '../../components/owner/ImageUploader';
 import { LoadingState, ErrorState } from '../../components/StateViews';
 import VerificationBanner from '../../components/VerificationBanner';
 import { useAuth } from '../../data/AuthContext';
+import { useOperatorAccess } from '../../data/operatorAccess';
 import { useAsync } from '../../hooks/useAsync';
 import * as boats from '../../services/boats.service';
 import * as imagesSvc from '../../services/images.service';
@@ -125,6 +126,7 @@ function SaveSummary({ result, live }: { result: SaveResult; live: boolean }) {
 export default function BoatFormPage() {
   const { id } = useParams();
   const { currentUser } = useAuth();
+  const access = useOperatorAccess();
   const navigate = useNavigate();
   const editing = Boolean(id);
 
@@ -144,10 +146,24 @@ export default function BoatFormPage() {
     imagesSvc.listBoatImages(id).then((imgs) => { setImages(imgs); setImagesLoaded(true); });
   }, [id]);
 
+  // submit_boat_for_review checks the account that holds the boat (the team's
+  // accountable owner), not whoever presses the button. For a sole operator that is
+  // the signed-in account, so no extra read is made.
+  const holderId = boat?.ownerId ?? null;
+  const holderIsMe = !!currentUser && holderId === currentUser.id;
+  const { data: holderVerified } = useAsync(
+    () => (holderId && !holderIsMe ? boats.isAccountVerified(holderId) : Promise.resolve(null)),
+    [holderId, holderIsMe],
+  );
+
   if (!currentUser) return null;
 
+  const canEdit = access.can('edit_boats');
+  const isAccountableOwner = access.accountableOwnerId === currentUser.id;
+
   const handleCreate = async (input: BoatInput) => {
-    const created = await boats.createBoat(currentUser.id, input);
+    if (!access.company) throw new Error('Your workspace has not loaded yet. Try again in a moment.');
+    const created = await boats.createBoat(currentUser.id, access.company.id, input);
     navigate(`/owner/boats/${created.id}/edit`, { replace: true });
   };
 
@@ -178,7 +194,9 @@ export default function BoatFormPage() {
     }
   };
 
-  const accountVerified = currentUser.verificationStatus === 'verified';
+  const accountVerified = holderIsMe || !holderId
+    ? currentUser.verificationStatus === 'verified'
+    : holderVerified === true;
   const canSubmit = boat && (boat.status === 'draft' || boat.status === 'rejected') && accountVerified;
 
   const title = editing ? 'Edit boat' : 'Register a boat';
@@ -192,9 +210,24 @@ export default function BoatFormPage() {
         ? 'Update the details, add photos, and submit for review when ready.'
         : 'Start with the details. You will add photos on the next step.'}
     >
-      <VerificationBanner />
+      {isAccountableOwner && <VerificationBanner />}
 
-      {boat?.status === 'rejected' && boat.rejectionReason && (
+      {!access.loading && !canEdit && (
+        <div role="note" className={`${portalCard} mb-4 max-w-3xl p-5`}>
+          <p className="text-base font-semibold text-lake-950">
+            {editing ? 'Only a team owner or manager can edit boats' : 'Only a team owner or manager can register boats'}
+          </p>
+          <p className="mt-1 text-[15px] leading-normal text-lake-700">
+            You can see the fleet and log operating hours. Ask an owner or manager to make this change.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link to="/owner" className={portalButtonSecondary}>Back to the fleet</Link>
+            <Link to="/owner/maintenance" className={portalButtonSecondary}>Log hours</Link>
+          </div>
+        </div>
+      )}
+
+      {canEdit && boat?.status === 'rejected' && boat.rejectionReason && (
         <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-200 border-l-4 border-l-red-600 bg-red-50 p-4 text-[15px] leading-normal text-red-700">
           <AlertCircle size={20} className="mt-0.5 shrink-0" />
           <div className="min-w-0 break-words">
@@ -207,7 +240,7 @@ export default function BoatFormPage() {
       {/* Once a boat exists, its review status and the submit step sit in a side
           column beside the form on a wide screen, like the summary panel of a
           booking. Before that there is only the form, kept to a readable width. */}
-      <div className={showSide ? 'grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]' : 'max-w-3xl'}>
+      {canEdit && <div className={showSide ? 'grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]' : 'max-w-3xl'}>
         <div className="min-w-0 space-y-6">
           <div className={`${portalCard} p-5 sm:p-6`}>
             {editing && loading && <LoadingState large label="Loading boat" />}
@@ -298,13 +331,13 @@ export default function BoatFormPage() {
               {(boat.status === 'draft' || boat.status === 'rejected') && !accountVerified && (
                 <p className="text-base leading-normal text-lake-700">
                   You can add photos and edit details now. Submitting for review unlocks once an
-                  administrator verifies your owner account.
+                  administrator verifies {holderIsMe || !holderId ? 'your owner account' : 'the account of your team’s owner'}.
                 </p>
               )}
             </div>
           </div>
         )}
-      </div>
+      </div>}
     </OwnerPortalPage>
   );
 }

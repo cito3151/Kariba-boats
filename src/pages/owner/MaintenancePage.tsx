@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
+import RoleNotice from '../../components/owner/RoleNotice';
 import PortalSection from '../../components/portal/PortalSection';
 import { portalCard } from '../../components/portal/styles';
 import MaintenanceCard from '../../components/owner/MaintenanceCard';
@@ -8,7 +9,9 @@ import HoursLog from '../../components/maintenance/HoursLog';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
 import Reveal from '../../components/Reveal';
 import { useAuth } from '../../data/AuthContext';
+import { useOperatorAccess } from '../../data/operatorAccess';
 import { useAsync } from '../../hooks/useAsync';
+import { useCompanyAsync } from '../../hooks/useCompanyAsync';
 import * as boats from '../../services/boats.service';
 import * as maint from '../../services/maintenance.service';
 import type { OwnerBoat, MaintenanceStatus } from '../../services/boats.service';
@@ -77,8 +80,11 @@ function BoatHistory({ boatId, userId, onChanged }: { boatId: string; userId: st
 
 export default function MaintenancePage() {
   const { currentUser } = useAuth();
-  const ownerId = currentUser?.id ?? '';
-  const { data, loading, error, reload } = useAsync(() => boats.listOwnerBoats(ownerId), [ownerId]);
+  const access = useOperatorAccess();
+  const userId = currentUser?.id ?? '';
+  const { data, loading, error, reload } = useCompanyAsync(boats.listOwnerBoats);
+  const canLog = access.can('log_hours');
+  const canService = access.can('complete_maintenance');
 
   const sorted = [...(data ?? [])].sort(
     (a, b) => ORDER[a.maintenanceStatus] - ORDER[b.maintenanceStatus],
@@ -90,6 +96,12 @@ export default function MaintenancePage() {
       crumb="Maintenance"
       subtitle="Log operating hours after each trip. Boats that go overdue are hidden from tourist search until you record a service."
     >
+      {access.role === 'staff' && (
+        <RoleNotice role={access.role}>
+          You can log operating hours and correct your own entries. An owner or manager records completed services.
+        </RoleNotice>
+      )}
+
       <PortalSection title="Your fleet" description="Most urgent first.">
         {loading && <LoadingState large label="Loading maintenance" />}
         {error && <ErrorState large message={error} onRetry={reload} />}
@@ -101,8 +113,8 @@ export default function MaintenancePage() {
         <div className="grid items-start gap-6 lg:grid-cols-2">
           {sorted.map((boat: OwnerBoat) => (
             <Reveal key={boat.id} className="min-w-0">
-              <MaintenanceCard boat={boat} onChanged={reload} />
-              <BoatHistory boatId={boat.id} userId={ownerId} onChanged={reload} />
+              <MaintenanceCard boat={boat} canLog={canLog} canService={canService} onChanged={reload} />
+              <BoatHistory boatId={boat.id} userId={userId} onChanged={reload} />
             </Reveal>
           ))}
         </div>

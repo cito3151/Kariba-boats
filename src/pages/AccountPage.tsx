@@ -449,8 +449,9 @@ function DeleteAccount({ isAdmin }: { isAdmin: boolean }) {
                     you wrote stay published as "Former guest".
                   </li>
                   <li>
-                    If you operate boats, they pass to another owner of your company on the platform, or are taken off the
-                    website.
+                    If you operate boats with a team, your boats and the captains you added pass to another owner on the
+                    team, or, if there is none, to its longest-serving manager or staff member, who becomes an owner. If you
+                    work alone, your boats are taken off the website and your captains are deleted.
                   </li>
                   <li>
                     If you make a new booking in the 30 days, we wait until that trip is over before deleting.

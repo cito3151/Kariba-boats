@@ -15,11 +15,14 @@ export interface AppUser {
 export interface SignupInput {
   email: string; password: string; fullName: string; role: Role;
   phone?: string; businessName?: string;
+  /** Boat operators only: a sole trader or a registered company (migration 40). */
+  operatorType?: 'individual' | 'company';
 }
 
 export async function signUp(input: SignupInput) {
   // role travels in user metadata; the database trigger whitelists it and
-  // silently downgrades anything outside tourist/owner/hotel.
+  // silently downgrades anything outside tourist/owner/hotel/agency. operator_type
+  // likewise: anything but 'individual' makes a company workspace.
   const { data, error } = await supabase.auth.signUp({
     email: input.email.trim(),
     password: input.password,
@@ -29,6 +32,7 @@ export async function signUp(input: SignupInput) {
         role: input.role,
         phone: input.phone ?? null,
         business_name: input.businessName ?? null,
+        ...(input.role === 'owner' && input.operatorType ? { operator_type: input.operatorType } : {}),
       },
       emailRedirectTo: `${window.location.origin}/login`,
     },

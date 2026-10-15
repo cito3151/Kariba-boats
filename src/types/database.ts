@@ -323,8 +323,9 @@ export type Database = {
           approved_by: string | null
           boat_type: Database["public"]["Enums"]["boat_kind"]
           capacity: number
-          company_id: string | null
+          company_id: string
           created_at: string
+          created_by: string | null
           crew_included: boolean
           deleted_at: string | null
           deposit_percent: number
@@ -358,8 +359,9 @@ export type Database = {
           approved_by?: string | null
           boat_type: Database["public"]["Enums"]["boat_kind"]
           capacity: number
-          company_id?: string | null
+          company_id?: string
           created_at?: string
+          created_by?: string | null
           crew_included?: boolean
           deleted_at?: string | null
           deposit_percent?: number
@@ -393,8 +395,9 @@ export type Database = {
           approved_by?: string | null
           boat_type?: Database["public"]["Enums"]["boat_kind"]
           capacity?: number
-          company_id?: string | null
+          company_id?: string
           created_at?: string
+          created_by?: string | null
           crew_included?: boolean
           deleted_at?: string | null
           deposit_percent?: number
@@ -435,6 +438,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boats_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -562,6 +572,7 @@ export type Database = {
       }
       captains: {
         Row: {
+          company_id: string
           created_at: string
           id: string
           name: string
@@ -569,6 +580,7 @@ export type Database = {
           phone: string
         }
         Insert: {
+          company_id?: string
           created_at?: string
           id?: string
           name: string
@@ -576,6 +588,7 @@ export type Database = {
           phone: string
         }
         Update: {
+          company_id?: string
           created_at?: string
           id?: string
           name?: string
@@ -583,6 +596,13 @@ export type Database = {
           phone?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "captains_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "captains_owner_id_fkey"
             columns: ["owner_id"]
@@ -600,6 +620,7 @@ export type Database = {
           created_by: string
           id: string
           name: string
+          operator_type: Database["public"]["Enums"]["operator_type"]
           registration_number: string | null
           updated_at: string
           verification_note: string | null
@@ -614,6 +635,7 @@ export type Database = {
           created_by: string
           id?: string
           name: string
+          operator_type?: Database["public"]["Enums"]["operator_type"]
           registration_number?: string | null
           updated_at?: string
           verification_note?: string | null
@@ -628,6 +650,7 @@ export type Database = {
           created_by?: string
           id?: string
           name?: string
+          operator_type?: Database["public"]["Enums"]["operator_type"]
           registration_number?: string | null
           updated_at?: string
           verification_note?: string | null
@@ -1210,6 +1233,25 @@ export type Database = {
           scheduled_for: string | null
         }[]
       }
+      add_company_member: {
+        Args: {
+          p_company_id: string
+          p_email: string
+          p_role?: Database["public"]["Enums"]["company_member_role"]
+        }
+        Returns: {
+          added_at: string
+          company_id: string
+          member_role: Database["public"]["Enums"]["company_member_role"]
+          profile_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "company_members"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_cancel_account_deletion: {
         Args: { p_user_id: string }
         Returns: undefined
@@ -1717,6 +1759,21 @@ export type Database = {
       is_company_member: { Args: { p_company_id: string }; Returns: boolean }
       is_sensitive_change: { Args: { p_changes: Json }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      leave_company: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
+      list_company_members: {
+        Args: { p_company_id: string }
+        Returns: {
+          added_at: string
+          email: string | null
+          full_name: string
+          is_self: boolean
+          member_role: Database["public"]["Enums"]["company_member_role"]
+          profile_id: string
+        }[]
+      }
       log_operating_hours: {
         Args: {
           p_boat_id: string
@@ -1901,6 +1958,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      remove_company_member: {
+        Args: { p_company_id: string; p_profile_id: string }
+        Returns: undefined
+      }
       reply_to_review: {
         Args: { p_reply: string; p_review_id: string }
         Returns: undefined
@@ -1937,6 +1998,25 @@ export type Database = {
           requested_at: string
           scheduled_for: string
         }[]
+      }
+      set_company_member_role: {
+        Args: {
+          p_company_id: string
+          p_profile_id: string
+          p_role: Database["public"]["Enums"]["company_member_role"]
+        }
+        Returns: {
+          added_at: string
+          company_id: string
+          member_role: Database["public"]["Enums"]["company_member_role"]
+          profile_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "company_members"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       soft_delete_boat: {
         Args: { p_boat_id: string }
@@ -2066,6 +2146,34 @@ export type Database = {
           updated_by_guest_at: string
         }[]
       }
+      upgrade_to_company: {
+        Args: {
+          p_company_id: string
+          p_name: string
+          p_registration_number?: string
+        }
+        Returns: {
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          operator_type: Database["public"]["Enums"]["operator_type"]
+          registration_number: string | null
+          updated_at: string
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["company_verification_status"]
+          verified_at: string | null
+          verified_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "companies"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       void_operating_hours: {
         Args: { p_entry_id: string; p_reason: string }
         Returns: {
@@ -2140,6 +2248,7 @@ export type Database = {
         | "operator_agreement"
         | "booking_waiver"
         | "marketing"
+      operator_type: "individual" | "company"
       user_role: "tourist" | "owner" | "hotel" | "admin" | "agency"
       verification_status: "pending" | "verified" | "rejected"
     }
@@ -2301,6 +2410,7 @@ export const Constants = {
         "booking_waiver",
         "marketing",
       ],
+      operator_type: ["individual", "company"],
       user_role: ["tourist", "owner", "hotel", "admin", "agency"],
       verification_status: ["pending", "verified", "rejected"],
     },

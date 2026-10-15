@@ -197,11 +197,14 @@ export async function listMyBookings(touristId: string): Promise<BookingRow[]> {
   return (data ?? []).map(toBookingRow);
 }
 
-export async function listBookingsForOwner(ownerId: string): Promise<BookingRow[]> {
-  // RLS bookings_read_involved already restricts reads to the owner's boats;
-  // filter by owned boat ids so the query is explicit.
+/**
+ * Bookings on every boat of the operator's company. RLS (bookings_read_involved,
+ * migration 40) admits the bookings of a member's company boats; filtering by the
+ * company's boat ids keeps the query explicit and an admin's view to this company.
+ */
+export async function listBookingsForOwner(companyId: string): Promise<BookingRow[]> {
   const { data: boats, error: bErr } = await supabase.from('boats')
-    .select('id').eq('owner_id', ownerId).eq('is_deleted', false);
+    .select('id').eq('company_id', companyId).eq('is_deleted', false);
   if (bErr) throw new Error(bErr.message);
   const ids = (boats ?? []).map((b) => b.id);
   if (ids.length === 0) return [];

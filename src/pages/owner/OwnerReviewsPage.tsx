@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import { AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Star } from 'lucide-react';
 import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
+import RoleNotice from '../../components/owner/RoleNotice';
 import PortalSection from '../../components/portal/PortalSection';
 import Reveal from '../../components/Reveal';
 import StarRating from '../../components/StarRating';
@@ -11,8 +12,9 @@ import ReviewCard from '../../components/reviews/ReviewCard';
 import ReplyEditor from '../../components/reviews/ReplyEditor';
 import { portalCard } from '../../components/portal/styles';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
-import { useAuth } from '../../data/AuthContext';
+import { useOperatorAccess } from '../../data/operatorAccess';
 import { loadedFigure, useAsync } from '../../hooks/useAsync';
+import { useCompanyAsync } from '../../hooks/useCompanyAsync';
 import * as reviewsSvc from '../../services/reviews.service';
 
 type Show = 'all' | 'awaiting' | 'hidden';
@@ -26,11 +28,13 @@ const SELECT = 'min-h-11 w-full rounded-lg border border-lake-200 bg-white px-3 
  * know a review was moderated even though the public no longer sees it.
  */
 export default function OwnerReviewsPage() {
-  const { currentUser } = useAuth();
-  const ownerId = currentUser?.id ?? '';
-  const { data, loading, error, reload } = useAsync(() => reviewsSvc.listReviewsForOwner(ownerId), [ownerId]);
+  const access = useOperatorAccess();
+  const { data, loading, error, reload } = useCompanyAsync(reviewsSvc.listReviewsForOwner);
   // Replies need migration 32 (reply_to_review). Until then the list still shows.
-  const { data: canReply } = useAsync(reviewsSvc.hasReviewsUpgrade, []);
+  const { data: repliesLive } = useAsync(reviewsSvc.hasReviewsUpgrade, []);
+  // The public reply speaks for the business: owners and managers (migration 40).
+  const mayReply = access.can('reply_reviews');
+  const canReply = repliesLive && mayReply;
   const reduce = useReducedMotion();
   const [boatFilter, setBoatFilter] = useState('all');
   const [show, setShow] = useState<Show>('all');
@@ -51,6 +55,12 @@ export default function OwnerReviewsPage() {
       crumb="Reviews"
       subtitle="What guests say about your boats, and your public replies."
     >
+      {access.role === 'staff' && (
+        <RoleNotice role={access.role}>
+          You can read every review of your team&rsquo;s boats. An owner or manager writes the public replies.
+        </RoleNotice>
+      )}
+
       {loading && !data && <LoadingState large label="Loading reviews" />}
       {error && <ErrorState large message={error} onRetry={reload} />}
 
@@ -97,9 +107,11 @@ export default function OwnerReviewsPage() {
           </PortalSection>
 
           <PortalSection title="All reviews"
-            description={canReply === false
+            description={repliesLive === false
               ? 'Replying to reviews switches on once the latest database update is applied.'
-              : 'Each review takes one public reply from you. You can edit your reply; the guest’s review cannot be changed.'}>
+              : !mayReply
+                ? 'Each review takes one public reply from your team. The guest’s review cannot be changed.'
+                : 'Each review takes one public reply from you. You can edit your reply; the guest’s review cannot be changed.'}>
             {reviews.length > 0 && (
               <div className="mb-4 grid gap-3 sm:max-w-xl sm:grid-cols-2">
                 {boats.length > 1 && (

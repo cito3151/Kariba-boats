@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Anchor, Plus, Pencil, Gauge, Trash2, EyeOff, Eye, X, Bell, Clock, MapPin } from 'lucide-react';
+import { Anchor, Plus, Pencil, Gauge, Trash2, EyeOff, Eye, X, Bell, Clock, MapPin, UserRound } from 'lucide-react';
 import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
+import RoleNotice from '../../components/owner/RoleNotice';
 import { BOAT_STATUS_CHIP } from '../../components/owner/boatStatus';
 import PortalSection from '../../components/portal/PortalSection';
 import { portalCard, portalButtonPrimary, portalButtonSecondary, portalButtonDanger } from '../../components/portal/styles';
@@ -13,7 +14,9 @@ import Reveal from '../../components/Reveal';
 import VerificationBanner from '../../components/VerificationBanner';
 import DocumentUploader from '../../components/verification/DocumentUploader';
 import { useAuth } from '../../data/AuthContext';
+import { useOperatorAccess } from '../../data/operatorAccess';
 import { loadedFigure, useAsync } from '../../hooks/useAsync';
+import { useCompanyAsync } from '../../hooks/useCompanyAsync';
 import * as boats from '../../services/boats.service';
 import * as imagesSvc from '../../services/images.service';
 import * as maint from '../../services/maintenance.service';
@@ -27,8 +30,10 @@ const MAINT_CHIP: Record<MaintenanceStatus, { label: string; className: string }
 };
 
 // Card actions sit two to a row and share the width, so all four fit a phone
-// card without wrapping into a ragged third line.
+// card without wrapping into a ragged third line. A role that sees fewer than four
+// gets an odd one out, which then spans the row rather than leaving a gap.
 const cardAction = `${portalButtonSecondary} w-full`;
+const cardActions = 'grid grid-cols-2 gap-2 border-t border-lake-100 bg-lake-50/60 p-3 [&>*:last-child:nth-child(odd)]:col-span-2';
 
 function CoverImage({ boat }: { boat: OwnerBoat }) {
   const { data } = useAsync(() => imagesSvc.listBoatImages(boat.id), [boat.id]);
@@ -43,14 +48,26 @@ type BoatFilter = 'all' | 'live' | 'pending' | 'attention';
 
 export default function OwnerDashboard() {
   const { currentUser } = useAuth();
+  const access = useOperatorAccess();
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
-  const ownerId = currentUser?.id ?? '';
   const [filter, setFilter] = useState<BoatFilter>('all');
 
-  const { data: boatList, loading, error, reload } = useAsync(
-    () => boats.listOwnerBoats(ownerId), [ownerId],
-  );
+  const { data: boatList, loading, error, reload } = useCompanyAsync(boats.listOwnerBoats);
+  const canEdit = access.can('edit_boats');
+  const canDelete = access.can('delete_boats');
+  const canDismiss = access.can('complete_maintenance');
+  // The account whose verification still matters: the team's accountable owner,
+  // who holds its boats. For a sole operator that is always them, as before.
+  const isAccountableOwner = !!currentUser && access.accountableOwnerId === currentUser.id;
+  const team = access.members;
+  // Who registered a boat, shown once there is a team to tell apart.
+  const addedBy = (boat: OwnerBoat): string | null => {
+    if (team.length <= 1 && (!boat.createdBy || boat.createdBy === currentUser?.id)) return null;
+    if (boat.createdBy === currentUser?.id) return 'Added by you';
+    const member = team.find((m) => m.profileId === boat.createdBy);
+    return member ? `Added by ${member.name}` : 'Added by a former team member';
+  };
   const { data: notifications, reload: reloadNotifs } = useAsync(
     () => maint.listNotifications(), [],
   );
@@ -104,17 +121,23 @@ export default function OwnerDashboard() {
 
   return (
     <OwnerPortalPage
-      title={currentUser?.businessName || currentUser?.name || 'Your boats'}
-      actions={
+      title={access.company?.name || currentUser?.businessName || currentUser?.name || 'Your boats'}
+      actions={canEdit ? (
         <Link to="/owner/boats/new" className={portalButtonPrimary}>
           <Plus size={16} /> Register a boat
         </Link>
-      }
+      ) : undefined}
     >
-      <VerificationBanner />
+      {isAccountableOwner && <VerificationBanner />}
 
-      {currentUser?.verificationStatus !== 'verified' && (
+      {isAccountableOwner && currentUser?.verificationStatus !== 'verified' && (
         <div className="mb-4"><DocumentUploader /></div>
+      )}
+
+      {access.role === 'staff' && (
+        <RoleNotice role={access.role}>
+          You can see the whole fleet and log operating hours. An owner or manager registers and edits boats.
+        </RoleNotice>
       )}
 
       <AnimatePresence initial={false}>
@@ -126,10 +149,14 @@ export default function OwnerDashboard() {
             <p className="flex min-w-0 items-start gap-2 break-words text-base leading-normal text-lake-900">
               <Bell size={18} className="mt-1 shrink-0 text-sunset-700" /> {n.message}
             </p>
-            <button onClick={() => dismissNotif(n.id)} aria-label="Dismiss notification"
-              className="shrink-0 rounded-md p-1 text-lake-700 outline-none hover:bg-lake-50 hover:text-lake-950 focus-visible:ring-2 focus-visible:ring-lake-500">
-              <X size={18} />
-            </button>
+            {/* Dismissing clears the alert for the whole team, so it is a
+                manager's or owner's call (notif_update_own, migration 40). */}
+            {canDismiss && (
+              <button onClick={() => dismissNotif(n.id)} aria-label="Dismiss notification"
+                className="shrink-0 rounded-md p-1 text-lake-700 outline-none hover:bg-lake-50 hover:text-lake-950 focus-visible:ring-2 focus-visible:ring-lake-500">
+                <X size={18} />
+              </button>
+            )}
           </motion.div>
         ))}
       </AnimatePresence>
@@ -145,7 +172,7 @@ export default function OwnerDashboard() {
           active={filter === 'attention'} onClick={() => setFilter(filter === 'attention' ? 'all' : 'attention')} />
       </div>
 
-      <PortalSection title="Your boats" className="mt-10">
+      <PortalSection title={team.length > 1 ? 'Your team\u2019s boats' : 'Your boats'} className="mt-10">
         {actionError && (
           <p className="mb-4 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{actionError}</p>
         )}
@@ -155,12 +182,14 @@ export default function OwnerDashboard() {
         {!loading && !error && list.length === 0 && (
           <EmptyState large
             title="No boats yet"
-            hint="Register your first boat to start taking bookings on Kariba Lake Connect."
-            action={
+            hint={canEdit
+              ? 'Register your first boat to start taking bookings on Kariba Lake Connect.'
+              : 'Your team has not registered a boat yet. An owner or manager can add one.'}
+            action={canEdit ? (
               <Link to="/owner/boats/new" className={`${portalButtonPrimary} mt-2`}>
                 <Plus size={16} /> Register your first boat
               </Link>
-            }
+            ) : undefined}
           />
         )}
 
@@ -195,6 +224,12 @@ export default function OwnerDashboard() {
                       <MapPin size={15} className="mt-0.5 shrink-0 text-lake-600" aria-hidden />
                       <span className="min-w-0 break-words">{boat.location}</span>
                     </p>
+                    {addedBy(boat) && (
+                      <p className="mt-1 flex items-start gap-1.5 text-sm leading-snug text-lake-700">
+                        <UserRound size={15} className="mt-0.5 shrink-0 text-lake-600" aria-hidden />
+                        <span className="min-w-0 break-words">{addedBy(boat)}</span>
+                      </p>
+                    )}
 
                     {(maintChip || boat.pendingChanges) && (
                       <div className="mt-3 flex flex-wrap gap-1.5">
@@ -216,20 +251,26 @@ export default function OwnerDashboard() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 border-t border-lake-100 bg-lake-50/60 p-3">
-                    <button onClick={() => navigate(`/owner/boats/${boat.id}/edit`)} className={cardAction}>
-                      <Pencil size={15} /> Edit
-                    </button>
+                  <div className={cardActions}>
+                    {canEdit && (
+                      <button onClick={() => navigate(`/owner/boats/${boat.id}/edit`)} className={cardAction}>
+                        <Pencil size={15} /> Edit
+                      </button>
+                    )}
                     <Link to="/owner/maintenance" className={cardAction}>
                       <Gauge size={15} /> Hours
                     </Link>
-                    <button onClick={() => toggleActive(boat)} disabled={busyId === boat.id} className={cardAction}>
-                      {boat.isActive ? <><EyeOff size={15} /> Unavailable</> : <><Eye size={15} /> Available</>}
-                    </button>
-                    <button onClick={() => remove(boat)} disabled={busyId === boat.id}
-                      className={`${portalButtonDanger} w-full`}>
-                      <Trash2 size={15} /> Delete
-                    </button>
+                    {canEdit && (
+                      <button onClick={() => toggleActive(boat)} disabled={busyId === boat.id} className={cardAction}>
+                        {boat.isActive ? <><EyeOff size={15} /> Unavailable</> : <><Eye size={15} /> Available</>}
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button onClick={() => remove(boat)} disabled={busyId === boat.id}
+                        className={`${portalButtonDanger} w-full`}>
+                        <Trash2 size={15} /> Delete
+                      </button>
+                    )}
                   </div>
                 </Reveal>
               );

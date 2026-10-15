@@ -16,12 +16,14 @@ export interface BoatInput {
 }
 
 export interface OwnerBoat extends BoatInput {
-  id: string; ownerId: string; status: BoatStatus; isActive: boolean;
+  /** ownerId is the team's accountable owner; createdBy is who registered the boat (migration 40). */
+  id: string; ownerId: string; companyId: string | null; createdBy: string | null;
+  status: BoatStatus; isActive: boolean;
   rejectionReason: string | null; pendingChanges: Record<string, unknown> | null;
   nextMaintenanceHours: number; hoursRemaining: number; maintenanceStatus: MaintenanceStatus;
 }
 
-const OWNER_COLS = `id, owner_id, name, boat_type, capacity, description, location,
+const OWNER_COLS = `id, owner_id, company_id, created_by, name, boat_type, capacity, description, location,
   price_per_hour, price_per_day, deposit_percent, facilities, safety_equipment, crew_included, fuel_policy,
   registration_number, maintenance_interval_hours, accumulated_hours, last_maintenance_hours,
   next_maintenance_hours, hours_remaining, maintenance_status,
@@ -45,7 +47,8 @@ function oneOf<T extends string>(allowed: readonly T[], value: unknown, fallback
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function toOwnerBoat(r: any): OwnerBoat {
   return {
-    id: r.id, ownerId: r.owner_id, name: r.name, boatType: r.boat_type,
+    id: r.id, ownerId: r.owner_id, companyId: r.company_id ?? null, createdBy: r.created_by ?? null,
+    name: r.name, boatType: r.boat_type,
     capacity: r.capacity, description: r.description ?? '', location: r.location,
     pricePerHour: r.price_per_hour, pricePerDay: r.price_per_day,
     depositPercent: r.deposit_percent != null ? Number(r.deposit_percent) : 20,
@@ -69,9 +72,15 @@ function toOwnerBoat(r: any): OwnerBoat {
   };
 }
 
-export async function listOwnerBoats(ownerId: string): Promise<OwnerBoat[]> {
+/**
+ * Every boat of the operator's company, whoever registered it or holds it. RLS
+ * (boats_read_public_or_own_or_admin, migration 40) admits a member's company
+ * boats; the explicit company filter keeps the list to this company for an admin,
+ * and keeps other operators' public listings out of it.
+ */
+export async function listOwnerBoats(companyId: string): Promise<OwnerBoat[]> {
   const { data, error } = await supabase.from('boats').select(OWNER_COLS)
-    .eq('owner_id', ownerId).eq('is_deleted', false)
+    .eq('company_id', companyId).eq('is_deleted', false)
     .order('created_at', { ascending: false });
   if (error) throw new Error(humanizeError(error.message));
   return (data ?? []).map(toOwnerBoat);
@@ -83,9 +92,14 @@ export async function getOwnerBoat(id: string): Promise<OwnerBoat | null> {
   return toOwnerBoat(data);
 }
 
-export async function createBoat(ownerId: string, input: BoatInput): Promise<OwnerBoat> {
+/**
+ * Registers a boat for the company. The server (stamp_boat_company, migration 40)
+ * records the caller as its creator and gives it to the team's accountable owner,
+ * so owner_id here is only a starting value.
+ */
+export async function createBoat(ownerId: string, companyId: string, input: BoatInput): Promise<OwnerBoat> {
   const { data, error } = await supabase.from('boats').insert({
-    owner_id: ownerId, name: input.name, boat_type: input.boatType,
+    owner_id: ownerId, company_id: companyId, name: input.name, boat_type: input.boatType,
     capacity: input.capacity, description: input.description, location: input.location,
     price_per_hour: input.pricePerHour, price_per_day: input.pricePerDay,
     deposit_percent: input.depositPercent,
@@ -117,6 +131,19 @@ export async function proposeChanges(id: string, changes: Record<string, unknown
   });
   if (error) throw new Error(humanizeError(error.message));
   return toOwnerBoat(data);
+}
+
+/**
+ * Whether the account that holds a boat is verified. submit_boat_for_review checks
+ * the boat's accountable owner, not the person pressing the button (migration 40),
+ * so a manager's own pending verification does not block them. Owner profiles are
+ * readable by every signed-in user (profiles_read_own_or_admin).
+ */
+export async function isAccountVerified(profileId: string): Promise<boolean> {
+  const { data, error } = await supabase.from('profiles')
+    .select('verification_status').eq('id', profileId).maybeSingle();
+  if (error) throw new Error(humanizeError(error.message));
+  return data?.verification_status === 'verified';
 }
 
 export async function submitForReview(id: string): Promise<void> {

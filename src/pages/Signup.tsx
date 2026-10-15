@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AlertCircle, Anchor, Building2, ClipboardCheck, MailCheck, Briefcase } from 'lucide-react';
+import { AlertCircle, Anchor, Building2, ClipboardCheck, MailCheck, Briefcase, UserRound } from 'lucide-react';
 import AuthCard from '../components/AuthCard';
 import PageTransition from '../components/PageTransition';
 import { useAuth, type Role } from '../data/AuthContext';
 import { useCurrentDocuments } from '../components/legal/useCurrentDocuments';
 import DocumentModal from '../components/legal/DocumentModal';
 import { recordConsent, type LegalDocType } from '../services/legal.service';
+import { requiredDocuments, type OperatorType } from '../services/companies.service';
 
 const roleHome: Record<string, string> = {
   tourist: '/',
@@ -16,6 +17,19 @@ const roleHome: Record<string, string> = {
   agency: '/agency',
   admin: '/admin',
 };
+
+// How a boat operator works on the platform (migration 40, ADR-002). The proofs
+// named here are what the company page asks for after signup.
+const operatorOptions: { value: OperatorType; label: string; hint: string; icon: typeof Anchor }[] = [
+  {
+    value: 'individual', label: 'On my own', icon: UserRound,
+    hint: 'A sole trader running your own boat. No company registration needed.',
+  },
+  {
+    value: 'company', label: 'As a registered company', icon: Building2,
+    hint: 'A business with a registration certificate. You can add managers and crew later.',
+  },
+];
 
 const roleOptions: { value: Role; label: string; icon: typeof Anchor }[] = [
   { value: 'tourist', label: 'Tourist', icon: Anchor },
@@ -35,6 +49,7 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [businessName, setBusinessName] = useState('');
+  const [operatorType, setOperatorType] = useState<OperatorType | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmSent, setConfirmSent] = useState(false);
@@ -71,6 +86,10 @@ export default function Signup() {
       setError('Please accept the Operator Agreement to continue.');
       return;
     }
+    if (role === 'owner' && !operatorType) {
+      setError('Choose whether you operate on your own or as a registered company.');
+      return;
+    }
 
     setBusy(true);
     try {
@@ -81,6 +100,7 @@ export default function Signup() {
         role,
         phone: phone || undefined,
         businessName: businessName || undefined,
+        operatorType: role === 'owner' && operatorType ? operatorType : undefined,
       });
       if (result.needsConfirmation) {
         setConfirmSent(true);
@@ -147,7 +167,7 @@ export default function Signup() {
               key={opt.value}
               type="button"
               onClick={() => setRole(opt.value)}
-              className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-xs font-medium transition-colors ${
+              className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[13px] font-medium transition-colors ${
                 role === opt.value
                   ? 'border-lake-600 bg-lake-50 text-lake-800'
                   : 'border-lake-100 text-lake-500 hover:bg-lake-50'
@@ -160,8 +180,41 @@ export default function Signup() {
         </div>
 
         <form onSubmit={submit} className="mt-5 space-y-3">
+          {role === 'owner' && (
+            <fieldset>
+              <legend className="text-sm font-medium text-lake-700">How do you operate?</legend>
+              <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
+                {operatorOptions.map((opt) => {
+                  const selected = operatorType === opt.value;
+                  return (
+                    <label key={opt.value}
+                      className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-lake-500 motion-reduce:transition-none ${
+                        selected ? 'border-lake-600 bg-lake-50' : 'border-lake-100 hover:bg-lake-50'
+                      }`}>
+                      <input type="radio" name="operator-type" value={opt.value} checked={selected}
+                        onChange={() => setOperatorType(opt.value)}
+                        className="mt-1 h-4 w-4 shrink-0 accent-lake-700" />
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-1.5 text-[15px] font-semibold text-lake-950">
+                          <opt.icon size={16} aria-hidden /> {opt.label}
+                        </span>
+                        <span className="mt-0.5 block text-sm leading-snug text-lake-700">{opt.hint}</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+              {operatorType && (
+                <p className="mt-2 text-sm leading-normal text-lake-700">
+                  After signing up you upload:{' '}
+                  {requiredDocuments(operatorType).map((d) => d.label.toLowerCase()).join(', ')}.
+                </p>
+              )}
+            </fieldset>
+          )}
+
           <div>
-            <label className="text-xs font-medium text-lake-500">Full name</label>
+            <label className="block text-sm font-medium text-lake-700">Full name</label>
             <input
               required
               value={name}
@@ -172,7 +225,7 @@ export default function Signup() {
           </div>
 
           <div>
-            <label className="text-xs font-medium text-lake-500">Email</label>
+            <label className="block text-sm font-medium text-lake-700">Email</label>
             <input
               required
               type="email"
@@ -185,9 +238,13 @@ export default function Signup() {
 
           {(role === 'owner' || role === 'hotel' || role === 'agency') && (
             <div>
-              <label className="text-xs font-medium text-lake-500">Business name</label>
+              <label className="block text-sm font-medium text-lake-700">
+                {role === 'owner' && operatorType === 'individual' ? 'Trading name (optional)'
+                  : role === 'owner' && operatorType === 'company' ? 'Registered company name'
+                  : 'Business name'}
+              </label>
               <input
-                required
+                required={!(role === 'owner' && operatorType === 'individual')}
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-lake-100 bg-lake-50 px-3 py-2 text-base outline-none focus:border-lake-400"
@@ -198,7 +255,7 @@ export default function Signup() {
 
           {(role === 'owner' || role === 'tourist' || role === 'agency') && (
             <div>
-              <label className="text-xs font-medium text-lake-500">
+              <label className="block text-sm font-medium text-lake-700">
                 Phone / WhatsApp {role === 'owner' || role === 'agency' ? '' : '(optional)'}
               </label>
               <input
@@ -213,7 +270,7 @@ export default function Signup() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-lake-500">Password</label>
+              <label className="block text-sm font-medium text-lake-700">Password</label>
               <input
                 required
                 type="password"
@@ -224,7 +281,7 @@ export default function Signup() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-lake-500">Confirm password</label>
+              <label className="block text-sm font-medium text-lake-700">Confirm password</label>
               <input
                 required
                 type="password"
@@ -237,7 +294,7 @@ export default function Signup() {
           </div>
 
           {(role === 'hotel' || role === 'owner' || role === 'agency') && (
-            <p className="text-xs text-lake-500">
+            <p className="text-sm text-lake-700">
               New {role === 'hotel' ? 'hotel' : role === 'agency' ? 'travel agency' : 'owner'} accounts are
               reviewed by the Kariba Lake Connect team, who check your uploaded registration documents
               before you go live. You can set everything up in your portal while verification is pending.
@@ -245,7 +302,7 @@ export default function Signup() {
           )}
 
           <div className="space-y-2 pt-1">
-            <label className="flex items-start gap-2 text-xs text-lake-600">
+            <label className="flex items-start gap-2 text-sm text-lake-700">
               <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)}
                 className="mt-0.5" />
               <span>
@@ -261,7 +318,7 @@ export default function Signup() {
               </span>
             </label>
             {needsOperator && (
-              <label className="flex items-start gap-2 text-xs text-lake-600">
+              <label className="flex items-start gap-2 text-sm text-lake-700">
                 <input type="checkbox" checked={acceptOperator} onChange={(e) => setAcceptOperator(e.target.checked)}
                   className="mt-0.5" />
                 <span>
@@ -270,7 +327,7 @@ export default function Signup() {
                 </span>
               </label>
             )}
-            <label className="flex items-start gap-2 text-xs text-lake-500">
+            <label className="flex items-start gap-2 text-sm text-lake-700">
               <input type="checkbox" checked={marketingOptIn} onChange={(e) => setMarketingOptIn(e.target.checked)}
                 className="mt-0.5" />
               <span>Send me occasional updates and offers (optional).</span>
@@ -281,7 +338,7 @@ export default function Signup() {
             <motion.div
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700"
+              className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
             >
               <AlertCircle size={14} /> {error}
             </motion.div>
@@ -302,7 +359,7 @@ export default function Signup() {
             Log in
           </Link>
         </p>
-        <p className="mt-2 text-center text-xs text-lake-400">
+        <p className="mt-2 text-center text-[13px] text-lake-600">
           Admin accounts are provisioned internally and are not available through this form.
         </p>
         {viewDoc && <DocumentModal docType={viewDoc} onClose={() => setViewDoc(null)} />}

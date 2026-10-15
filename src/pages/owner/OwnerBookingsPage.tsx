@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, X, Wallet, CheckCircle2, UserCheck, PencilLine } from 'lucide-react';
 import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
+import RoleNotice from '../../components/owner/RoleNotice';
 import PortalSection from '../../components/portal/PortalSection';
 import Reveal from '../../components/Reveal';
 import { portalCard } from '../../components/portal/styles';
@@ -12,7 +13,8 @@ import BookingFigures from '../../components/BookingFigures';
 import BookingRef from '../../components/BookingRef';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
 import { useAuth } from '../../data/AuthContext';
-import { useAsync } from '../../hooks/useAsync';
+import { useOperatorAccess } from '../../data/operatorAccess';
+import { useCompanyAsync } from '../../hooks/useCompanyAsync';
 import * as bookingsSvc from '../../services/bookings.service';
 import * as captainsSvc from '../../services/captains.service';
 import type { Captain } from '../../services/captains.service';
@@ -84,10 +86,13 @@ const ORDER: Record<BookingStatus, number> = {
 
 export default function OwnerBookingsPage() {
   const { currentUser } = useAuth();
-  const ownerId = currentUser?.id ?? '';
-  const { data, loading, error, reload } = useAsync(() => bookingsSvc.listBookingsForOwner(ownerId), [ownerId]);
-  const { data: captainsData, reload: reloadCaptains } = useAsync(() => captainsSvc.listMyCaptains(ownerId), [ownerId]);
+  const access = useOperatorAccess();
+  const userId = currentUser?.id ?? '';
+  const { data, loading, error, reload } = useCompanyAsync(bookingsSvc.listBookingsForOwner);
+  const { data: captainsData, reload: reloadCaptains, companyId } = useCompanyAsync(captainsSvc.listCompanyCaptains);
   const captains = captainsData ?? [];
+  const canManage = access.can('manage_bookings');
+  const canAssign = access.can('assign_captains');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
 
@@ -107,6 +112,13 @@ export default function OwnerBookingsPage() {
       crumb="Bookings"
       subtitle="Confirm or decline requests, then mark deposits and completed trips as they happen."
     >
+      {access.role === 'staff' && (
+        <RoleNotice role={access.role}>
+          You can see every booking and assign captains to confirmed trips. An owner or manager confirms,
+          declines and updates bookings.
+        </RoleNotice>
+      )}
+
       {actionError && (
         <p className="mb-4 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{actionError}</p>
       )}
@@ -139,7 +151,8 @@ export default function OwnerBookingsPage() {
 
                   <BookingFigures booking={b} />
 
-                  <div className="mt-3.5 flex flex-wrap items-start gap-2">
+                  {canManage && (
+                  <div className="mt-3.5 flex flex-wrap items-start gap-2 empty:hidden">
                     {b.status === 'requested' && (
                       <>
                         {/* updatedByGuestAt is what this card shows. If the guest has
@@ -175,8 +188,9 @@ export default function OwnerBookingsPage() {
                       </>
                     )}
                   </div>
+                  )}
 
-                  <AssignCaptain booking={b} captains={captains} onAssigned={run} />
+                  {canAssign && <AssignCaptain booking={b} captains={captains} onAssigned={run} />}
                 </Reveal>
               ))}
             </AnimatePresence>
@@ -184,7 +198,8 @@ export default function OwnerBookingsPage() {
         </PortalSection>
 
         <div className="min-w-0">
-          <CaptainManager ownerId={ownerId} captains={captains} onChanged={reloadCaptains} />
+          <CaptainManager companyId={companyId} userId={userId} captains={captains}
+            canManage={access.can('manage_captains')} onChanged={reloadCaptains} />
         </div>
       </div>
     </OwnerPortalPage>

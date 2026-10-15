@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Building2, ShieldCheck, ShieldAlert, Eye, Check, X, AlertTriangle } from 'lucide-react';
+import { Building2, ShieldCheck, ShieldAlert, Eye, Check, X, AlertTriangle, UserRound } from 'lucide-react';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
 import Reveal from '../Reveal';
 import { portalCard, portalButtonSecondary, portalButtonDanger } from '../portal/styles';
@@ -7,7 +7,7 @@ import { adminButtonCommit, adminButtonConfirmReject } from './styles';
 import { useAsync } from '../../hooks/useAsync';
 import * as companies from '../../services/companies.service';
 import type {
-  CompanyForReview, CompanyDocument, CompanyVerificationStatus,
+  CompanyForReview, CompanyDocument, CompanyVerificationStatus, OperatorType,
 } from '../../services/companies.service';
 
 const STATUS_CHIP: Record<CompanyVerificationStatus, string> = {
@@ -23,7 +23,9 @@ const DOC_CHIP: Record<CompanyDocument['reviewStatus'], string> = {
   rejected: 'bg-red-100 text-red-700',
 };
 
-function DocumentRow({ doc, onReviewed }: { doc: CompanyDocument; onReviewed: () => void }) {
+function DocumentRow({ doc, operatorType, onReviewed }: {
+  doc: CompanyDocument; operatorType: OperatorType; onReviewed: () => void;
+}) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
   const [rejecting, setRejecting] = useState(false);
@@ -73,8 +75,9 @@ function DocumentRow({ doc, onReviewed }: { doc: CompanyDocument; onReviewed: ()
     }
   };
 
+  // An individual's director_id is their own national ID or passport (migration 40).
   const kindLabel = doc.docKind
-    ? companies.DOCUMENT_LABELS[doc.docKind]
+    ? companies.documentLabel(doc.docKind, operatorType)
     : doc.label || 'Unclassified document';
 
   return (
@@ -146,6 +149,9 @@ function DocumentRow({ doc, onReviewed }: { doc: CompanyDocument; onReviewed: ()
 
 function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChanged: () => void }) {
   const [busy, setBusy] = useState(false);
+  const label = (k: Parameters<typeof companies.documentLabel>[0]) => companies.documentLabel(k, company.operatorType);
+  const required = companies.requiredDocuments(company.operatorType);
+  const TypeIcon = company.operatorType === 'individual' ? UserRound : Building2;
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -167,12 +173,19 @@ function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChan
     <div className={`${portalCard} p-4 sm:p-5`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-2">
-          <Building2 size={20} className="mt-0.5 shrink-0 text-lake-600" aria-hidden />
+          <TypeIcon size={20} className="mt-0.5 shrink-0 text-lake-600" aria-hidden />
           <div className="min-w-0">
             <h3 className="break-words text-lg font-bold leading-snug tracking-[-0.01em] text-lake-950">{company.name}</h3>
             <p className="mt-0.5 break-words text-[15px] leading-normal text-lake-700">
-              {company.registrationNumber ? `Reg ${company.registrationNumber}` : 'No registration number given'}
+              <span className="font-semibold text-lake-900">{companies.OPERATOR_TYPE_LABELS[company.operatorType]}</span>
+              {company.operatorType === 'company'
+                ? (company.registrationNumber ? ` · Reg ${company.registrationNumber}` : ' · No registration number given')
+                : ''}
               {company.contactEmail ? ` · ${company.contactEmail}` : ''}
+            </p>
+            {/* What this kind of operator has to prove (required_proof_kinds). */}
+            <p className="mt-1 break-words text-sm leading-normal text-lake-700">
+              Requires {required.length} proofs: {required.map((d) => d.label).join(', ')}.
             </p>
           </div>
         </div>
@@ -185,7 +198,7 @@ function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChan
         <p className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3.5 py-2.5 text-[15px] leading-normal text-amber-900">
           <AlertTriangle size={17} className="mt-0.5 shrink-0" />
           <span>
-            Still missing: {company.missingKinds.map((k) => companies.DOCUMENT_LABELS[k]).join(', ')}
+            Still missing: {company.missingKinds.map(label).join(', ')}
           </span>
         </p>
       )}
@@ -197,7 +210,7 @@ function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChan
       ) : (
         <ul className="mt-3 space-y-2">
           {company.documents.map((doc) => (
-            <DocumentRow key={doc.id} doc={doc} onReviewed={onChanged} />
+            <DocumentRow key={doc.id} doc={doc} operatorType={company.operatorType} onReviewed={onChanged} />
           ))}
         </ul>
       )}
@@ -224,7 +237,7 @@ function CompanyCard({ company, onChanged }: { company: CompanyForReview; onChan
           {company.awaitingApproval.length > 0 && (
             <p className="w-full text-[15px] leading-normal text-lake-700">
               Every proof must be approved before this company can be verified. Outstanding:{' '}
-              {company.awaitingApproval.map((k) => companies.DOCUMENT_LABELS[k]).join(', ')}.
+              {company.awaitingApproval.map(label).join(', ')}.
             </p>
           )}
           <button onClick={() => decide('rejected')} disabled={busy || !note.trim()} className={portalButtonDanger}>

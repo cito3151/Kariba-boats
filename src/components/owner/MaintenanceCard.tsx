@@ -28,9 +28,12 @@ function Figure({ label, value }: { label: string; value: string }) {
 }
 
 export default function MaintenanceCard({
-  boat, onChanged,
+  boat, canLog = true, canService = true, onChanged,
 }: {
-  boat: OwnerBoat; onChanged: () => void;
+  boat: OwnerBoat;
+  /** Team permissions (migration 40): staff log hours; owners and managers also record services. */
+  canLog?: boolean; canService?: boolean;
+  onChanged: () => void;
 }) {
   const [mode, setMode] = useState<'none' | 'hours' | 'service'>('none');
   const [busy, setBusy] = useState(false);
@@ -120,16 +123,20 @@ export default function MaintenanceCard({
         )}
       </div>
 
-      {mode === 'none' && (
+      {mode === 'none' && (canLog || canService) && (
         <div className="mt-4 flex flex-wrap gap-2">
-          <button onClick={() => { setMode('hours'); setError(''); }}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lake-800">
-            <Clock size={16} /> Log hours
-          </button>
-          <button onClick={() => { setMode('service'); setError(''); }}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-4 py-2.5 text-sm font-semibold text-lake-700 hover:bg-lake-50">
-            <Wrench size={16} /> Mark maintenance complete
-          </button>
+          {canLog && (
+            <button onClick={() => { setMode('hours'); setError(''); }}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lake-800">
+              <Clock size={16} /> Log hours
+            </button>
+          )}
+          {canService && (
+            <button onClick={() => { setMode('service'); setError(''); }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-lake-200 px-4 py-2.5 text-sm font-semibold text-lake-700 hover:bg-lake-50">
+              <Wrench size={16} /> Mark maintenance complete
+            </button>
+          )}
         </div>
       )}
 

@@ -1,17 +1,24 @@
 import { supabase } from '../lib/supabase';
 import { humanizeError } from './errors';
+import { ROLES, type CompanyMemberRole } from './permissions';
 import { DOCUMENT_BUCKET, deleteVerificationDocument } from './documentStorage.service';
 
 export { signedUrl, openDocument } from './documentStorage.service';
 
 export type CompanyVerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected';
-export type CompanyMemberRole = 'owner' | 'manager' | 'staff';
+export type { CompanyMemberRole } from './permissions';
+export type OperatorType = 'individual' | 'company';
 export type DocumentKind =
   | 'company_registration' | 'boat_ownership' | 'operator_licence' | 'director_id';
 export type DocumentReviewStatus = 'pending' | 'approved' | 'rejected';
 
-/** The four proofs an operator must file. Order here is the order shown on screen. */
-export const REQUIRED_DOCUMENTS: { kind: DocumentKind; label: string; hint: string }[] = [
+export interface RequiredDocument { kind: DocumentKind; label: string; hint: string }
+
+/**
+ * The proofs a company files. Order here is the order shown on screen. Mirrors
+ * required_proof_kinds('company') in the database: every document kind.
+ */
+export const REQUIRED_DOCUMENTS: RequiredDocument[] = [
   {
     kind: 'company_registration',
     label: 'Company registration',
@@ -34,9 +41,46 @@ export const REQUIRED_DOCUMENTS: { kind: DocumentKind; label: string; hint: stri
   },
 ];
 
+/**
+ * The proofs an individual (sole trader) files: no company registration, and the
+ * ID is their own. Mirrors required_proof_kinds('individual'), which reuses the
+ * director_id kind for the operator's own national ID or passport.
+ */
+export const INDIVIDUAL_DOCUMENTS: RequiredDocument[] = [
+  {
+    kind: 'director_id',
+    label: 'National ID or passport',
+    hint: 'Your own national ID card or passport, matching the name on your account.',
+  },
+  {
+    kind: 'boat_ownership',
+    label: 'Proof of boat ownership',
+    hint: 'Boat registration or title showing you own the vessel.',
+  },
+  {
+    kind: 'operator_licence',
+    label: 'Operator licence',
+    hint: 'Tourism or marine permit allowing you to carry paying passengers.',
+  },
+];
+
+export function requiredDocuments(type: OperatorType): RequiredDocument[] {
+  return type === 'individual' ? INDIVIDUAL_DOCUMENTS : REQUIRED_DOCUMENTS;
+}
+
 export const DOCUMENT_LABELS: Record<DocumentKind, string> = Object.fromEntries(
   REQUIRED_DOCUMENTS.map((d) => [d.kind, d.label]),
 ) as Record<DocumentKind, string>;
+
+/** A document kind's name for this kind of operator ("Director ID" or "National ID or passport"). */
+export function documentLabel(kind: DocumentKind, type: OperatorType): string {
+  return requiredDocuments(type).find((d) => d.kind === kind)?.label ?? DOCUMENT_LABELS[kind];
+}
+
+export const OPERATOR_TYPE_LABELS: Record<OperatorType, string> = {
+  individual: 'Individual operator',
+  company: 'Registered company',
+};
 
 export interface Company {
   id: string;
@@ -44,6 +88,8 @@ export interface Company {
   registrationNumber: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
+  /** 'individual' (a sole trader, one member) or 'company' (a team). Migration 40. */
+  operatorType: OperatorType;
   verificationStatus: CompanyVerificationStatus;
   verificationNote: string | null;
   verifiedAt: string | null;
@@ -71,13 +117,14 @@ const MAX_BYTES = 10 * 1024 * 1024;
 const ALLOWED = ['application/pdf', 'image/jpeg', 'image/png'];
 
 const COMPANY_SELECT =
-  'id, name, registration_number, contact_email, contact_phone, verification_status, verification_note, verified_at, verification_lapse_reason, created_at';
+  'id, name, operator_type, registration_number, contact_email, contact_phone, verification_status, verification_note, verified_at, verification_lapse_reason, created_at';
 const DOC_SELECT =
   'id, company_id, user_id, doc_kind, storage_path, file_name, label, review_status, review_note, reviewed_at, expires_at, uploaded_at';
 
 const COMPANY_STATUSES: readonly CompanyVerificationStatus[] = ['unverified', 'pending', 'verified', 'rejected'];
 const REVIEW_STATUSES: readonly DocumentReviewStatus[] = ['pending', 'approved', 'rejected'];
 const DOC_KINDS: readonly DocumentKind[] = REQUIRED_DOCUMENTS.map((d) => d.kind);
+const OPERATOR_TYPES: readonly OperatorType[] = ['individual', 'company'];
 
 /**
  * review_status is a plain text column behind a CHECK constraint, so a later
@@ -94,6 +141,9 @@ function oneOf<T extends string>(allowed: readonly T[], value: unknown, fallback
 function mapCompany(r: any): Company {
   return {
     id: r.id, name: r.name, registrationNumber: r.registration_number,
+    // 'company' is what every operator was before migration 40, and its proof set is
+    // the stricter one, so an unknown value never lowers what has to be filed.
+    operatorType: oneOf(OPERATOR_TYPES, r.operator_type, 'company'),
     contactEmail: r.contact_email, contactPhone: r.contact_phone,
     // 'pending' rather than 'unverified': an unknown status must never read as
     // verified, nor tell an operator to re-upload proofs they already filed.
@@ -119,17 +169,21 @@ function mapDoc(r: any): CompanyDocument {
   };
 }
 
+/** The workspace the signed-in operator works in, and their role on it. */
+export interface Workspace {
+  company: Company;
+  role: CompanyMemberRole;
+}
+
 /**
- * The company the given profile belongs to, or null if they are not in one.
- *
- * The profile filter and the ordering are both deliberate: row level security
- * already hides other people's memberships, but an admin can see every row, and a
- * profile may legitimately belong to more than one company. Without both, this
- * returns a server-chosen row that can differ between page loads.
+ * The company the given profile belongs to, with their role, or null if they are
+ * not in one. Since migration 40 a profile belongs to at most one company (a unique
+ * index), so this is unambiguous; the profile filter still matters because an admin
+ * can read every membership row.
  */
-export async function getMyCompany(profileId: string): Promise<Company | null> {
+export async function getMyWorkspace(profileId: string): Promise<Workspace | null> {
   const { data: membership, error: mErr } = await supabase
-    .from('company_members').select('company_id')
+    .from('company_members').select('company_id, member_role')
     .eq('profile_id', profileId)
     .order('added_at', { ascending: true })
     .limit(1).maybeSingle();
@@ -139,7 +193,17 @@ export async function getMyCompany(profileId: string): Promise<Company | null> {
   const { data, error } = await supabase
     .from('companies').select(COMPANY_SELECT).eq('id', membership.company_id).maybeSingle();
   if (error) throw new Error(humanizeError(error.message));
-  return data ? mapCompany(data) : null;
+  if (!data) return null;
+  return {
+    company: mapCompany(data),
+    // 'staff' rather than anything higher: an unknown role must never unlock actions.
+    role: oneOf(ROLES, membership.member_role, 'staff'),
+  };
+}
+
+/** The company the given profile belongs to, or null. */
+export async function getMyCompany(profileId: string): Promise<Company | null> {
+  return (await getMyWorkspace(profileId))?.company ?? null;
 }
 
 export async function updateCompany(
@@ -245,7 +309,8 @@ export async function listCompaniesForReview(): Promise<CompanyForReview[]> {
     const documents = byCompany.get(company.id) ?? [];
     const present = new Set(documents.filter((d) => d.reviewStatus !== 'rejected').map((d) => d.docKind));
     const approved = new Set(documents.filter((d) => d.reviewStatus === 'approved').map((d) => d.docKind));
-    const kinds = REQUIRED_DOCUMENTS.map((r) => r.kind);
+    // The proofs this kind of operator needs (required_proof_kinds in the database).
+    const kinds = requiredDocuments(company.operatorType).map((r) => r.kind);
     return {
       ...company,
       documents,
@@ -287,6 +352,21 @@ export async function reviewCompany(
 ): Promise<void> {
   const { error } = await supabase.rpc('admin_review_company', {
     p_company_id: companyId, p_status: status, p_note: note?.trim() || undefined,
+  });
+  if (error) throw new Error(humanizeError(error.message));
+}
+
+/**
+ * Turns an individual operator into a registered company (upgrade_to_company,
+ * migration 40). One way only. A verified individual goes back to review, because a
+ * company also has to file its registration.
+ */
+export async function upgradeToCompany(
+  companyId: string, name: string, registrationNumber: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('upgrade_to_company', {
+    p_company_id: companyId, p_name: name.trim(),
+    p_registration_number: registrationNumber.trim() || undefined,
   });
   if (error) throw new Error(humanizeError(error.message));
 }
