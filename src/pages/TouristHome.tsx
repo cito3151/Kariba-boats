@@ -190,11 +190,11 @@ export default function TouristHome() {
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.8fr_1.2fr_auto_auto] lg:items-stretch">
               <label className="block rounded-md px-4 py-3 hover:bg-lake-50 focus-within:bg-lake-50">
-                <span className="block text-xs font-bold uppercase tracking-[0.08em] text-lake-600">Boat type</span>
+                <span className="block text-[13px] font-bold uppercase tracking-[0.08em] text-lake-600">Boat type</span>
                 <select
                   value={boatType}
                   onChange={(e) => setBoatType(e.target.value as BoatKind | 'all')}
-                  className="mt-1 w-full bg-transparent text-[15px] font-semibold text-lake-950 outline-none"
+                  className="mt-1 w-full bg-transparent text-base font-semibold text-lake-950 outline-none"
                 >
                   <option value="all">Any boat</option>
                   {TYPE_OPTIONS.slice(1).map((t) => (
@@ -203,20 +203,20 @@ export default function TouristHome() {
                 </select>
               </label>
               <label className="block rounded-md px-4 py-3 hover:bg-lake-50 focus-within:bg-lake-50 lg:border-l lg:border-lake-100">
-                <span className="block text-xs font-bold uppercase tracking-[0.08em] text-lake-600">Guests</span>
+                <span className="block text-[13px] font-bold uppercase tracking-[0.08em] text-lake-600">Guests</span>
                 <span className="mt-1 flex items-center gap-2">
                   <Users size={15} className="text-lake-400" aria-hidden />
                   <input
                     type="number" min={1} max={200} value={groupSize}
                     onChange={(e) => setGroupSize(Number(e.target.value) || 1)}
-                    className="w-full bg-transparent text-[15px] font-semibold tabular-nums text-lake-950 outline-none"
+                    className="w-full bg-transparent text-base font-semibold tabular-nums text-lake-950 outline-none"
                   />
                 </span>
               </label>
               <label className="block rounded-md px-4 py-3 hover:bg-lake-50 focus-within:bg-lake-50 lg:border-l lg:border-lake-100">
-                <span className="flex items-baseline justify-between text-xs font-bold uppercase tracking-[0.08em] text-lake-600">
+                <span className="flex items-baseline justify-between text-[13px] font-bold uppercase tracking-[0.08em] text-lake-600">
                   Max price
-                  <span className="text-[13px] font-semibold normal-case tracking-normal tabular-nums text-lake-950">
+                  <span className="text-[15px] font-semibold normal-case tracking-normal tabular-nums text-lake-950">
                     ${maxPrice}
                   </span>
                 </span>
@@ -320,7 +320,7 @@ export default function TouristHome() {
                 <label className="flex items-center gap-2 text-sm text-lake-700">
                   <ArrowDownUp size={14} className="text-lake-400" />
                   <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}
-                    className="rounded-lg border border-lake-100 bg-lake-50 px-3 py-1.5 text-sm outline-none focus:border-lake-400">
+                    className="min-h-10 rounded-lg border border-lake-200 bg-white px-3 py-2 text-base outline-none focus:border-lake-500">
                     <option value="recommended">Recommended</option>
                     <option value="price_low">Price: low to high</option>
                     <option value="capacity">Largest first</option>
@@ -334,7 +334,7 @@ export default function TouristHome() {
                     aria-pressed={boatType === t}
                     /* Feedback on the press itself, not only on the settled state, and
                        a focus ring so the filter row is usable from the keyboard. */
-                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold outline-none
+                    className={`min-h-10 rounded-full px-4 py-2 text-sm font-semibold outline-none
                       transition-[color,background-color,border-color,transform] duration-200
                       active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-lake-500 focus-visible:ring-offset-2 ${
                       boatType === t
@@ -365,7 +365,7 @@ export default function TouristHome() {
               <Anchor size={22} className="text-lake-300" />
               <p>No boats match those filters.</p>
               <button onClick={resetFilters}
-                className="rounded-lg bg-lake-700 px-4 py-2 text-xs font-semibold text-white hover:bg-lake-800">
+                className="rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lake-800">
                 Clear filters
               </button>
             </div>

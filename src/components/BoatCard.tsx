@@ -108,33 +108,33 @@ export default function BoatCard({
               the carousel dots so they stay legible on pale photos. */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-14 bg-linear-to-t from-lake-950/45 to-transparent" />
           {boat.operatorVerified && (
-            <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-sm bg-white px-2 py-1 text-[11px] font-bold uppercase leading-none tracking-[0.06em] text-lake-950 shadow-[0_1px_3px_rgba(13,37,50,0.25)]">
-              <ShieldCheck size={12} className="text-lake-600" aria-hidden /> Verified operator
+            <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-sm bg-white px-2 py-1 text-[13px] font-bold uppercase leading-none tracking-[0.05em] text-lake-950 shadow-[0_1px_3px_rgba(13,37,50,0.25)]">
+              <ShieldCheck size={14} className="text-lake-600" aria-hidden /> Verified operator
             </span>
           )}
         </div>
 
         <div className="flex flex-1 flex-col p-4">
-          <p className="text-[11px] font-bold uppercase leading-4 tracking-[0.1em] text-lake-600">
+          <p className="text-[13px] font-bold uppercase leading-4 tracking-[0.08em] text-lake-600">
             {BOAT_TYPE_LABELS[boat.boatType]}
           </p>
           <h3 className="mt-1 line-clamp-2 text-lg font-bold leading-6 text-lake-950">{boat.name}</h3>
           <RatingBadge summary={rating} className="mt-1" />
-          <p className="mt-1 flex items-center gap-1 text-xs leading-4 text-lake-600">
-            <MapPin size={12} className="shrink-0" aria-hidden />
+          <p className="mt-1 flex items-center gap-1 text-sm leading-5 text-lake-600">
+            <MapPin size={14} className="shrink-0" aria-hidden />
             <span className="truncate">Departs from {boat.location}</span>
           </p>
 
-          <ul className="mt-3 space-y-1 text-xs leading-4 text-lake-600">
+          <ul className="mt-3 space-y-1 text-sm leading-5 text-lake-600">
             <li className="flex items-center gap-1.5">
-              <Users size={12} className="shrink-0" aria-hidden />
+              <Users size={14} className="shrink-0" aria-hidden />
               <span>
                 Up to <span className="font-semibold tabular-nums text-lake-950">{boat.capacity}</span>{' '}
                 {boat.capacity === 1 ? 'guest' : 'guests'}
               </span>
             </li>
             <li className="flex items-center gap-1.5">
-              <Gauge size={12} className="shrink-0" aria-hidden />
+              <Gauge size={14} className="shrink-0" aria-hidden />
               <span>
                 Operator trust score{' '}
                 <span className="font-semibold tabular-nums text-lake-950">{boat.operatorTrustScore}</span>
@@ -148,13 +148,13 @@ export default function BoatCard({
             <div className="min-w-0">
               {price ? (
                 <>
-                  <p className="text-[11px] font-bold uppercase leading-4 tracking-[0.1em] text-lake-600">From</p>
+                  <p className="text-[13px] font-bold uppercase leading-4 tracking-[0.08em] text-lake-600">From</p>
                   <p className="leading-8 text-lake-950">
                     <span className="text-2xl font-bold tabular-nums">${price.amount}</span>
                     <span className="text-sm text-lake-600"> / {price.unit}</span>
                   </p>
                   {secondary && (
-                    <p className="text-xs leading-4 text-lake-600">
+                    <p className="text-[13px] leading-5 text-lake-600">
                       or <span className="font-semibold tabular-nums text-lake-950">${secondary.amount}</span> / {secondary.unit}
                     </p>
                   )}
@@ -166,7 +166,7 @@ export default function BoatCard({
             {/* A span, not a link: the whole card is already the one link. Navy
                 on sunset-500 is 5.08:1; white on it is 3.11:1 and fails AA at
                 this size. */}
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-sunset-500 px-3.5 py-2.5 text-xs font-bold uppercase leading-4 tracking-[0.08em] text-lake-950 transition-colors group-hover:bg-sunset-400 group-focus-visible:bg-sunset-400">
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-sunset-500 px-3.5 py-2.5 text-[13px] font-bold uppercase leading-4 tracking-[0.06em] text-lake-950 transition-colors group-hover:bg-sunset-400 group-focus-visible:bg-sunset-400">
               View boat <ArrowRight size={14} aria-hidden />
             </span>
           </div>

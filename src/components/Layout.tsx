@@ -188,7 +188,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               >
                 <span className="min-w-0">
                   <span className="block max-w-[10rem] truncate text-sm font-semibold text-lake-950 group-hover:underline group-hover:underline-offset-2">{currentUser.name}</span>
-                  <span className="block text-xs capitalize text-lake-600">{currentUser.role}</span>
+                  <span className="block text-[13px] capitalize leading-tight text-lake-600">{currentUser.role}</span>
                 </span>
                 <UserRound size={18} aria-hidden className="shrink-0 text-lake-700" />
               </Link>
@@ -278,7 +278,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                           <UserRound size={18} aria-hidden className="shrink-0 text-lake-700" />
                           <span className="min-w-0">
                             <span className="block truncate text-sm font-semibold text-lake-950 underline-offset-2 hover:underline">{currentUser.name}</span>
-                            <span className="block text-xs text-lake-600"><span className="capitalize">{currentUser.role}</span> · Account</span>
+                            <span className="block text-[13px] text-lake-600"><span className="capitalize">{currentUser.role}</span> · Account</span>
                           </span>
                         </Link>
                         <button
@@ -366,7 +366,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             {footerColumns.map((column) => (
               <Reveal y={16} key={column.id}>
                 <nav aria-labelledby={column.id}>
-                  <h2 id={column.id} className="text-xs font-bold uppercase tracking-wider text-white">
+                  <h2 id={column.id} className="text-[13px] font-bold uppercase tracking-wider text-white">
                     {column.heading}
                   </h2>
                   <ul className="mt-4 space-y-3">

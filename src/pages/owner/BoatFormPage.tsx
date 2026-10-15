@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Send, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
-import { portalCard, portalButtonPrimary, portalButtonSecondary } from '../../components/portal/styles';
+import { portalCard, portalButtonSecondary } from '../../components/portal/styles';
+import Reveal from '../../components/Reveal';
 import { BOAT_STATUS_CHIP } from '../../components/owner/boatStatus';
 import BoatForm from '../../components/owner/BoatForm';
 import ImageUploader from '../../components/owner/ImageUploader';
@@ -200,7 +201,6 @@ export default function BoatFormPage() {
   const canSubmit = boat && (boat.status === 'draft' || boat.status === 'rejected') && accountVerified;
 
   const title = editing ? 'Edit boat' : 'Register a boat';
-  const showSide = editing && boat;
 
   return (
     <OwnerPortalPage
@@ -237,107 +237,103 @@ export default function BoatFormPage() {
         </div>
       )}
 
-      {/* Once a boat exists, its review status and the submit step sit in a side
-          column beside the form on a wide screen, like the summary panel of a
-          booking. Before that there is only the form, kept to a readable width. */}
-      {canEdit && <div className={showSide ? 'grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]' : 'max-w-3xl'}>
-        <div className="min-w-0 space-y-6">
-          <div className={`${portalCard} p-5 sm:p-6`}>
-            {editing && loading && <LoadingState large label="Loading boat" />}
-            {editing && error && <ErrorState large message={error} onRetry={reload} />}
-            {editing && !loading && !boat && (
-              <ErrorState large message="This boat could not be found." />
-            )}
+      {/* A reload after a save keeps the form on screen; only a first load or a
+          failed one shows here. */}
+      {canEdit && editing && (!boat || error) && (
+        <div className={`${portalCard} mb-6 max-w-3xl p-5 sm:p-6`}>
+          {loading && !boat && <LoadingState large label="Loading boat" />}
+          {error && <ErrorState large message={error} onRetry={reload} />}
+          {!loading && !error && !boat && <ErrorState large message="This boat could not be found." />}
+        </div>
+      )}
 
-            {(!editing || (editing && boat)) && (
-              <BoatForm
-                initial={boat ? toInput(boat) : undefined}
-                submitLabel={editing ? 'Save changes' : 'Create boat'}
-                onSubmit={editing ? handleEdit : handleCreate}
-              />
-            )}
-
-            {/* Always mounted while editing, so the live region exists before the
-                save result is written into it and screen readers announce it. */}
-            {editing && boat && (
-              <div role="status" aria-live="polite">
-                {saveResult && <SaveSummary result={saveResult} live={boat.status === 'approved' && boat.isActive} />}
-              </div>
-            )}
-          </div>
-
-          {editing && boat && (
-            <div className={`${portalCard} p-5 sm:p-6`}>
+      {/* The form lays itself out: its sections on the left, and on a wide screen
+          a panel on the right that follows the scroll with the checklist, the save
+          action and (once the boat exists) its review status and submit step.
+          On a phone the photos and then the review status follow the form, as
+          before. */}
+      {canEdit && (!editing || boat) && (
+        <BoatForm
+          key={boat?.id ?? 'new'}
+          initial={boat ? toInput(boat) : undefined}
+          submitLabel={editing ? 'Save changes' : 'Create boat'}
+          onSubmit={editing ? handleEdit : handleCreate}
+          guestHint={!boat || boat.status !== 'approved'}
+          status={editing && boat && saveResult
+            ? <SaveSummary result={saveResult} live={boat.status === 'approved' && boat.isActive} />
+            : null}
+          after={editing && boat ? (
+            <Reveal className={`${portalCard} p-5 sm:p-7`}>
               {imagesLoaded ? (
                 <ImageUploader boatId={boat.id} ownerId={currentUser.id}
                   value={images} onChange={setImages} />
               ) : (
                 <LoadingState large label="Loading photos" />
               )}
-            </div>
+            </Reveal>
+          ) : (
+            <p className="text-[15px] leading-normal text-lake-700">
+              You will add photos on the next step, once the boat is created.
+            </p>
           )}
-        </div>
-
-        {editing && boat && (
-          // After the form in the source, so on a phone it still comes after the
-          // form and photos as before; on lg it moves up beside them and follows
-          // the scroll, keeping the submit step in reach of a long form.
-          <div className={`${portalCard} min-w-0 p-5 lg:sticky lg:top-24`}>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-[13px] font-bold uppercase tracking-[0.06em] text-lake-700">Review status</h2>
-              <span className={`rounded-full px-2.5 py-1 text-[13px] font-semibold leading-none ${BOAT_STATUS_CHIP[boat.status].className}`}>
-                {BOAT_STATUS_CHIP[boat.status].label}
-              </span>
-            </div>
-            <div className="mt-3 empty:hidden">
-              {boat.status === 'pending' && (
-                <p className="flex items-start gap-2 text-base leading-normal text-amber-800">
-                  <CheckCircle2 size={20} className="mt-0.5 shrink-0" /> Submitted. An administrator is reviewing this boat.
-                </p>
-              )}
-              {boat.status === 'approved' && (
-                <div className="space-y-3">
-                  <p className="flex items-start gap-2 text-base leading-normal text-lake-700">
-                    <CheckCircle2 size={20} className="mt-0.5 shrink-0" /> This boat is approved and live for tourists.
+          aside={editing && boat ? (
+            <Reveal className={`${portalCard} min-w-0 p-5`}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-[13px] font-bold uppercase tracking-[0.06em] text-lake-700">Review status</h2>
+                <span className={`rounded-full px-2.5 py-1 text-[13px] font-semibold leading-none ${BOAT_STATUS_CHIP[boat.status].className}`}>
+                  {BOAT_STATUS_CHIP[boat.status].label}
+                </span>
+              </div>
+              <div className="mt-3 empty:hidden">
+                {boat.status === 'pending' && (
+                  <p className="flex items-start gap-2 text-base leading-normal text-amber-800">
+                    <CheckCircle2 size={20} className="mt-0.5 shrink-0" /> Submitted. An administrator is reviewing this boat.
                   </p>
-                  <p className="text-[15px] leading-normal text-lake-700">
-                    Changes to {boats.REVIEWED_BOAT_FIELDS.map((k) => label(k).toLowerCase()).join(', ')} wait
-                    for admin review. Everything else applies as soon as you save.
-                  </p>
-                  {boat.pendingChanges && Object.keys(boat.pendingChanges).length > 0 && (
-                    <p className="rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[15px] leading-normal text-amber-900">
-                      Waiting for review: {Object.keys(boat.pendingChanges).map(label).join(', ')}.
+                )}
+                {boat.status === 'approved' && (
+                  <div className="space-y-3">
+                    <p className="flex items-start gap-2 text-base leading-normal text-lake-700">
+                      <CheckCircle2 size={20} className="mt-0.5 shrink-0" /> This boat is approved and live for tourists.
                     </p>
-                  )}
-                </div>
-              )}
-              {canSubmit && (
-                <div>
+                    <p className="text-[15px] leading-normal text-lake-700">
+                      Changes to {boats.REVIEWED_BOAT_FIELDS.map((k) => label(k).toLowerCase()).join(', ')} wait
+                      for admin review. Everything else applies as soon as you save.
+                    </p>
+                    {boat.pendingChanges && Object.keys(boat.pendingChanges).length > 0 && (
+                      <p className="rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[15px] leading-normal text-amber-900">
+                        Waiting for review: {Object.keys(boat.pendingChanges).map(label).join(', ')}.
+                      </p>
+                    )}
+                  </div>
+                )}
+                {canSubmit && (
+                  <div>
+                    <p className="text-base leading-normal text-lake-700">
+                      When the details and at least one photo are ready, submit this boat for review.
+                    </p>
+                    {submitError && (
+                      <p className="mt-2 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{submitError}</p>
+                    )}
+                    <button type="button" onClick={submitForReview} disabled={submitting || images.length === 0}
+                      className={`${portalButtonSecondary} mt-3 w-full`}>
+                      <Send size={16} /> {submitting ? 'Submitting' : 'Submit for review'}
+                    </button>
+                    {images.length === 0 && (
+                      <p className="mt-2 text-[15px] text-lake-700">Add at least one photo to enable this.</p>
+                    )}
+                  </div>
+                )}
+                {(boat.status === 'draft' || boat.status === 'rejected') && !accountVerified && (
                   <p className="text-base leading-normal text-lake-700">
-                    When the details and at least one photo are ready, submit this boat for review.
+                    You can add photos and edit details now. Submitting for review unlocks once an
+                    administrator verifies {holderIsMe || !holderId ? 'your owner account' : 'the account of your team’s owner'}.
                   </p>
-                  {submitError && (
-                    <p className="mt-2 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{submitError}</p>
-                  )}
-                  <button onClick={submitForReview} disabled={submitting || images.length === 0}
-                    className={`${portalButtonPrimary} mt-3 w-full`}>
-                    <Send size={16} /> {submitting ? 'Submitting' : 'Submit for review'}
-                  </button>
-                  {images.length === 0 && (
-                    <p className="mt-2 text-[15px] text-lake-700">Add at least one photo to enable this.</p>
-                  )}
-                </div>
-              )}
-              {(boat.status === 'draft' || boat.status === 'rejected') && !accountVerified && (
-                <p className="text-base leading-normal text-lake-700">
-                  You can add photos and edit details now. Submitting for review unlocks once an
-                  administrator verifies {holderIsMe || !holderId ? 'your owner account' : 'the account of your team’s owner'}.
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-      </div>}
+                )}
+              </div>
+            </Reveal>
+          ) : null}
+        />
+      )}
     </OwnerPortalPage>
   );
 }

@@ -96,10 +96,10 @@ function Editor({ doc, onPublished }: { doc: LegalDocument; onPublished: () => v
         </span>
       </div>
 
-      <label htmlFor={ids.title} className={`${labelClass} mt-3`}>Title</label>
+      <label htmlFor={ids.title} className={`${labelClass} mt-5`}>Title</label>
       <input id={ids.title} value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
 
-      <div className="mt-3 flex flex-wrap items-end justify-between gap-2">
+      <div className="mt-5 flex flex-wrap items-end justify-between gap-2">
         <label htmlFor={ids.body} className={labelClass}>Text (Markdown)</label>
         <div role="group" aria-label="Edit or preview the text" className="inline-flex gap-1 rounded-lg bg-lake-100 p-1">
           <button type="button" aria-pressed={view === 'edit'} onClick={() => setView('edit')} className={tabClass(view === 'edit')}>Edit</button>
@@ -119,7 +119,7 @@ function Editor({ doc, onPublished }: { doc: LegalDocument; onPublished: () => v
         </div>
       )}
 
-      <fieldset className="mt-4 space-y-3 rounded-lg border border-lake-100 p-3.5">
+      <fieldset className="mt-5 space-y-4 rounded-lg border border-lake-100 p-4">
         <legend className="px-1 text-sm font-medium text-lake-700">Settings for version {nextVersion}</legend>
         <div>
           <label className={`flex items-start gap-2.5 text-base ${canRequire ? 'text-lake-900' : 'text-lake-700'}`}>

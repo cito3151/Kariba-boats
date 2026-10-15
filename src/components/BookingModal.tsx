@@ -342,7 +342,7 @@ export default function BookingModal({
           animate={{ opacity: 1, y: 0 }}
           exit={reduce ? { opacity: 0 } : { opacity: 0, y: 40 }}
           transition={reduce ? { duration: 0.2 } : { type: 'spring', bounce: 0, duration: 0.4 }}
-          className="w-full sm:max-w-lg max-h-[92svh] overflow-y-auto overflow-x-hidden rounded-t-2xl sm:rounded-xl bg-white px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:p-7"
+          className="w-full sm:max-w-xl max-h-[92svh] overflow-y-auto overflow-x-hidden rounded-t-2xl sm:rounded-xl bg-white px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:p-7"
         >
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -409,60 +409,75 @@ export default function BookingModal({
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="min-w-0">
-                      <label htmlFor={`${nameHintId}-date`} className={fieldLabel}>{isHourly ? 'Date' : 'Start date'}</label>
-                      <input id={`${nameHintId}-date`} required type="date" min={toISODate(new Date())} value={date}
-                        onChange={(e) => changeStart(e.target.value)}
-                        className={fieldInput} />
-                    </div>
-                    <div className="min-w-0">
-                      <label htmlFor={`${nameHintId}-group`} className={fieldLabel}>Group size</label>
-                      <input id={`${nameHintId}-group`} required type="number" min={1} max={boat.capacity} value={groupSize}
-                        onChange={(e) => setGroupSize(Number(e.target.value) || 1)}
-                        className={`${fieldInput} tabular-nums`} />
-                    </div>
-                  </div>
-
+                  {/* Fields that belong together share a row: the two ends of a
+                      stay, or a slot's start and length; then who is coming and
+                      what for. Group size takes the narrower share so the
+                      Experience names fit on a phone. */}
                   {isHourly ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="min-w-0">
-                        <label htmlFor={`${nameHintId}-time`} className={fieldLabel}>Start time</label>
-                        <select id={`${nameHintId}-time`} value={startTime} onChange={(e) => setStartTime(e.target.value)}
-                          className={`${fieldInput} tabular-nums`}>
-                          {withCurrent(START_TIMES, hhmm(editing?.startTime)).map((t) => <option key={t} value={t}>{t}</option>)}
-                        </select>
+                    <>
+                      <div>
+                        <label htmlFor={`${nameHintId}-date`} className={fieldLabel}>Date</label>
+                        <input id={`${nameHintId}-date`} required type="date" min={toISODate(new Date())} value={date}
+                          onChange={(e) => changeStart(e.target.value)}
+                          className={fieldInput} />
                       </div>
-                      <div className="min-w-0">
-                        <label htmlFor={`${nameHintId}-duration`} className={fieldLabel}>Duration</label>
-                        <select id={`${nameHintId}-duration`} value={durationHours} onChange={(e) => setDurationHours(Number(e.target.value))}
-                          className={fieldInput}>
-                          {withCurrent(DURATIONS, editing?.durationHours).map((d) => <option key={d} value={d}>{d} hours</option>)}
-                        </select>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="min-w-0">
+                          <label htmlFor={`${nameHintId}-time`} className={fieldLabel}>Start time</label>
+                          <select id={`${nameHintId}-time`} value={startTime} onChange={(e) => setStartTime(e.target.value)}
+                            className={`${fieldInput} tabular-nums`}>
+                            {withCurrent(START_TIMES, hhmm(editing?.startTime)).map((t) => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                        </div>
+                        <div className="min-w-0">
+                          <label htmlFor={`${nameHintId}-duration`} className={fieldLabel}>Duration</label>
+                          <select id={`${nameHintId}-duration`} value={durationHours} onChange={(e) => setDurationHours(Number(e.target.value))}
+                            className={fieldInput}>
+                            {withCurrent(DURATIONS, editing?.durationHours).map((d) => <option key={d} value={d}>{d} hours</option>)}
+                          </select>
+                        </div>
                       </div>
-                    </div>
+                    </>
                   ) : (
                     <div>
-                      <label htmlFor={`${nameHintId}-end`} className={fieldLabel}>End date</label>
-                      <input id={`${nameHintId}-end`} required type="date" min={date || toISODate(new Date())} value={endDate}
-                        onChange={(e) => changeEnd(e.target.value)}
-                        aria-describedby={`${nameHintId}-days`}
-                        className={fieldInput} />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="min-w-0">
+                          <label htmlFor={`${nameHintId}-date`} className={fieldLabel}>Start date</label>
+                          <input id={`${nameHintId}-date`} required type="date" min={toISODate(new Date())} value={date}
+                            onChange={(e) => changeStart(e.target.value)}
+                            className={fieldInput} />
+                        </div>
+                        <div className="min-w-0">
+                          <label htmlFor={`${nameHintId}-end`} className={fieldLabel}>End date</label>
+                          <input id={`${nameHintId}-end`} required type="date" min={date || toISODate(new Date())} value={endDate}
+                            onChange={(e) => changeEnd(e.target.value)}
+                            aria-describedby={`${nameHintId}-days`}
+                            className={fieldInput} />
+                        </div>
+                      </div>
                       <p id={`${nameHintId}-days`} className={fieldHint}>
                         <span className="font-semibold tabular-nums text-lake-950">{days} day{days > 1 ? 's' : ''}</span> total, start and end inclusive.
                       </p>
                     </div>
                   )}
 
-                  <div>
-                    <label htmlFor={`${nameHintId}-experience`} className={fieldLabel}>Experience</label>
-                    <select id={`${nameHintId}-experience`} value={experienceType} onChange={(e) => setExperienceType(e.target.value)}
-                      className={fieldInput}>
-                      {EXPERIENCES.map((exp) => <option key={exp.value} value={exp.value}>{exp.label}</option>)}
-                      {editing?.experienceType && !EXPERIENCES.some((exp) => exp.value === editing.experienceType) && (
-                        <option value={editing.experienceType}>{editing.experienceType}</option>
-                      )}
-                    </select>
+                  <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 sm:grid-cols-2">
+                    <div className="min-w-0">
+                      <label htmlFor={`${nameHintId}-group`} className={fieldLabel}>Group size</label>
+                      <input id={`${nameHintId}-group`} required type="number" min={1} max={boat.capacity} value={groupSize}
+                        onChange={(e) => setGroupSize(Number(e.target.value) || 1)}
+                        className={`${fieldInput} tabular-nums`} />
+                    </div>
+                    <div className="min-w-0">
+                      <label htmlFor={`${nameHintId}-experience`} className={fieldLabel}>Experience</label>
+                      <select id={`${nameHintId}-experience`} value={experienceType} onChange={(e) => setExperienceType(e.target.value)}
+                        className={fieldInput}>
+                        {EXPERIENCES.map((exp) => <option key={exp.value} value={exp.value}>{exp.label}</option>)}
+                        {editing?.experienceType && !EXPERIENCES.some((exp) => exp.value === editing.experienceType) && (
+                          <option value={editing.experienceType}>{editing.experienceType}</option>
+                        )}
+                      </select>
+                    </div>
                   </div>
                 </section>
 

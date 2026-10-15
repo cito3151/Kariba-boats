@@ -143,23 +143,25 @@ export default function MaintenanceCard({
       {error && <p className="mt-3 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{error}</p>}
 
       {mode === 'hours' && (
-        <div className="mt-4 space-y-3 rounded-lg border border-lake-100 bg-lake-50/60 p-4">
+        <div className="mt-4 space-y-4 rounded-lg border border-lake-100 bg-lake-50/60 p-4 sm:p-5">
           <p className="flex items-center gap-2 text-lg font-bold tracking-[-0.01em] text-lake-900"><Clock size={18} /> Log operating hours</p>
-          <div className="grid gap-3 @md:grid-cols-2">
-            <div>
+          {/* The hours figure is short and the note is not, so the note takes the
+              rest of the row, and only once the card is wide enough for both. */}
+          <div className="grid gap-4 @lg:grid-cols-[minmax(0,13rem)_minmax(0,1fr)]">
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-lake-700">Hours this trip (0.5 to 24)</label>
               <input type="number" min={0.5} max={24} step="0.5" value={hours}
                 onChange={(e) => setHours(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base outline-none focus:border-lake-500" />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-lake-700">Note (optional)</label>
               <input value={note} onChange={(e) => setNote(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base outline-none focus:border-lake-500"
                 placeholder="Sunset cruise, calm water" />
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button onClick={logHours} disabled={busy}
               className="rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
               {busy ? 'Saving' : 'Save hours'}
@@ -173,7 +175,7 @@ export default function MaintenanceCard({
       )}
 
       {mode === 'service' && (
-        <div className="mt-4 space-y-3 rounded-lg border border-lake-100 bg-lake-50/60 p-4">
+        <div className="mt-4 space-y-4 rounded-lg border border-lake-100 bg-lake-50/60 p-4 sm:p-5">
           <p className="flex items-center gap-2 text-lg font-bold tracking-[-0.01em] text-lake-900"><Wrench size={18} /> Record maintenance</p>
           <div>
             <label className="block text-sm font-medium text-lake-700">What was done</label>
@@ -181,25 +183,27 @@ export default function MaintenanceCard({
               className="mt-1 w-full rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base outline-none focus:border-lake-500"
               placeholder="Engine service, oil and filter change" />
           </div>
-          <div className="grid gap-3 @xl:grid-cols-3">
-            <div>
+          {/* Date and cost pair up; the provider is a name and gets its own row.
+              Three across left each field about 170px in this card. */}
+          <div className="grid gap-4 @[30rem]:grid-cols-2">
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-lake-700">Date</label>
               <input type="date" value={performedAt} onChange={(e) => setPerformedAt(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base outline-none focus:border-lake-500" />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-lake-700">Cost (USD, optional)</label>
               <input type="number" min={0} step="0.01" value={cost} onChange={(e) => setCost(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base outline-none focus:border-lake-500" />
             </div>
-            <div>
+            <div className="min-w-0 @[30rem]:col-span-2">
               <label className="block text-sm font-medium text-lake-700">Service provider (optional)</label>
               <input value={provider} onChange={(e) => setProvider(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-lake-200 bg-white px-3 py-2.5 text-base outline-none focus:border-lake-500"
                 placeholder="Kariba Marine" />
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button onClick={completeService} disabled={busy}
               className="rounded-lg bg-lake-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lake-800 disabled:opacity-50">
               {busy ? 'Saving' : 'Record maintenance'}

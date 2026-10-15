@@ -67,7 +67,9 @@ function OrgForm({
     <motion.form {...fade} onSubmit={submit} noValidate
       onKeyDown={(e) => { if (e.key === 'Escape' && !busy) onCancel(); }}
       className="rounded-lg bg-lake-50 p-3 sm:p-4">
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_8rem]">
+      {/* Name and location pair up, with the short commission figure on its own
+          row, until the form is wide enough for all three with room to type. */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_9rem]">
         <div className="min-w-0">
           <label htmlFor={`${id}-name`} className={labelClass}>{kind === 'hotel' ? 'Hotel' : 'Agency'} name</label>
           <input ref={nameRef} id={`${id}-name`} value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />

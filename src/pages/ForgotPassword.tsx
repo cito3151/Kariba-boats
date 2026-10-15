@@ -29,7 +29,7 @@ export default function ForgotPassword() {
         {!sent ? (
           <form onSubmit={submit} className="space-y-3">
             <div>
-              <label className="text-xs font-medium text-lake-500">Email</label>
+              <label className="block text-sm font-medium text-lake-700">Email</label>
               <input
                 required
                 type="email"
@@ -61,12 +61,12 @@ export default function ForgotPassword() {
             >
               <CheckCircle2 size={44} className="text-emerald-500" />
             </motion.div>
-            <p className="mt-3 text-sm text-lake-600">
+            <p className="mt-3 text-sm text-lake-700">
               If an account exists for <span className="font-medium text-lake-900">{email}</span>, a
               password reset link has been sent.
             </p>
 
-            <div className="mt-5 rounded-lg bg-lake-50 p-3 text-xs text-lake-600 text-left flex items-start gap-2">
+            <div className="mt-5 rounded-lg bg-lake-50 p-3.5 text-sm leading-normal text-lake-700 text-left flex items-start gap-2">
               <Mail size={14} className="mt-0.5 shrink-0 text-lake-500" />
               <span>
                 Open the link in that email to choose a new password. It brings you back here to the
@@ -76,7 +76,7 @@ export default function ForgotPassword() {
           </motion.div>
         )}
 
-        <p className="mt-5 text-center text-sm text-lake-500">
+        <p className="mt-5 text-center text-sm text-lake-700">
           Remembered your password?{' '}
           <Link to="/login" className="font-semibold text-lake-700 hover:text-lake-900">
             Log in

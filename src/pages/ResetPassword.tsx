@@ -48,7 +48,7 @@ export default function ResetPassword() {
         {!done ? (
           <form onSubmit={submit} className="space-y-3">
             <div>
-              <label className="text-xs font-medium text-lake-500">New password</label>
+              <label className="block text-sm font-medium text-lake-700">New password</label>
               <input
                 required
                 type="password"
@@ -59,7 +59,7 @@ export default function ResetPassword() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-lake-500">Confirm new password</label>
+              <label className="block text-sm font-medium text-lake-700">Confirm new password</label>
               <input
                 required
                 type="password"
@@ -74,7 +74,7 @@ export default function ResetPassword() {
               <motion.div
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700"
+                className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700"
               >
                 <AlertCircle size={14} /> {error}
               </motion.div>
@@ -115,7 +115,7 @@ export default function ResetPassword() {
         )}
 
         {!done && (
-          <p className="mt-5 text-center text-sm text-lake-500">
+          <p className="mt-5 text-center text-sm text-lake-700">
             <Link to="/login" className="font-semibold text-lake-700 hover:text-lake-900">
               Back to login
             </Link>

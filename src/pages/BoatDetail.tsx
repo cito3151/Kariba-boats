@@ -555,7 +555,9 @@ function describeRange(range: DateRange, singleDate: boolean) {
  * The boat's own photos as the page header, with a dark wash at the foot and the
  * boat's type, hire basis and name set large in white on it. The slideshow
  * drifts a little slower than the page as it scrolls away (parallax "top"), and
- * the frame settles in on load; under reduced motion both are still.
+ * the frame settles in on load; under reduced motion both are still. Its height
+ * follows the screen (about half of it, between a floor and a cap), so on an
+ * 800px-tall laptop the booking summary still starts above the fold.
  */
 function BoatHero({
   boat, images, hasPhotos, unit, rating,
@@ -575,7 +577,7 @@ function BoatHero({
       initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.985 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={reduce ? reducedFade : { type: 'spring', bounce: 0, duration: 0.8 }}
-      className="group relative mt-3 h-[340px] overflow-hidden rounded-xl bg-lake-900 shadow-[0_10px_30px_rgb(13_37_50/0.18)] sm:h-[440px] lg:h-[480px]"
+      className="group relative mt-3 h-[clamp(260px,44svh,340px)] overflow-hidden rounded-xl bg-lake-900 shadow-[0_10px_30px_rgb(13_37_50/0.18)] sm:h-[clamp(320px,50vh,420px)] lg:h-[clamp(360px,52vh,500px)]"
     >
       <AutoCarousel images={images} alt={boat.name} className="h-full w-full" intervalMs={5000}
         showArrows showDots parallax="top" />

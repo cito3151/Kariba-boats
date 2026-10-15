@@ -63,7 +63,7 @@ export default function ReplyEditor({ review, onSaved }: { review: Review; onSav
         {text.length} / {REPLY_MAX_LENGTH}<span className="sr-only"> characters</span>
       </p>
       {error && <p role="alert" className="mt-1 text-[15px] font-medium text-red-700">{error}</p>}
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
         <button type="button" onClick={save} disabled={busy || (!trimmed && !hasReply) || trimmed === (review.operatorResponse ?? '')}
           className={saveButton}>
           {busy ? 'Saving' : !trimmed && hasReply ? 'Remove reply' : hasReply ? 'Save changes' : 'Post reply'}

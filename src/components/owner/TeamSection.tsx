@@ -183,19 +183,31 @@ function AddMemberForm({ company, onAdded }: { company: Company; onAdded: () => 
         They need their own operator account first: ask them to sign up as a boat operator, choosing
         &ldquo;On my own&rdquo;, with the email you enter here. Then add them.
       </p>
-      <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_11rem]">
+      {/* Stacked, not side by side: this card sits in a 22rem column on a wide
+          screen, where a Role select beside the email cut the field to about 120px.
+          The email takes the full width and the role is a segmented control. */}
+      <div className="mt-4 space-y-4">
         <div className="min-w-0">
           <label htmlFor={emailId} className="block text-sm font-medium text-lake-700">Their email</label>
           <input id={emailId} type="email" inputMode="email" autoComplete="off" value={email}
             onChange={(e) => setEmail(e.target.value)} aria-describedby={hintId}
             placeholder="name@example.com" className={inputClass} />
         </div>
-        <div className="min-w-0">
-          <label htmlFor={roleId} className="block text-sm font-medium text-lake-700">Role</label>
-          <select id={roleId} value={role} onChange={(e) => setRole(e.target.value as CompanyMemberRole)} className={inputClass}>
-            {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-          </select>
-        </div>
+        <fieldset className="min-w-0">
+          <legend id={roleId} className="block text-sm font-medium text-lake-700">Role</legend>
+          <div className="mt-1.5 grid grid-cols-3 gap-1 rounded-lg border border-lake-200 bg-lake-50 p-1">
+            {ROLES.map((r) => (
+              <label key={r}
+                className={`relative flex min-h-10 cursor-pointer items-center justify-center rounded-md px-2 text-[15px] font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-lake-500 ${
+                  role === r ? 'bg-white text-lake-950 shadow-[0_1px_2px_rgb(13_37_50/0.12)]' : 'text-lake-700 hover:text-lake-950'
+                }`}>
+                <input type="radio" name={`${roleId}-role`} value={r} checked={role === r}
+                  onChange={() => setRole(r)} className="sr-only" />
+                {ROLE_LABELS[r]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
       </div>
       <p className="mt-2 text-sm leading-normal text-lake-700">{ROLE_LABELS[role]}: {ROLE_SUMMARIES[role]}</p>
       <div className="mt-3 flex flex-wrap items-center gap-3">

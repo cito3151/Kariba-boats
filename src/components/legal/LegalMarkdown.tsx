@@ -71,8 +71,9 @@ function BlockView({ block, compact = false, onHeadingLink }: {
       }
       return (
         <h2 id={block.id} tabIndex={-1}
-          className="group flex scroll-mt-28 items-baseline gap-2 text-[1.375rem] font-bold text-lake-950 outline-none sm:text-[1.625rem]">
+          className="group flex scroll-mt-28 items-baseline gap-1 text-[1.375rem] font-bold text-lake-950 outline-none sm:text-[1.625rem]">
           <span className="min-w-0 break-words">{block.text}</span>
+          {/* A 32px target (the icon alone was 18px), centred on the heading's first line. */}
           <a
             href={`#${block.id}`}
             onClick={(e) => {
@@ -81,7 +82,7 @@ function BlockView({ block, compact = false, onHeadingLink }: {
               onHeadingLink(block.id);
             }}
             aria-label={`Link to this section: ${block.text}`}
-            className="shrink-0 rounded-sm text-lake-600 opacity-0 outline-none transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-lake-500 [@media(hover:none)]:opacity-60"
+            className="mt-[calc((1lh-2rem)/2)] grid h-8 w-8 shrink-0 place-items-center self-start rounded-md text-lake-600 opacity-0 outline-none transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-lake-500 [@media(hover:none)]:opacity-60"
           >
             <Link2 size={18} aria-hidden />
           </a>

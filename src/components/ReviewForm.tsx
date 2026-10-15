@@ -92,7 +92,7 @@ export default function ReviewForm({
       {withCategories && (
         <fieldset className="mt-4 border-t border-lake-200 pt-4">
           <legend id={ids.cats} className="text-base font-bold text-lake-950">Rate the details <span className="font-normal text-lake-700">(optional)</span></legend>
-          <div className="mt-2 grid gap-x-6 gap-y-1 md:grid-cols-2">
+          <div className="mt-3 grid gap-x-6 gap-y-4 md:grid-cols-2">
             {RATING_CATEGORIES.map((k) => (
               <div key={k}>
                 <p id={`${ids.cats}-${k}`} className="text-sm font-semibold text-lake-800">{CATEGORY_LABELS[k]}</p>
