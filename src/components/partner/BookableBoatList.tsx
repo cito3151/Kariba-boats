@@ -6,6 +6,8 @@ import { EmptyState } from '../StateViews';
 import { priceView } from '../BoatCard';
 import { staggerContainer, staggerItem } from '../motion';
 import { portalCard, portalButtonSecondary } from '../portal/styles';
+import { useAsync } from '../../hooks/useAsync';
+import * as imagesSvc from '../../services/images.service';
 import type { PublicBoat } from '../../services/boats.service';
 
 /**
@@ -31,6 +33,18 @@ export default function BookableBoatList({
 }) {
   const reduce = useReducedMotion();
   const reasonId = useId();
+  // The boats' own cover photos, in one batched query (as the home page does).
+  // Until they arrive, or for a boat with none, the type illustration stands in.
+  const boatIdsKey = boats.map((b) => b.id).join(',');
+  const { data: imagesByBoat } = useAsync(
+    () => imagesSvc.listImagesForBoats(boats.map((b) => b.id)),
+    [boatIdsKey],
+  );
+  const thumbFor = (boat: PublicBoat) => {
+    const rows = imagesByBoat?.[boat.id] ?? [];
+    const cover = rows.find((i) => i.isPrimary) ?? rows[0];
+    return cover ? imagesSvc.publicImageUrl(cover.storagePath) : `illustration:${boat.boatType}`;
+  };
 
   const notice = !canBook && (
     <p id={reasonId} role="status"
@@ -59,7 +73,7 @@ export default function BookableBoatList({
           return (
             <motion.li variants={staggerItem} key={boat.id}
               className="flex items-start gap-3 p-3 transition-colors hover:bg-lake-50/60 sm:items-center sm:gap-4 sm:p-4">
-              <BoatImage src={`illustration:${boat.boatType}`} className="h-14 w-20 shrink-0 rounded-md" showBadge={false} />
+              <BoatImage src={thumbFor(boat)} className="h-14 w-20 shrink-0 rounded-md" showBadge={false} />
               <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <div className="min-w-0">
                   <p className="flex items-start gap-1.5 text-base font-semibold leading-snug text-lake-950">
