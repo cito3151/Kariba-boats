@@ -8,7 +8,28 @@ export interface LegalDocument {
   isRequired: boolean; appliesToRoles: string[] | null; isCurrent: boolean;
   /** When this version took effect (ISO timestamp). */
   effectiveAt: string;
+  /** When this version was published (ISO timestamp). */
+  publishedAt: string;
 }
+
+/** Display names of the document types, for the admin editor. */
+export const LEGAL_DOC_LABELS: Record<LegalDocType, string> = {
+  terms: 'Terms of Service',
+  privacy: 'Privacy Policy',
+  operator_agreement: 'Operator Agreement',
+  booking_waiver: 'Booking waiver',
+  marketing: 'Marketing consent',
+};
+
+/**
+ * Types that can never be required (publish_legal_document refuses it, migration
+ * 38): marketing consent has to be optional, and the booking waiver is accepted
+ * with each booking rather than on the next visit.
+ */
+export const NEVER_REQUIRED: ReadonlySet<LegalDocType> = new Set(['marketing', 'booking_waiver']);
+
+/** Roles a document can be limited to (the user_role enum). */
+export const LEGAL_ROLES = ['tourist', 'owner', 'hotel', 'agency', 'admin'] as const;
 export interface OutstandingConsent {
   docType: LegalDocType; version: number; title: string; body: string;
 }
@@ -18,8 +39,20 @@ function mapDoc(r: any): LegalDocument {
   return {
     id: r.id, docType: r.doc_type, version: r.version, title: r.title, body: r.body,
     isRequired: r.is_required, appliesToRoles: r.applies_to_roles, isCurrent: r.is_current,
-    effectiveAt: r.effective_at,
+    effectiveAt: r.effective_at, publishedAt: r.published_at,
   };
+}
+
+/**
+ * Every published version of one document type, newest first. Administrators
+ * read every version (legal_documents_read_current: is_current or is_admin());
+ * versions are never edited, because consent records point at a fixed version.
+ */
+export async function listDocumentVersions(docType: LegalDocType): Promise<LegalDocument[]> {
+  const { data, error } = await supabase
+    .from('legal_documents').select('*').eq('doc_type', docType).order('version', { ascending: false });
+  if (error) throw new Error(humanizeError(error.message));
+  return (data ?? []).map(mapDoc);
 }
 
 export async function listCurrentDocuments(): Promise<LegalDocument[]> {

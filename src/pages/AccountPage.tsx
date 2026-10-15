@@ -337,7 +337,9 @@ function DeleteAccount({ isAdmin }: { isAdmin: boolean }) {
     return (
       <Reveal className={card}>
         <p className="text-base leading-relaxed text-lake-900">
-          Administrator accounts can't be deleted from here. Ask another super administrator to close this account.
+          Administrator accounts can't be deleted from here. To close this account, ask another super administrator:
+          under Admins and roles they change it to a non-administrator role, then schedule its deletion. As with any
+          deletion, nothing is removed for 30 days, and you can cancel it from this page in that time.
         </p>
       </Reveal>
     );

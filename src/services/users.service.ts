@@ -36,6 +36,10 @@ export interface ManagedUser {
   id: string; email: string; fullName: string;
   role: 'tourist' | 'owner' | 'hotel' | 'admin' | 'agency';
   isSuperAdmin: boolean; verificationStatus: VerificationStatus;
+  /** When the account is due to be deleted; null when no deletion is pending. */
+  deletionScheduledFor: string | null;
+  /** Set once the purge has anonymised the account. */
+  purgedAt: string | null;
 }
 
 /**
@@ -62,7 +66,26 @@ export async function listAllUsers(): Promise<ManagedUser[]> {
   return (data ?? []).map((r: any) => ({
     id: r.id, email: r.email, fullName: r.full_name, role: r.role,
     isSuperAdmin: r.is_super_admin, verificationStatus: r.verification_status as VerificationStatus,
+    deletionScheduledFor: r.deletion_scheduled_for ?? null, purgedAt: r.purged_at ?? null,
   }));
+}
+
+/**
+ * Starts the 30-day account deletion for another user (super admin only,
+ * migration 38). Refused for yourself, for an administrator (change the role
+ * first), and while the account has active upcoming bookings. Returns the date
+ * the account will be deleted. The user can still cancel from their Account page.
+ */
+export async function scheduleAccountDeletion(userId: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('admin_schedule_account_deletion', { p_user_id: userId });
+  if (error) throw new Error(humanizeError(error.message));
+  return data?.[0]?.scheduled_for ?? null;
+}
+
+/** Stops a pending deletion of another user's account (super admin only). */
+export async function cancelScheduledDeletion(userId: string): Promise<void> {
+  const { error } = await supabase.rpc('admin_cancel_account_deletion', { p_user_id: userId });
+  if (error) throw new Error(humanizeError(error.message));
 }
 
 export async function setUserRole(userId: string, role: ManagedUser['role'], isSuperAdmin: boolean) {

@@ -4,6 +4,7 @@ import OwnerPortalPage from '../../components/owner/OwnerPortalPage';
 import PortalSection from '../../components/portal/PortalSection';
 import { portalCard } from '../../components/portal/styles';
 import MaintenanceCard from '../../components/owner/MaintenanceCard';
+import HoursLog from '../../components/maintenance/HoursLog';
 import { LoadingState, ErrorState, EmptyState } from '../../components/StateViews';
 import Reveal from '../../components/Reveal';
 import { useAuth } from '../../data/AuthContext';
@@ -14,10 +15,18 @@ import type { OwnerBoat, MaintenanceStatus } from '../../services/boats.service'
 
 const ORDER: Record<MaintenanceStatus, number> = { overdue: 0, due: 1, approaching: 2, ok: 3 };
 
-function BoatHistory({ boatId }: { boatId: string }) {
+// The hours log comes back with the time it was read, so which entries are
+// still inside the owner's 24-hour correction window is decided from data, not
+// from a clock read during render.
+async function loadHours(boatId: string) {
+  const entries = await maint.listHours(boatId);
+  return { entries, readAt: Date.now() };
+}
+
+function BoatHistory({ boatId, userId, onChanged }: { boatId: string; userId: string; onChanged: () => void }) {
   const [open, setOpen] = useState(false);
-  const { data: records } = useAsync(() => maint.listMaintenance(boatId), [boatId, open ? 1 : 0]);
-  const { data: hours } = useAsync(() => maint.listHours(boatId), [boatId, open ? 1 : 0]);
+  const { data: records, reload: reloadRecords } = useAsync(() => maint.listMaintenance(boatId), [boatId, open ? 1 : 0]);
+  const { data: hours, reload: reloadHours } = useAsync(() => loadHours(boatId), [boatId, open ? 1 : 0]);
   const panelId = useId();
 
   return (
@@ -51,20 +60,15 @@ function BoatHistory({ boatId }: { boatId: string }) {
           )}
 
           <p className="mt-5 text-[13px] font-semibold uppercase tracking-[0.05em] text-lake-700">Hours log</p>
-          {(hours ?? []).length === 0 ? (
-            <p className="mt-1.5 text-base text-lake-700">No hours logged yet.</p>
-          ) : (
-            <ul className="mt-2 space-y-1.5">
-              {(hours ?? []).map((h) => (
-                <li key={h.id} className="flex flex-wrap justify-between gap-x-3 gap-y-0.5 text-base">
-                  <span className="min-w-0 break-words text-lake-800">
-                    <span className="font-semibold tabular-nums">+{h.hours.toFixed(1)} h</span>{h.note ? <span className="text-lake-700">, {h.note}</span> : ''}
-                  </span>
-                  <span className="tabular-nums text-lake-700">total {h.readingAfter.toFixed(1)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <p className="mt-1 text-[15px] leading-normal text-lake-700">
+            Logged a wrong figure? You can correct an entry for 24 hours after logging it, as long as no service has been recorded since.
+          </p>
+          <HoursLog
+            entries={hours?.entries ?? []}
+            actionLabel="Correct this entry"
+            canVoid={(h) => !!hours && maint.canOwnerCorrect(h, userId, records ?? [], hours.readAt)}
+            onVoided={() => { reloadHours(); reloadRecords(); onChanged(); }}
+          />
         </div>
       )}
     </div>
@@ -98,7 +102,7 @@ export default function MaintenancePage() {
           {sorted.map((boat: OwnerBoat) => (
             <Reveal key={boat.id} className="min-w-0">
               <MaintenanceCard boat={boat} onChanged={reload} />
-              <BoatHistory boatId={boat.id} />
+              <BoatHistory boatId={boat.id} userId={ownerId} onChanged={reload} />
             </Reveal>
           ))}
         </div>

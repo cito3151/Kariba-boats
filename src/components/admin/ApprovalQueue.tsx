@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, X, Ban } from 'lucide-react';
 import PendingChangesDiff from './PendingChangesDiff';
+import AdminHoursPanel from './AdminHoursPanel';
 import { adminButtonApprove, adminButtonConfirmReject } from './styles';
 import PortalSection from '../portal/PortalSection';
 import { portalCard, portalButtonSecondary, portalButtonDanger } from '../portal/styles';
@@ -56,12 +57,39 @@ function PhotoStrip({ boatId }: { boatId: string }) {
   );
 }
 
+/** One boat in the maintenance attention list, with its hours log behind a toggle. */
+function AttentionRow({
+  boat: b, ownerName, onVoided,
+}: {
+  boat: OwnerBoat; ownerName: string; onVoided: (summary: string) => void;
+}) {
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="break-words text-base font-semibold text-lake-950">{b.name}</p>
+          <p className="break-words text-[15px] text-lake-700">
+            {ownerName} · <span className="tabular-nums">{b.accumulatedHours.toFixed(1)}</span> hours, next service at <span className="tabular-nums">{b.nextMaintenanceHours.toFixed(1)}</span>
+          </p>
+        </div>
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[13px] font-semibold leading-none ${
+          b.maintenanceStatus === 'overdue' ? 'bg-red-100 text-red-700' : 'bg-sunset-100 text-sunset-700'
+        }`}>
+          {b.maintenanceStatus === 'overdue' ? 'Overdue' : 'Due'}
+        </span>
+      </div>
+      <AdminHoursPanel boat={b} onVoided={onVoided} />
+    </>
+  );
+}
+
 export default function ApprovalQueue() {
   const { data, loading, error, reload } = useAsync(loadQueue, []);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [actionError, setActionError] = useState('');
+  const [notice, setNotice] = useState('');
   const reduce = useReducedMotion();
 
   const act = async (fn: () => Promise<void>, id: string) => {
@@ -87,8 +115,8 @@ export default function ApprovalQueue() {
 
   // This view titles its own two sections, so its loading and error states sit
   // under the first title rather than under none.
-  if (loading) return <PortalSection title="Approval queue"><LoadingState large label="Loading the approval queue" /></PortalSection>;
-  if (error) return <PortalSection title="Approval queue"><ErrorState large message={error} onRetry={reload} /></PortalSection>;
+  if (loading && !data) return <PortalSection title="Approval queue"><LoadingState large label="Loading the approval queue" /></PortalSection>;
+  if (error && !data) return <PortalSection title="Approval queue"><ErrorState large message={error} onRetry={reload} /></PortalSection>;
 
   const queue = data?.queue ?? [];
   const attention = data?.attention ?? [];
@@ -178,6 +206,9 @@ export default function ApprovalQueue() {
       </PortalSection>
 
       <PortalSection title="Maintenance attention">
+        <p role="status" className={notice ? 'mb-4 rounded-lg bg-emerald-50 px-3.5 py-2.5 text-[15px] leading-normal text-emerald-900' : 'sr-only'}>
+          {notice}
+        </p>
         {attention.length === 0 ? (
           <p className="rounded-lg border border-dashed border-lake-200 bg-white py-10 text-center text-base text-lake-700">
             No boats are due or overdue for maintenance.
@@ -186,16 +217,9 @@ export default function ApprovalQueue() {
           <motion.ul variants={staggerContainer} initial={reduce ? false : 'hidden'} animate="show"
             className={`${portalCard} divide-y divide-lake-100`}>
             {attention.map((b) => (
-              <motion.li variants={staggerItem} key={b.id} className="flex items-center justify-between gap-3 px-4 py-3.5">
-                <div className="min-w-0">
-                  <p className="break-words text-base font-semibold text-lake-950">{b.name}</p>
-                  <p className="break-words text-[15px] text-lake-700">{names[b.ownerId] ?? 'Owner'}</p>
-                </div>
-                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[13px] font-semibold leading-none ${
-                  b.maintenanceStatus === 'overdue' ? 'bg-red-100 text-red-700' : 'bg-sunset-100 text-sunset-700'
-                }`}>
-                  {b.maintenanceStatus === 'overdue' ? 'Overdue' : 'Due'}
-                </span>
+              <motion.li variants={staggerItem} key={b.id} className="px-4 py-3.5">
+                <AttentionRow boat={b} ownerName={names[b.ownerId] ?? 'Owner'}
+                  onVoided={(summary) => { setNotice(summary); reload(); }} />
               </motion.li>
             ))}
           </motion.ul>

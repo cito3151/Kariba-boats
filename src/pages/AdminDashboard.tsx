@@ -17,6 +17,7 @@ import LegalDocuments from '../components/admin/LegalDocuments';
 import EmergencyContactsAdmin from '../components/admin/EmergencyContactsAdmin';
 import AdminReviews from '../components/admin/AdminReviews';
 import PartnerOrgs from '../components/admin/PartnerOrgs';
+import AdminHoursPanel from '../components/admin/AdminHoursPanel';
 import { BOAT_TYPE_LABELS } from '../components/BoatCard';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import Reveal from '../components/Reveal';
@@ -56,9 +57,14 @@ const STATUS_CHIP: Record<BoatStatus, string> = {
   suspended: 'bg-red-100 text-red-700',
 };
 
-function BoatList({ boats: list, onChanged }: { boats: OwnerBoat[]; onChanged: () => void }) {
+function BoatList({ boats: list, onChanged, hoursLog = false }: {
+  boats: OwnerBoat[]; onChanged: () => void;
+  /** Adds each boat's hours log, where an admin can void a mistaken entry (the maintenance view). */
+  hoursLog?: boolean;
+}) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
+  const [notice, setNotice] = useState('');
 
   // A suspended boat goes back to approved (admin_review_boat 'unsuspend'), which
   // lists it again if it is still active, not deleted and not overdue for service.
@@ -69,11 +75,20 @@ function BoatList({ boats: list, onChanged }: { boats: OwnerBoat[]; onChanged: (
     finally { setBusyId(null); }
   };
 
-  if (list.length === 0) return <EmptyState large title="No boats here" hint="Nothing matches this filter yet." />;
+  const noticeLine = (
+    <p role="status" className={notice ? 'mb-4 rounded-lg bg-emerald-50 px-3.5 py-2.5 text-[15px] leading-normal text-emerald-900' : 'sr-only'}>
+      {notice}
+    </p>
+  );
+
+  if (list.length === 0) {
+    return <>{hoursLog && noticeLine}<EmptyState large title="No boats here" hint="Nothing matches this filter yet." /></>;
+  }
   // Each card rises in as it scrolls into view: the full fleet runs well past
   // the fold, so a one-off stagger on mount would play out where nobody sees it.
   return (
     <>
+    {hoursLog && noticeLine}
     {actionError && (
       <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{actionError}</p>
     )}
@@ -102,6 +117,14 @@ function BoatList({ boats: list, onChanged }: { boats: OwnerBoat[]; onChanged: (
               {b.safetyEquipment.length ? b.safetyEquipment.join(', ') : 'None listed'}
             </Figure>
           </dl>
+          {hoursLog && (
+            <div className="mt-3 border-t border-lake-100 pt-2">
+              <p className="text-[15px] leading-normal text-lake-700">
+                <span className="tabular-nums">{b.accumulatedHours.toFixed(1)}</span> hours logged, next service at <span className="tabular-nums">{b.nextMaintenanceHours.toFixed(1)}</span>.
+              </p>
+              <AdminHoursPanel boat={b} onVoided={(summary) => { setNotice(summary); onChanged(); }} />
+            </div>
+          )}
           {b.status === 'approved' && (
             <Link to={`/boats/${b.id}`} className="mt-3 inline-block rounded-sm py-1 text-[15px] font-semibold text-lake-700 underline underline-offset-2 outline-none hover:text-lake-900 focus-visible:ring-2 focus-visible:ring-lake-500">
               View public listing
@@ -178,10 +201,12 @@ export default function AdminDashboard() {
       default:
         return (
           <>
-            {loading && <LoadingState large label="Loading boats" />}
+            {/* A reload keeps the list on screen (and any notice in it) rather
+                than swapping it for a spinner. */}
+            {loading && !boatData && <LoadingState large label="Loading boats" />}
             {error && <ErrorState large message={error} onRetry={reload} />}
-            {!loading && !error && (
-              <BoatList onChanged={reload} boats={
+            {boatData && !error && (
+              <BoatList onChanged={reload} hoursLog={v === 'attention'} boats={
                 v === 'all' ? list
                   : v === 'live' ? list.filter((b) => b.status === 'approved' && b.isActive)
                   : list.filter((b) => b.maintenanceStatus === 'due' || b.maintenanceStatus === 'overdue')

@@ -98,6 +98,19 @@ export async function deleteBoatImage(image: BoatImage): Promise<void> {
   await supabase.storage.from(BUCKET).remove([image.storagePath]);
 }
 
+/**
+ * Saves a new photo order: each id's sort_order becomes its index in
+ * `orderedIds`. Owners can update only is_primary and sort_order (migration 38),
+ * and boat_images_write_own limits the rows to boats they manage. At most ten
+ * small updates, sent together; if one fails the caller reloads the real order.
+ */
+export async function reorderImages(boatId: string, orderedIds: string[]): Promise<void> {
+  const results = await Promise.all(orderedIds.map((id, index) =>
+    supabase.from('boat_images').update({ sort_order: index }).eq('id', id).eq('boat_id', boatId)));
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw new Error(humanizeError(failed.error.message));
+}
+
 export async function setPrimaryImage(boatId: string, imageId: string): Promise<void> {
   const { error: clearError } = await supabase.from('boat_images')
     .update({ is_primary: false }).eq('boat_id', boatId);

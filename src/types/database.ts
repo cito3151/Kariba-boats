@@ -255,6 +255,9 @@ export type Database = {
           logged_by: string
           note: string | null
           reading_after: number
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
         }
         Insert: {
           boat_id: string
@@ -265,6 +268,9 @@ export type Database = {
           logged_by: string
           note?: string | null
           reading_after: number
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Update: {
           boat_id?: string
@@ -275,6 +281,9 @@ export type Database = {
           logged_by?: string
           note?: string | null
           reading_after?: number
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Relationships: [
           {
@@ -294,6 +303,13 @@ export type Database = {
           {
             foreignKeyName: "boat_operating_hours_logged_by_fkey"
             columns: ["logged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boat_operating_hours_voided_by_fkey"
+            columns: ["voided_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1191,6 +1207,10 @@ export type Database = {
           scheduled_for: string | null
         }[]
       }
+      admin_cancel_account_deletion: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       admin_link_partner: {
         Args: { p_kind: string; p_org_id: string | null; p_user_id: string }
         Returns: {
@@ -1237,10 +1257,12 @@ export type Database = {
         Args: never
         Returns: {
           created_at: string
+          deletion_scheduled_for: string | null
           email: string
           full_name: string
           id: string
           is_super_admin: boolean
+          purged_at: string | null
           role: Database["public"]["Enums"]["user_role"]
           verification_status: Database["public"]["Enums"]["verification_status"]
         }[]
@@ -1418,6 +1440,13 @@ export type Database = {
       admin_set_review_visibility: {
         Args: { p_hidden: boolean; p_reason?: string; p_review_id: string }
         Returns: undefined
+      }
+      admin_schedule_account_deletion: {
+        Args: { p_user_id: string }
+        Returns: {
+          requested_at: string
+          scheduled_for: string
+        }[]
       }
       admin_set_role: {
         Args: {
@@ -1987,6 +2016,50 @@ export type Database = {
           start_time: string
           status: Database["public"]["Enums"]["booking_status"]
         }[]
+      }
+      void_operating_hours: {
+        Args: { p_entry_id: string; p_reason: string }
+        Returns: {
+          accumulated_hours: number
+          approved_at: string | null
+          approved_by: string | null
+          boat_type: Database["public"]["Enums"]["boat_kind"]
+          capacity: number
+          company_id: string | null
+          created_at: string
+          crew_included: boolean
+          deleted_at: string | null
+          deposit_percent: number
+          description: string | null
+          facilities: string[]
+          fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
+          hours_remaining: number | null
+          id: string
+          is_active: boolean
+          is_deleted: boolean
+          last_maintenance_hours: number
+          location: string
+          maintenance_interval_hours: number
+          maintenance_status: string | null
+          maintenance_warn_hours: number
+          name: string
+          next_maintenance_hours: number | null
+          owner_id: string
+          pending_changes: Json | null
+          price_per_day: number | null
+          price_per_hour: number | null
+          registration_number: string | null
+          rejection_reason: string | null
+          safety_equipment: string[]
+          status: Database["public"]["Enums"]["boat_status"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "boats"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
