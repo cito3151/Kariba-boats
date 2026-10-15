@@ -100,11 +100,23 @@ export async function createBoat(ownerId: string, input: BoatInput): Promise<Own
   return toOwnerBoat(data);
 }
 
-export async function proposeChanges(id: string, changes: Record<string, unknown>): Promise<void> {
-  const { error } = await supabase.rpc('propose_boat_changes', {
+/**
+ * The fields that never change a live (approved) listing directly: they wait in
+ * pending_changes for an administrator. Mirrors is_sensitive_change() in the
+ * database (migration 36); every other field applies at once.
+ */
+export const REVIEWED_BOAT_FIELDS: readonly string[] = [
+  'name', 'boat_type', 'capacity', 'price_per_hour', 'price_per_day',
+  'safety_equipment', 'crew_included', 'registration_number', 'deposit_percent',
+];
+
+/** Sends only the changed fields; returns the boat as saved, pending_changes included. */
+export async function proposeChanges(id: string, changes: Record<string, unknown>): Promise<OwnerBoat> {
+  const { data, error } = await supabase.rpc('propose_boat_changes', {
     p_boat_id: id, p_changes: changes as Json,
   });
   if (error) throw new Error(humanizeError(error.message));
+  return toOwnerBoat(data);
 }
 
 export async function submitForReview(id: string): Promise<void> {

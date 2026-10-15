@@ -90,6 +90,7 @@ export default function HotelDashboard() {
           bookings={hotelBookings ?? []}
           boatName={(b) => boatsById.get(b.boatId)?.name ?? 'Boat'}
           emptyText="No bookings referred yet."
+          onCancelled={reloadBookings}
         />
       </PortalSection>
 

@@ -3,24 +3,32 @@ import Reveal from '../Reveal';
 import StatusBadge from '../StatusBadge';
 import BookingFigures from '../BookingFigures';
 import BookingRef from '../BookingRef';
+import CancelBookingButton from '../CancelBookingButton';
 import { portalCard } from '../portal/styles';
 import type { BookingRow } from '../../services/bookings.service';
+
+// The statuses cancel_booking will still cancel (the same set the trip list uses).
+const CANCELLABLE = new Set(['requested', 'confirmed', 'deposit_paid']);
 
 /**
  * The bookings a hotel or agency has made for its guests, one portal card each:
  * boat as the title with the booking reference chip under it, status badge,
  * then the labelled Guest / When / Group / Total figures. `boatName` resolves
- * the title the way each dashboard always has.
+ * the title the way each dashboard always has. With `onCancelled`, an open
+ * booking gets the shared Cancel button (cancel_booking lets the hotel or agency
+ * that made it cancel it).
  * Each card rises in as it scrolls into view.
  */
 export default function PartnerBookingList({
-  bookings, boatName, showCaptain = false, emptyText,
+  bookings, boatName, showCaptain = false, emptyText, onCancelled,
 }: {
   bookings: BookingRow[];
   boatName: (b: BookingRow) => string;
   /** The agency view names the assigned captain; the hotel view never has. */
   showCaptain?: boolean;
   emptyText: string;
+  /** Runs once a booking has been cancelled, normally the list's reload. */
+  onCancelled?: () => void;
 }) {
   const reduce = useReducedMotion();
 
@@ -51,6 +59,11 @@ export default function PartnerBookingList({
               <p className="mt-3 break-words text-[15px] leading-normal text-lake-700">
                 Captain: <span className="font-semibold text-lake-900">{b.captainName}</span>
               </p>
+            )}
+            {onCancelled && CANCELLABLE.has(b.status) && (
+              <div className="mt-3.5 flex flex-wrap items-start gap-2 border-t border-lake-100 pt-3.5">
+                <CancelBookingButton booking={{ ...b, boatName: boatName(b) }} onCancelled={onCancelled} />
+              </div>
             )}
           </Reveal>
         ))}

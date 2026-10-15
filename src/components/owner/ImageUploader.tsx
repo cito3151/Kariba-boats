@@ -39,8 +39,13 @@ export default function ImageUploader({
   };
 
   const makePrimary = async (img: BoatImage) => {
-    await images.setPrimaryImage(boatId, img.id);
-    onChange(value.map((v) => ({ ...v, isPrimary: v.id === img.id })));
+    setBusy(true); setError('');
+    try {
+      await images.setPrimaryImage(boatId, img.id);
+      onChange(value.map((v) => ({ ...v, isPrimary: v.id === img.id })));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not set the cover photo.');
+    } finally { setBusy(false); }
   };
 
   return (

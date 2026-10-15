@@ -99,7 +99,9 @@ export async function deleteBoatImage(image: BoatImage): Promise<void> {
 }
 
 export async function setPrimaryImage(boatId: string, imageId: string): Promise<void> {
-  await supabase.from('boat_images').update({ is_primary: false }).eq('boat_id', boatId);
+  const { error: clearError } = await supabase.from('boat_images')
+    .update({ is_primary: false }).eq('boat_id', boatId);
+  if (clearError) throw new Error(humanizeError(clearError.message));
   const { error } = await supabase.from('boat_images').update({ is_primary: true }).eq('id', imageId);
   if (error) throw new Error(humanizeError(error.message));
 }

@@ -89,6 +89,7 @@ export default function AgencyDashboard() {
           boatName={(b) => boatsById.get(b.boatId)?.name ?? 'Boat'}
           showCaptain
           emptyText="No bookings made yet."
+          onCancelled={reloadBookings}
         />
       </PortalSection>
 

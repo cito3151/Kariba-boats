@@ -1,10 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText, FileText, LifeBuoy, Building2, Star } from 'lucide-react';
+import { Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText, FileText, LifeBuoy, Building2, Star, RotateCcw } from 'lucide-react';
 import AdminPortalPage from '../components/admin/AdminPortalPage';
 import PortalSection from '../components/portal/PortalSection';
-import { portalCard } from '../components/portal/styles';
+import { portalCard, portalButtonSecondary } from '../components/portal/styles';
 import StatTile from '../components/StatTile';
 import { Figure } from '../components/BookingFigures';
 import ApprovalQueue from '../components/admin/ApprovalQueue';
@@ -54,11 +54,27 @@ const STATUS_CHIP: Record<BoatStatus, string> = {
   suspended: 'bg-red-100 text-red-700',
 };
 
-function BoatList({ boats: list }: { boats: OwnerBoat[] }) {
+function BoatList({ boats: list, onChanged }: { boats: OwnerBoat[]; onChanged: () => void }) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState('');
+
+  // A suspended boat goes back to approved (admin_review_boat 'unsuspend'), which
+  // lists it again if it is still active, not deleted and not overdue for service.
+  const reinstate = async (b: OwnerBoat) => {
+    setBusyId(b.id); setActionError('');
+    try { await boats.reviewBoat(b.id, 'unsuspend'); onChanged(); }
+    catch (e) { setActionError(e instanceof Error ? e.message : 'Could not reinstate this boat.'); }
+    finally { setBusyId(null); }
+  };
+
   if (list.length === 0) return <EmptyState large title="No boats here" hint="Nothing matches this filter yet." />;
   // Each card rises in as it scrolls into view: the full fleet runs well past
   // the fold, so a one-off stagger on mount would play out where nobody sees it.
   return (
+    <>
+    {actionError && (
+      <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3.5 py-2.5 text-[15px] leading-normal text-red-700">{actionError}</p>
+    )}
     <ul className="space-y-3">
       {list.map((b) => (
         <Reveal as="li" key={b.id} className={`${portalCard} p-4 sm:p-5`}>
@@ -89,9 +105,17 @@ function BoatList({ boats: list }: { boats: OwnerBoat[] }) {
               View public listing
             </Link>
           )}
+          {b.status === 'suspended' && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-lake-100 pt-3.5">
+              <button type="button" onClick={() => reinstate(b)} disabled={busyId === b.id} className={portalButtonSecondary}>
+                <RotateCcw size={15} aria-hidden /> {busyId === b.id ? 'Reinstating' : 'Reinstate'}
+              </button>
+            </div>
+          )}
         </Reveal>
       ))}
     </ul>
+    </>
   );
 }
 
@@ -153,7 +177,7 @@ export default function AdminDashboard() {
             {loading && <LoadingState large label="Loading boats" />}
             {error && <ErrorState large message={error} onRetry={reload} />}
             {!loading && !error && (
-              <BoatList boats={
+              <BoatList onChanged={reload} boats={
                 v === 'all' ? list
                   : v === 'live' ? list.filter((b) => b.status === 'approved' && b.isActive)
                   : list.filter((b) => b.maintenanceStatus === 'due' || b.maintenanceStatus === 'overdue')

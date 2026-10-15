@@ -4,7 +4,7 @@ const LABELS: Record<string, string> = {
   name: 'Name', boat_type: 'Type', capacity: 'Capacity',
   price_per_hour: 'Price per hour', price_per_day: 'Price per day',
   safety_equipment: 'Safety equipment', crew_included: 'Crew included',
-  registration_number: 'Registration',
+  registration_number: 'Registration', deposit_percent: 'Deposit percent',
 };
 
 const CURRENT: Record<string, (b: OwnerBoat) => unknown> = {
@@ -13,6 +13,7 @@ const CURRENT: Record<string, (b: OwnerBoat) => unknown> = {
   safety_equipment: (b) => b.safetyEquipment.join(', '),
   crew_included: (b) => (b.crewIncluded ? 'Yes' : 'No'),
   registration_number: (b) => b.registrationNumber,
+  deposit_percent: (b) => b.depositPercent,
 };
 
 const show = (v: unknown) => (Array.isArray(v) ? v.join(', ') : v === null ? 'None' : String(v));
