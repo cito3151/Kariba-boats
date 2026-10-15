@@ -30,7 +30,10 @@ function App() {
   const isAuthRoute = authRoutes.includes(location.pathname);
 
   const routes = (
-    <AnimatePresence mode="wait" initial={false}>
+    // No initial={false} here: framer passes it down to every motion element in
+    // the first page loaded, which then skips its starting state, so on a fresh
+    // load or refresh none of the scroll reveals ever played.
+    <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<TouristHome />} />
         <Route path="/boats/:id" element={<BoatDetail />} />
