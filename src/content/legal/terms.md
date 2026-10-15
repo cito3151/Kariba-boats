@@ -187,7 +187,7 @@ You can delete your account at any time from **Account** in the menu at the top 
 
 You can't ask for deletion while you have an active booking that has not happened yet, as a guest or on a boat you operate. Cancel it, or wait until it is completed, then ask again. If you make a new booking during the 30 days, we wait until that trip is completed or cancelled before deleting your account.
 
-Some records are kept after deletion because the law requires them or they are needed to settle disputes: booking and payment records are kept for at least six years for tax purposes, with your name, phone number and notes removed. Reviews you wrote stay published as "Former guest". If you operate boats and your company has another owner on the platform, your boats pass to them; otherwise your listings are taken down.
+Some records are kept after deletion because the law requires them or they are needed to settle disputes: booking and payment records are kept for at least six years for tax purposes, with your name, phone number and notes removed. Reviews you wrote stay published as "Former guest". If you operate boats as part of a team, the boats you hold and the captains you registered pass to another member of your team (another owner first; otherwise the longest-serving manager or staff member, who becomes an owner). If you operate alone, your listings are taken down.
 
 Administrator accounts are closed by another administrator, not from the Account page.
 

@@ -163,7 +163,7 @@ We keep personal information only as long as we need it for the purposes above.
 | Booking and payment records | At least 6 years, because Zimbabwe's tax laws require businesses to keep their records for at least six years. After your account is deleted they are kept with your name, phone number and notes removed |
 | Reviews | While published. After your account is deleted, shown as "Former guest" |
 | Verification documents | Until you remove them, or your account is deleted |
-| Captains' details | Until the operator removes them, or the operator's account is deleted |
+| Captains' details | Until the operator's team removes them. If the operator who added them deletes their account, they stay on the team's roster; if no one else is on the team, they are deleted |
 | Consent records | Kept as proof of what was agreed. They contain only an account number, document version and time |
 | Security log | Kept as a security record. Names, phone numbers and other personal details are removed from it when the related account is deleted |
 | Sign-in token in your browser | Until you sign out or it expires |
@@ -177,13 +177,13 @@ You can ask us to delete your account at any time from **Account** in the menu a
 3. **After 30 days**, we delete or anonymise your personal information:
    - your name, phone number and business name are removed from your account, and you can no longer sign in; your sign-in record is deleted, or, where other records still point to it, emptied of your email, phone and password and permanently blocked;
    - verification documents you uploaded are deleted, and the files removed from storage;
-   - captains you registered are deleted, and their names and phone numbers removed from past trips on your boats;
+   - captains you registered stay on your team's roster if anyone else is on your team; if you operate alone, they are deleted and their names and phone numbers removed from past trips on your boats;
    - on bookings you made, your name becomes "Former guest" and your phone number and notes are removed; the reference, boat, dates and amounts are kept for tax records;
    - reviews you wrote stay published as "Former guest";
-   - if you operate boats and your company has another owner on the platform, your boats pass to them; otherwise your listings are taken down;
+   - if you operate boats as part of a team, the boats you hold pass to another member of your team (another owner first; otherwise the longest-serving manager or staff member, who becomes an owner); if you operate alone, your listings are taken down;
    - names, phone numbers and other personal details are removed from the security log entries about your records.
 
-If you still have an active booking that has not happened yet when the 30 days end, we wait until it is completed or cancelled, then delete your account.
+If you still have an active booking that has not happened yet when the 30 days end, we wait until it is completed or cancelled, then delete your account. For an operator on a team, a booking on a boat only causes this wait when no one else on the team can take the boat over.
 
 Records of what you agreed to are kept, with only your account number, as proof of consent.
 
