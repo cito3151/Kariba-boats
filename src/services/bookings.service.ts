@@ -176,18 +176,47 @@ export function toCalendarBooking(b: BookingRow): Booking {
   };
 }
 
+// booking_boat_names takes at most this many ids per call (migration 41).
+const BOAT_NAME_BATCH = 500;
+
+/**
+ * Bookings to rows, naming every boat. The boats(name) embed is filtered by the
+ * boats read policy, so a boat that is no longer listed (suspended, deactivated,
+ * deleted, overdue for maintenance) comes back without a name, and a hotel or
+ * agency card read "Boat". booking_boat_names (migration 41) names the boat for
+ * bookings the caller can already read. The name is only a title, so if that call
+ * fails the card keeps "Boat" rather than failing the whole list.
+ */
+async function toRowsWithBoatNames(raw: any[]): Promise<BookingRow[]> {
+  const rows = raw.map(toBookingRow);
+  const missing = raw.filter((r) => !r.boats?.name).map((r) => r.id as string);
+  if (missing.length === 0) return rows;
+  const names = new Map<string, string>();
+  for (let i = 0; i < missing.length; i += BOAT_NAME_BATCH) {
+    const { data, error } = await supabase.rpc('booking_boat_names', {
+      p_booking_ids: missing.slice(i, i + BOAT_NAME_BATCH),
+    });
+    if (error) break;
+    (data ?? []).forEach((r) => { if (r.boat_name) names.set(r.booking_id, r.boat_name); });
+  }
+  return rows.map((b) => {
+    const name = names.get(b.id);
+    return name ? { ...b, boatName: name } : b;
+  });
+}
+
 export async function listBookingsForHotel(hotelId: string): Promise<BookingRow[]> {
   const { data, error } = await supabase.from('bookings').select(BOOKING_SELECT)
     .eq('hotel_id', hotelId).order('start_date', { ascending: false });
   if (error) throw new Error(humanizeError(error.message));
-  return (data ?? []).map(toBookingRow);
+  return toRowsWithBoatNames(data ?? []);
 }
 
 export async function listBookingsForAgency(agencyId: string): Promise<BookingRow[]> {
   const { data, error } = await supabase.from('bookings').select(BOOKING_SELECT)
     .eq('agency_id', agencyId).order('start_date', { ascending: false });
   if (error) throw new Error(humanizeError(error.message));
-  return (data ?? []).map(toBookingRow);
+  return toRowsWithBoatNames(data ?? []);
 }
 
 export async function listMyBookings(touristId: string): Promise<BookingRow[]> {

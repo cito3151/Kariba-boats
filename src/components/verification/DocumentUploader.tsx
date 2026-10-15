@@ -20,6 +20,12 @@ export default function DocumentUploader() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const docs = data ?? [];
+  // What verification unlocks, in the account's own terms.
+  const unlocks = currentUser?.role === 'hotel'
+    ? 'you can book boats for your guests'
+    : currentUser?.role === 'agency'
+      ? 'you can book boats for your clients'
+      : 'your boats can go live';
 
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -59,7 +65,7 @@ export default function DocumentUploader() {
       </h2>
       <p className="mt-1.5 text-[15px] leading-normal text-lake-700">
         Upload your company registration documents (PDF, JPEG, or PNG). Our team reviews these
-        before your account is verified and your boats can go live.
+        before your account is verified and {unlocks}.
       </p>
 
       {loading && <LoadingState large label="Loading documents" />}

@@ -1721,6 +1721,13 @@ export type Database = {
           status: Database["public"]["Enums"]["booking_status"]
         }[]
       }
+      booking_boat_names: {
+        Args: { p_booking_ids: string[] }
+        Returns: {
+          boat_name: string
+          booking_id: string
+        }[]
+      }
       create_booking: {
         Args: {
           p_boat_id: string

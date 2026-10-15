@@ -47,6 +47,10 @@ export default function EditBookingButton({
       }
       setSaved(false);
       setBoat(b);
+    } catch (err) {
+      setError(err instanceof Error && err.message
+        ? err.message
+        : 'This request could not be opened. Check your connection and try again.');
     } finally {
       setLoading(false);
     }

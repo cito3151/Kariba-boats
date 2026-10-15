@@ -72,6 +72,16 @@ export default function BoatDetail() {
   const { currentUser } = useAuth();
   const reduce = useReducedMotion();
   const [showModal, setShowModal] = useState(false);
+  // Hotel and agency staff book for a guest, as on their dashboards: the modal opens
+  // on behalf of the guest (empty guest fields, the hotel's id for a hotel). Until the
+  // account is verified and linked, Book shows a note pointing to their portal
+  // instead of a form the server would refuse.
+  const partnerRole = currentUser?.role === 'hotel' || currentUser?.role === 'agency' ? currentUser.role : null;
+  const partnerOrgId = partnerRole === 'hotel' ? currentUser?.hotelId ?? null
+    : partnerRole === 'agency' ? currentUser?.agencyId ?? null : null;
+  const partnerCanBook = partnerRole !== null
+    && currentUser?.verificationStatus === 'verified' && partnerOrgId !== null;
+  const [partnerNoteShown, setPartnerNoteShown] = useState(false);
   // Set when a request goes through. Those days are now the visitor's own booking,
   // so closing the modal would reload them as booked and reject the link as "no
   // longer available", seconds after they booked it. closeModal clears it quietly.
@@ -175,6 +185,10 @@ export default function BoatDetail() {
       navigate('/login', { state: { from: `/boats/${boat.id}${query}` } });
       return;
     }
+    if (partnerRole && !partnerCanBook) {
+      setPartnerNoteShown(true);
+      return;
+    }
     setShowModal(true);
   };
 
@@ -226,6 +240,17 @@ export default function BoatDetail() {
   const loginNote = !currentUser && (
     <p className="mt-3 text-center text-sm leading-snug text-lake-700">
       You will need to log in or create a free account to send a booking request.
+    </p>
+  );
+  const partnerNote = partnerRole && !partnerCanBook && partnerNoteShown && (
+    <p role="status" className="text-[15px] leading-snug text-amber-900">
+      {partnerRole === 'hotel'
+        ? 'Your hotel account must be verified and linked to your hotel before you can book for guests.'
+        : 'Your agency account must be verified and linked to your agency before you can book for clients.'}{' '}
+      <Link to={partnerRole === 'hotel' ? '/hotel' : '/agency'}
+        className="rounded-sm font-semibold text-amber-950 underline underline-offset-2 outline-none hover:text-lake-950 focus-visible:ring-2 focus-visible:ring-lake-800">
+        Go to the {partnerRole === 'hotel' ? 'Hotel' : 'Agency'} portal
+      </Link>
     </p>
   );
 
@@ -481,6 +506,9 @@ export default function BoatDetail() {
                     Book this boat
                   </button>
                   {loginNote}
+                  {partnerNote && (
+                    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">{partnerNote}</div>
+                  )}
                 </div>
               </motion.div>
             </aside>
@@ -496,6 +524,9 @@ export default function BoatDetail() {
           transition={reduce ? reducedFade : { ...revealSpring, delay: 0.3 }}
           className="sticky bottom-0 z-20 border-t border-lake-200 bg-white/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-6px_20px_rgb(13_37_50/0.10)] backdrop-blur-md lg:hidden"
         >
+          {partnerNote && (
+            <div className="mx-auto mb-3 max-w-6xl rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5">{partnerNote}</div>
+          )}
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
             <div className="min-w-0">
               {price ? (
@@ -520,10 +551,13 @@ export default function BoatDetail() {
       {showModal && (
         <BookingModal
           boat={boat}
-          touristId={currentUser?.id ?? null}
-          // Trimmed: profile names can carry stray whitespace into the form.
-          initialName={currentUser?.name?.trim()}
-          initialPhone={currentUser?.phone ?? undefined}
+          touristId={partnerRole ? null : currentUser?.id ?? null}
+          hotelId={partnerRole === 'hotel' ? partnerOrgId : null}
+          onBehalfOfGuest={partnerRole !== null}
+          // Trimmed: profile names can carry stray whitespace into the form. Staff
+          // booking for a guest start with empty guest fields instead.
+          initialName={partnerRole ? undefined : currentUser?.name?.trim()}
+          initialPhone={partnerRole ? undefined : currentUser?.phone ?? undefined}
           initialStartDate={range?.start}
           initialEndDate={singleDate ? undefined : range?.end ?? undefined}
           onClose={closeModal}

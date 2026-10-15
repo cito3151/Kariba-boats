@@ -13,24 +13,33 @@ import { useAuth } from '../data/AuthContext';
 import { loadedFigure, useAsync } from '../hooks/useAsync';
 import * as boats from '../services/boats.service';
 import { listBookingsForHotel } from '../services/bookings.service';
+import { getPartnerOrgActive } from '../services/partners.service';
 import type { PublicBoat } from '../services/boats.service';
 
 export default function HotelDashboard() {
   const { currentUser } = useAuth();
   const hotelId = currentUser?.hotelId ?? null;
+  const verified = currentUser?.verificationStatus === 'verified';
   const [search, setSearch] = useState('');
   const [bookingBoat, setBookingBoat] = useState<PublicBoat | null>(null);
 
   const { data: boatList, loading, error, reload } = useAsync(() => boats.listPublicBoats(), []);
-  const { data: hotelBookings, loading: bookingsLoading, reload: reloadBookings } = useAsync(
+  const {
+    data: hotelBookings, loading: bookingsLoading, error: bookingsError, reload: reloadBookings,
+  } = useAsync(
     () => (hotelId ? listBookingsForHotel(hotelId) : Promise.resolve([])), [hotelId],
   );
-
-  const boatsById = useMemo(() => {
-    const m = new Map<string, PublicBoat>();
-    (boatList ?? []).forEach((b) => m.set(b.id, b));
-    return m;
-  }, [boatList]);
+  // Why "Book for guest" is off, shown once above the list. A deactivated hotel
+  // (is_verified = false) is refused by guard_hotel_booking, so it is said here too.
+  const { data: orgActive } = useAsync(
+    () => (hotelId ? getPartnerOrgActive('hotel', hotelId) : Promise.resolve(null)), [hotelId],
+  );
+  const canBook = verified && Boolean(hotelId) && orgActive !== false;
+  const disabledReason = !verified
+    ? 'You can book for guests once an administrator verifies your hotel account.'
+    : !hotelId
+      ? 'Your hotel account is verified but not linked to a hotel yet, so you cannot book for guests. Contact us to link it.'
+      : 'Your hotel is not active on Kariba Lake Connect, so new bookings are paused. Contact us to reactivate it.';
 
   const filteredBoats = useMemo(
     () => (boatList ?? []).filter(
@@ -51,7 +60,7 @@ export default function HotelDashboard() {
     >
       <VerificationBanner />
 
-      {currentUser?.verificationStatus !== 'verified' && (
+      {!verified && (
         <div className="mb-4"><DocumentUploader /></div>
       )}
 
@@ -78,20 +87,26 @@ export default function HotelDashboard() {
           <BookableBoatList
             boats={filteredBoats}
             actionLabel="Book for guest"
-            canBook={Boolean(hotelId) && currentUser?.verificationStatus === 'verified'}
-            disabledReason="Your hotel account must be verified and linked before you can book for guests"
+            canBook={canBook}
+            disabledReason={disabledReason}
             onBook={setBookingBoat}
           />
         )}
       </PortalSection>
 
       <PortalSection title="Your referred bookings" className="mt-10">
-        <PartnerBookingList
-          bookings={hotelBookings ?? []}
-          boatName={(b) => boatsById.get(b.boatId)?.name ?? 'Boat'}
-          emptyText="No bookings referred yet."
-          onCancelled={reloadBookings}
-        />
+        {/* The spinner only until the first answer: a reload after a cancel or an
+            edit keeps the list in place instead of swapping it for a spinner. */}
+        {bookingsLoading && hotelBookings == null && <LoadingState large label="Loading bookings" />}
+        {bookingsError && <ErrorState large message={bookingsError} onRetry={reloadBookings} />}
+        {!bookingsError && hotelBookings != null && (
+          <PartnerBookingList
+            bookings={hotelBookings}
+            boatName={(b) => b.boatName}
+            emptyText="No bookings referred yet."
+            onCancelled={reloadBookings}
+          />
+        )}
       </PortalSection>
 
       {bookingBoat && (

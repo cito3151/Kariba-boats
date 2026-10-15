@@ -361,7 +361,7 @@ export default function BookingModal({
             {step === 'form' && (
               <motion.form key="form" {...stepMotion} onSubmit={submit} className="mt-6 space-y-7">
                 <section aria-labelledby={`${nameHintId}-trip`} className="space-y-4">
-                  <h3 id={`${nameHintId}-trip`} className={stepHeading}>Your trip</h3>
+                  <h3 id={`${nameHintId}-trip`} className={stepHeading}>{onBehalf ? "The guest's trip" : 'Your trip'}</h3>
                   {editing?.reference && (
                     <p className="text-[15px] leading-snug text-lake-800">
                       Booking{' '}
@@ -404,7 +404,7 @@ export default function BookingModal({
                         />
                       )}
                       <p className="mt-2 px-2 text-sm leading-snug text-lake-700 sm:px-0">
-                        Your current {editHourly ? 'slot shows' : 'days show'} as free, so you can move within {editHourly ? 'it' : 'them'}.
+                        {onBehalf ? "The guest's" : 'Your'} current {editHourly ? 'slot shows' : 'days show'} as free, so you can move within {editHourly ? 'it' : 'them'}.
                       </p>
                     </div>
                   )}
@@ -641,6 +641,7 @@ export default function BookingModal({
               <motion.div key="success" {...stepMotion}>
                 <BookingConfirmation
                   edited={isEdit}
+                  onBehalf={onBehalf}
                   phoneChanged={phoneChanged}
                   bookingReference={bookingReference}
                   bookingId={bookingId}
@@ -673,11 +674,16 @@ export default function BookingModal({
  * short booking id it has always shown.
  */
 function BookingConfirmation({
-  edited = false, phoneChanged = false,
+  edited = false, onBehalf = false, phoneChanged = false,
   bookingReference, bookingId, operatorName, boatName, when, groupSize, priceTotal, depositAmount, onDone,
 }: {
   /** The confirmation of a change to an existing request, not a new one. */
   edited?: boolean;
+  /**
+   * Hotel or agency staff booked for a guest: the copy speaks to the staff member,
+   * who passes the reference on, not to the guest.
+   */
+  onBehalf?: boolean;
   /** Edit only: the guest's phone changed, which is what the Track page matches on. */
   phoneChanged?: boolean;
   bookingReference?: string;
@@ -718,6 +724,8 @@ function BookingConfirmation({
         <motion.p {...part(1)} className="mt-2 max-w-sm text-base leading-relaxed text-lake-800">
           {edited ? (
             <>{operatorName || 'The operator'} will see the changed request and is still to confirm it.</>
+          ) : bookingReference && onBehalf ? (
+            <>You have sent the guest's request to {operatorName || 'the operator'}. It is awaiting their confirmation and is listed with your bookings in the portal.</>
           ) : bookingReference ? (
             <>Your request is with {operatorName || 'the operator'} and is awaiting their confirmation.</>
           ) : (
@@ -736,12 +744,16 @@ function BookingConfirmation({
           </p>
           <p className="mt-1 text-sm text-lake-700">Quote it whenever you contact the operator.</p>
           <p className="mt-3 border-t border-lake-200 pt-3 text-[15px] leading-snug text-lake-800">
-            {edited && phoneChanged
-              ? 'Track it with this reference and the new phone number.'
-              : 'Keep this number to track your booking.'}{' '}
+            {onBehalf
+              ? edited && phoneChanged
+                ? 'Give the guest this reference and the new phone number; they can track it at /track.'
+                : 'Give the guest this reference and the phone number used; they can track it at /track.'
+              : edited && phoneChanged
+                ? 'Track it with this reference and the new phone number.'
+                : 'Keep this number to track your booking.'}{' '}
             <Link to={`/track?ref=${encodeURIComponent(bookingReference)}`} onClick={onDone}
               className="rounded-sm font-semibold text-lake-800 underline underline-offset-2 outline-none hover:text-lake-950 focus-visible:ring-2 focus-visible:ring-lake-800 focus-visible:ring-offset-1">
-              Track your booking
+              {onBehalf ? 'Track this booking' : 'Track your booking'}
             </Link>
           </p>
         </motion.div>

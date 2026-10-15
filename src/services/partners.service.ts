@@ -101,6 +101,18 @@ export function setPartnerOrgActive(kind: PartnerKind, id: string, active: boole
   return updatePartnerOrg(kind, id, { isActive: active });
 }
 
+/**
+ * Whether the signed-in partner's own hotel or agency is active (is_verified), for
+ * the portal's "bookings are paused" notice. Not admin only: hotels and agencies
+ * are readable by every signed-in user. Reads that one column and nothing else, so
+ * the portal never fetches the commission rate. Null when the row is not found.
+ */
+export async function getPartnerOrgActive(kind: PartnerKind, id: string): Promise<boolean | null> {
+  const { data, error } = await supabase.from(TABLE[kind]).select('is_verified').eq('id', id).maybeSingle();
+  if (error) throw new Error(humanizeError(error.message));
+  return data ? data.is_verified : null;
+}
+
 /** Every hotel and agency account, with the organisation it is linked to. */
 export async function listPartnerUsers(): Promise<PartnerUser[]> {
   const { data, error } = await supabase.from('profiles')

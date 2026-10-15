@@ -1,18 +1,21 @@
 import { Clock, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../data/AuthContext';
 
-// Shows a pending / rejected notice for owners and hotels. Renders nothing when
-// the account is verified (or for tourists/admins, who are not gated).
+// Shows a pending / rejected notice for owners, hotels and travel agencies.
+// Renders nothing when the account is verified (or for tourists/admins, who are
+// not gated).
 // A white notice with a coloured left rule, so it still reads as a box on the
 // lake-50 page background the portals sit on.
 export default function VerificationBanner() {
   const { currentUser } = useAuth();
   if (!currentUser) return null;
-  if (currentUser.role !== 'owner' && currentUser.role !== 'hotel') return null;
+  const { role } = currentUser;
+  if (role !== 'owner' && role !== 'hotel' && role !== 'agency') return null;
   if (currentUser.verificationStatus === 'verified') return null;
 
-  const isOwner = currentUser.role === 'owner';
-  const target = isOwner ? 'submit boats for review' : 'book on behalf of guests';
+  const target = role === 'owner'
+    ? 'submit boats for review'
+    : role === 'hotel' ? 'book on behalf of guests' : 'book on behalf of clients';
 
   if (currentUser.verificationStatus === 'rejected') {
     return (
