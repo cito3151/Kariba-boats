@@ -103,6 +103,8 @@ export default function AgencyDashboard() {
             showCaptain
             emptyText="No bookings made yet."
             onCancelled={reloadBookings}
+            partnerName={currentUser?.businessName}
+            guestWord="client"
           />
         )}
       </PortalSection>

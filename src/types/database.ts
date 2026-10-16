@@ -331,6 +331,7 @@ export type Database = {
           deposit_percent: number
           description: string | null
           facilities: string[]
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
           hours_remaining: number | null
           id: string
@@ -367,6 +368,7 @@ export type Database = {
           deposit_percent?: number
           description?: string | null
           facilities?: string[]
+          cancellation_policy?: Database["public"]["Enums"]["cancellation_policy"]
           fuel_policy?: Database["public"]["Enums"]["fuel_policy_kind"]
           hours_remaining?: number | null
           id?: string
@@ -403,6 +405,7 @@ export type Database = {
           deposit_percent?: number
           description?: string | null
           facilities?: string[]
+          cancellation_policy?: Database["public"]["Enums"]["cancellation_policy"]
           fuel_policy?: Database["public"]["Enums"]["fuel_policy_kind"]
           hours_remaining?: number | null
           id?: string
@@ -481,6 +484,27 @@ export type Database = {
           status: Database["public"]["Enums"]["booking_status"]
           tourist_id: string | null
           updated_by_guest_at: string | null
+          cancel_note: string | null
+          cancel_reason: Database["public"]["Enums"]["cancel_reason"] | null
+          cancellation_fee_amount: number | null
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"] | null
+          cancellation_rule: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_party: Database["public"]["Enums"]["cancelled_by_party"] | null
+          deposit_paid_at: string | null
+          refund_due_amount: number | null
+          refund_due_by: string | null
+          refund_marked_at: string | null
+          refund_marked_by: string | null
+          refund_note: string | null
+          refund_outcome: string | null
+          refund_reported_at: string | null
+          refund_reported_by: string | null
+          refund_resolution_note: string | null
+          refund_resolved_at: string | null
+          refund_resolved_by: string | null
+          refund_status: Database["public"]["Enums"]["refund_status"]
         }
         Insert: {
           agency_id?: string | null
@@ -506,6 +530,27 @@ export type Database = {
           status?: Database["public"]["Enums"]["booking_status"]
           tourist_id?: string | null
           updated_by_guest_at?: string | null
+          cancel_note?: string | null
+          cancel_reason?: Database["public"]["Enums"]["cancel_reason"] | null
+          cancellation_fee_amount?: number | null
+          cancellation_policy?: Database["public"]["Enums"]["cancellation_policy"] | null
+          cancellation_rule?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_party?: Database["public"]["Enums"]["cancelled_by_party"] | null
+          deposit_paid_at?: string | null
+          refund_due_amount?: number | null
+          refund_due_by?: string | null
+          refund_marked_at?: string | null
+          refund_marked_by?: string | null
+          refund_note?: string | null
+          refund_outcome?: string | null
+          refund_reported_at?: string | null
+          refund_reported_by?: string | null
+          refund_resolution_note?: string | null
+          refund_resolved_at?: string | null
+          refund_resolved_by?: string | null
+          refund_status?: Database["public"]["Enums"]["refund_status"]
         }
         Update: {
           agency_id?: string | null
@@ -531,6 +576,27 @@ export type Database = {
           status?: Database["public"]["Enums"]["booking_status"]
           tourist_id?: string | null
           updated_by_guest_at?: string | null
+          cancel_note?: string | null
+          cancel_reason?: Database["public"]["Enums"]["cancel_reason"] | null
+          cancellation_fee_amount?: number | null
+          cancellation_policy?: Database["public"]["Enums"]["cancellation_policy"] | null
+          cancellation_rule?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_party?: Database["public"]["Enums"]["cancelled_by_party"] | null
+          deposit_paid_at?: string | null
+          refund_due_amount?: number | null
+          refund_due_by?: string | null
+          refund_marked_at?: string | null
+          refund_marked_by?: string | null
+          refund_note?: string | null
+          refund_outcome?: string | null
+          refund_reported_at?: string | null
+          refund_reported_by?: string | null
+          refund_resolution_note?: string | null
+          refund_resolved_at?: string | null
+          refund_resolved_by?: string | null
+          refund_status?: Database["public"]["Enums"]["refund_status"]
         }
         Relationships: [
           {
@@ -1197,6 +1263,7 @@ export type Database = {
           deposit_percent: number | null
           description: string | null
           facilities: string[] | null
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"] | null
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"] | null
           id: string | null
           location: string | null
@@ -1312,6 +1379,61 @@ export type Database = {
           verification_status: Database["public"]["Enums"]["verification_status"]
         }[]
       }
+      admin_resolve_refund: {
+        Args: { p_booking_id: string; p_note: string; p_outcome: string }
+        Returns: {
+          agency_id: string | null
+          boat_id: string
+          captain_name: string | null
+          captain_phone: string | null
+          created_at: string
+          days: number
+          deposit_amount: number
+          duration_hours: number | null
+          experience_type: string
+          group_size: number
+          guest_name: string
+          guest_phone: string
+          hotel_id: string | null
+          id: string
+          notes: string | null
+          period: unknown
+          price_total: number
+          reference: string
+          start_date: string
+          start_time: string | null
+          status: Database["public"]["Enums"]["booking_status"]
+          tourist_id: string | null
+          updated_by_guest_at: string | null
+          cancel_note: string | null
+          cancel_reason: Database["public"]["Enums"]["cancel_reason"] | null
+          cancellation_fee_amount: number | null
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"] | null
+          cancellation_rule: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_party: Database["public"]["Enums"]["cancelled_by_party"] | null
+          deposit_paid_at: string | null
+          refund_due_amount: number | null
+          refund_due_by: string | null
+          refund_marked_at: string | null
+          refund_marked_by: string | null
+          refund_note: string | null
+          refund_outcome: string | null
+          refund_reported_at: string | null
+          refund_reported_by: string | null
+          refund_resolution_note: string | null
+          refund_resolved_at: string | null
+          refund_resolved_by: string | null
+          refund_status: Database["public"]["Enums"]["refund_status"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_review_account: {
         Args: {
           p_note?: string
@@ -1358,6 +1480,7 @@ export type Database = {
           deposit_percent: number
           description: string | null
           facilities: string[]
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
           hours_remaining: number | null
           id: string
@@ -1402,6 +1525,7 @@ export type Database = {
           deposit_percent: number
           description: string | null
           facilities: string[]
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
           hours_remaining: number | null
           id: string
@@ -1615,6 +1739,27 @@ export type Database = {
           status: Database["public"]["Enums"]["booking_status"]
           tourist_id: string | null
           updated_by_guest_at: string | null
+          cancel_note: string | null
+          cancel_reason: Database["public"]["Enums"]["cancel_reason"] | null
+          cancellation_fee_amount: number | null
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"] | null
+          cancellation_rule: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_party: Database["public"]["Enums"]["cancelled_by_party"] | null
+          deposit_paid_at: string | null
+          refund_due_amount: number | null
+          refund_due_by: string | null
+          refund_marked_at: string | null
+          refund_marked_by: string | null
+          refund_note: string | null
+          refund_outcome: string | null
+          refund_reported_at: string | null
+          refund_reported_by: string | null
+          refund_resolution_note: string | null
+          refund_resolved_at: string | null
+          refund_resolved_by: string | null
+          refund_status: Database["public"]["Enums"]["refund_status"]
         }
         SetofOptions: {
           from: "*"
@@ -1628,7 +1773,12 @@ export type Database = {
         Returns: undefined
       }
       cancel_booking: {
-        Args: { p_booking_id: string }
+        Args: {
+          p_booking_id: string
+          p_compassionate?: boolean
+          p_note?: string
+          p_reason?: Database["public"]["Enums"]["cancel_reason"]
+        }
         Returns: {
           agency_id: string | null
           boat_id: string
@@ -1653,6 +1803,27 @@ export type Database = {
           status: Database["public"]["Enums"]["booking_status"]
           tourist_id: string | null
           updated_by_guest_at: string | null
+          cancel_note: string | null
+          cancel_reason: Database["public"]["Enums"]["cancel_reason"] | null
+          cancellation_fee_amount: number | null
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"] | null
+          cancellation_rule: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_party: Database["public"]["Enums"]["cancelled_by_party"] | null
+          deposit_paid_at: string | null
+          refund_due_amount: number | null
+          refund_due_by: string | null
+          refund_marked_at: string | null
+          refund_marked_by: string | null
+          refund_note: string | null
+          refund_outcome: string | null
+          refund_reported_at: string | null
+          refund_reported_by: string | null
+          refund_resolution_note: string | null
+          refund_resolved_at: string | null
+          refund_resolved_by: string | null
+          refund_status: Database["public"]["Enums"]["refund_status"]
         }
         SetofOptions: {
           from: "*"
@@ -1660,6 +1831,25 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      cancellation_quote: {
+        Args: {
+          p_booking_id: string
+          p_compassionate?: boolean
+          p_reason?: Database["public"]["Enums"]["cancel_reason"]
+        }
+        Returns: {
+          caller_party: Database["public"]["Enums"]["cancelled_by_party"]
+          days_before: number
+          deposit_amount: number
+          deposit_paid: boolean
+          fee_amount: number
+          policy: Database["public"]["Enums"]["cancellation_policy"]
+          refund_amount: number
+          refund_due_by: string | null
+          rule_applied: string
+          trip_started: boolean
+        }[]
       }
       complete_maintenance: {
         Args: {
@@ -1682,6 +1872,7 @@ export type Database = {
           deposit_percent: number
           description: string | null
           facilities: string[]
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
           hours_remaining: number | null
           id: string
@@ -1801,6 +1992,7 @@ export type Database = {
           deposit_percent: number
           description: string | null
           facilities: string[]
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
           hours_remaining: number | null
           id: string
@@ -1826,6 +2018,61 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "boats"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      operator_mark_refunded: {
+        Args: { p_booking_id: string; p_note?: string }
+        Returns: {
+          agency_id: string | null
+          boat_id: string
+          captain_name: string | null
+          captain_phone: string | null
+          created_at: string
+          days: number
+          deposit_amount: number
+          duration_hours: number | null
+          experience_type: string
+          group_size: number
+          guest_name: string
+          guest_phone: string
+          hotel_id: string | null
+          id: string
+          notes: string | null
+          period: unknown
+          price_total: number
+          reference: string
+          start_date: string
+          start_time: string | null
+          status: Database["public"]["Enums"]["booking_status"]
+          tourist_id: string | null
+          updated_by_guest_at: string | null
+          cancel_note: string | null
+          cancel_reason: Database["public"]["Enums"]["cancel_reason"] | null
+          cancellation_fee_amount: number | null
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"] | null
+          cancellation_rule: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_party: Database["public"]["Enums"]["cancelled_by_party"] | null
+          deposit_paid_at: string | null
+          refund_due_amount: number | null
+          refund_due_by: string | null
+          refund_marked_at: string | null
+          refund_marked_by: string | null
+          refund_note: string | null
+          refund_outcome: string | null
+          refund_reported_at: string | null
+          refund_reported_by: string | null
+          refund_resolution_note: string | null
+          refund_resolved_at: string | null
+          refund_resolved_by: string | null
+          refund_status: Database["public"]["Enums"]["refund_status"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1869,6 +2116,27 @@ export type Database = {
           status: Database["public"]["Enums"]["booking_status"]
           tourist_id: string | null
           updated_by_guest_at: string | null
+          cancel_note: string | null
+          cancel_reason: Database["public"]["Enums"]["cancel_reason"] | null
+          cancellation_fee_amount: number | null
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"] | null
+          cancellation_rule: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_party: Database["public"]["Enums"]["cancelled_by_party"] | null
+          deposit_paid_at: string | null
+          refund_due_amount: number | null
+          refund_due_by: string | null
+          refund_marked_at: string | null
+          refund_marked_by: string | null
+          refund_note: string | null
+          refund_outcome: string | null
+          refund_reported_at: string | null
+          refund_reported_by: string | null
+          refund_resolution_note: string | null
+          refund_resolved_at: string | null
+          refund_resolved_by: string | null
+          refund_status: Database["public"]["Enums"]["refund_status"]
         }
         SetofOptions: {
           from: "*"
@@ -1908,6 +2176,7 @@ export type Database = {
           deposit_percent: number
           description: string | null
           facilities: string[]
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
           hours_remaining: number | null
           id: string
@@ -1999,6 +2268,61 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      report_refund_not_received: {
+        Args: { p_booking_id: string }
+        Returns: {
+          agency_id: string | null
+          boat_id: string
+          captain_name: string | null
+          captain_phone: string | null
+          created_at: string
+          days: number
+          deposit_amount: number
+          duration_hours: number | null
+          experience_type: string
+          group_size: number
+          guest_name: string
+          guest_phone: string
+          hotel_id: string | null
+          id: string
+          notes: string | null
+          period: unknown
+          price_total: number
+          reference: string
+          start_date: string
+          start_time: string | null
+          status: Database["public"]["Enums"]["booking_status"]
+          tourist_id: string | null
+          updated_by_guest_at: string | null
+          cancel_note: string | null
+          cancel_reason: Database["public"]["Enums"]["cancel_reason"] | null
+          cancellation_fee_amount: number | null
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"] | null
+          cancellation_rule: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_party: Database["public"]["Enums"]["cancelled_by_party"] | null
+          deposit_paid_at: string | null
+          refund_due_amount: number | null
+          refund_due_by: string | null
+          refund_marked_at: string | null
+          refund_marked_by: string | null
+          refund_note: string | null
+          refund_outcome: string | null
+          refund_reported_at: string | null
+          refund_reported_by: string | null
+          refund_resolution_note: string | null
+          refund_resolved_at: string | null
+          refund_resolved_by: string | null
+          refund_status: Database["public"]["Enums"]["refund_status"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       request_account_deletion: {
         Args: never
         Returns: {
@@ -2040,6 +2364,7 @@ export type Database = {
           deposit_percent: number
           description: string | null
           facilities: string[]
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
           hours_remaining: number | null
           id: string
@@ -2084,6 +2409,7 @@ export type Database = {
           deposit_percent: number
           description: string | null
           facilities: string[]
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
           hours_remaining: number | null
           id: string
@@ -2128,6 +2454,13 @@ export type Database = {
           start_date: string
           start_time: string
           status: Database["public"]["Enums"]["booking_status"]
+          cancellation_fee_amount: number | null
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"] | null
+          cancelled_at: string | null
+          cancelled_by_party: Database["public"]["Enums"]["cancelled_by_party"] | null
+          refund_due_amount: number | null
+          refund_due_by: string | null
+          refund_status: Database["public"]["Enums"]["refund_status"]
         }[]
       }
       update_booking_request: {
@@ -2196,6 +2529,7 @@ export type Database = {
           deposit_percent: number
           description: string | null
           facilities: string[]
+          cancellation_policy: Database["public"]["Enums"]["cancellation_policy"]
           fuel_policy: Database["public"]["Enums"]["fuel_policy_kind"]
           hours_remaining: number | null
           id: string
@@ -2229,6 +2563,18 @@ export type Database = {
     Enums: {
       boat_kind: "houseboat" | "speedboat" | "fishing" | "cruiser" | "pontoon"
       boat_status: "draft" | "pending" | "approved" | "rejected" | "suspended"
+      cancel_reason:
+        | "guest_request"
+        | "guest_compassionate"
+        | "partner_error"
+        | "guest_no_show"
+        | "weather_safety"
+        | "boat_breakdown"
+        | "operator_unavailable"
+        | "operator_breach"
+        | "other"
+      cancellation_policy: "flexible" | "moderate" | "strict"
+      cancelled_by_party: "guest" | "partner" | "operator" | "admin" | "system"
       booking_status:
         | "requested"
         | "confirmed"
@@ -2256,6 +2602,7 @@ export type Database = {
         | "booking_waiver"
         | "marketing"
       operator_type: "individual" | "company"
+      refund_status: "none" | "due" | "refunded" | "disputed" | "resolved"
       user_role: "tourist" | "owner" | "hotel" | "admin" | "agency"
       verification_status: "pending" | "verified" | "rejected"
     }
@@ -2387,6 +2734,19 @@ export const Constants = {
     Enums: {
       boat_kind: ["houseboat", "speedboat", "fishing", "cruiser", "pontoon"],
       boat_status: ["draft", "pending", "approved", "rejected", "suspended"],
+      cancel_reason: [
+        "guest_request",
+        "guest_compassionate",
+        "partner_error",
+        "guest_no_show",
+        "weather_safety",
+        "boat_breakdown",
+        "operator_unavailable",
+        "operator_breach",
+        "other",
+      ],
+      cancellation_policy: ["flexible", "moderate", "strict"],
+      cancelled_by_party: ["guest", "partner", "operator", "admin", "system"],
       booking_status: [
         "requested",
         "confirmed",
@@ -2418,6 +2778,7 @@ export const Constants = {
         "marketing",
       ],
       operator_type: ["individual", "company"],
+      refund_status: ["none", "due", "refunded", "disputed", "resolved"],
       user_role: ["tourist", "owner", "hotel", "admin", "agency"],
       verification_status: ["pending", "verified", "rejected"],
     },

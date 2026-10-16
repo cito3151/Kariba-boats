@@ -105,6 +105,7 @@ export default function HotelDashboard() {
             boatName={(b) => b.boatName}
             emptyText="No bookings referred yet."
             onCancelled={reloadBookings}
+            partnerName={currentUser?.businessName}
           />
         )}
       </PortalSection>

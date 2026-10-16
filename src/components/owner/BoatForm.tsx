@@ -6,6 +6,7 @@ import Reveal from '../Reveal';
 import { revealSpring } from '../motion';
 import { portalCard, portalButtonPrimaryLarge } from '../portal/styles';
 import TagPicker from './TagPicker';
+import { DEFAULT_POLICY, POLICY_INFO, POLICY_ORDER } from '../../data/cancellation';
 import { mergeTags, splitTags } from './tags';
 
 const BOAT_TYPES: { value: BoatKind; label: string }[] = [
@@ -36,7 +37,7 @@ const SAFETY_SUGGESTIONS = [
 const EMPTY: BoatInput = {
   name: '', boatType: 'fishing', capacity: 4, description: '', location: '',
   pricePerHour: null, pricePerDay: null, depositPercent: 20, facilities: [], safetyEquipment: [],
-  crewIncluded: true, fuelPolicy: 'included', registrationNumber: '',
+  crewIncluded: true, fuelPolicy: 'included', cancellationPolicy: DEFAULT_POLICY, registrationNumber: '',
   maintenanceIntervalHours: 100, accumulatedHours: 0, lastMaintenanceHours: 0,
 };
 
@@ -68,7 +69,7 @@ function validate(v: BoatInput): Record<string, string> {
 const SECTIONS = [
   { key: 'boat', title: 'The boat', hint: 'How guests recognise it, and how many people it carries.', fields: ['name', 'capacity'] },
   { key: 'where', title: 'Where and what', hint: 'Where trips leave from, and what makes them worth booking.', fields: ['location'] },
-  { key: 'pricing', title: 'Pricing', hint: 'An hourly rate, a daily rate or both, in US dollars.', fields: ['price', 'depositPercent'] },
+  { key: 'pricing', title: 'Pricing', hint: 'Your rates in US dollars, the deposit, and what a guest gets back if they cancel.', fields: ['price', 'depositPercent'] },
   { key: 'onboard', title: 'On board', hint: 'Tap what the boat carries, and add anything that is missing.', fields: [], optional: true },
   { key: 'maintenance', title: 'Maintenance', hint: 'Operating hours drive your service alerts. Guests never see them.', fields: ['maintenanceIntervalHours', 'lastMaintenanceHours'] },
 ] as const;
@@ -317,6 +318,34 @@ export default function BoatForm({
               <p id={`${fid('deposit')}-hint`} className={hintClass}>Minimum 20 percent. Raise it if you want a larger deposit.</p>
               {err('depositPercent')}
             </div>
+            {/* The policy decides how much of the deposit the operator keeps when a guest
+                cancels. It applies to bookings made after it is saved, never to existing
+                ones, so it saves straight away without admin review. */}
+            <fieldset className="border-t border-lake-100 pt-5" aria-describedby={`${fid('policy')}-hint`}>
+              <legend className={labelClass}>Cancellation policy</legend>
+              <p id={`${fid('policy')}-hint`} className="mt-1 text-[15px] leading-normal text-lake-700">
+                How much of the deposit a guest gets back if they cancel. A change applies to new bookings only.
+              </p>
+              <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
+                {POLICY_ORDER.map((p) => (
+                  <label key={p}
+                    className="flex min-w-0 cursor-pointer items-start gap-3 rounded-lg border border-lake-200 bg-white p-3.5 transition-colors has-checked:border-lake-700 has-checked:bg-lake-50 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-lake-500">
+                    <input type="radio" name={fid('policy')} value={p} checked={v.cancellationPolicy === p}
+                      onChange={() => set('cancellationPolicy', p)}
+                      className="mt-1 h-4 w-4 shrink-0 accent-lake-700 outline-none" />
+                    <span className="min-w-0">
+                      <span className="block text-base font-semibold text-lake-950">
+                        {POLICY_INFO[p].label}{p === DEFAULT_POLICY && <span className="font-normal text-lake-700"> (default)</span>}
+                      </span>
+                      <span className="mt-0.5 block text-sm leading-snug text-lake-700">{POLICY_INFO[p].summary}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-2.5 text-sm leading-snug text-lake-700">
+                Every policy also gives no fee within 7 days of booking, for death or hospitalisation, and a full refund when you cancel.
+              </p>
+            </fieldset>
           </FormSection>
 
           <FormSection id={sectionId('onboard')} title={SECTIONS[3].title} hint={SECTIONS[3].hint}>

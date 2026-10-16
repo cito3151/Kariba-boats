@@ -5,6 +5,7 @@ import StatusBadge from '../StatusBadge';
 import BookingFigures from '../BookingFigures';
 import BookingRef from '../BookingRef';
 import CancelBookingButton from '../CancelBookingButton';
+import CancellationSummary from '../CancellationSummary';
 import { LoadingState, ErrorState, EmptyState } from '../StateViews';
 import Reveal from '../Reveal';
 import { portalCard } from '../portal/styles';
@@ -61,6 +62,7 @@ export default function AdminBookings() {
               <StatusBadge status={b.status} />
             </div>
             <BookingFigures booking={b} />
+            <CancellationSummary booking={b} viewer="admin" />
             {OPEN.has(b.status) && (
               <div className="mt-3.5 border-t border-lake-100 pt-3.5">
                 <CancelBookingButton booking={b} onCancelled={reload} />

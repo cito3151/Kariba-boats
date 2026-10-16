@@ -4,6 +4,7 @@ import StatusBadge from '../StatusBadge';
 import BookingFigures from '../BookingFigures';
 import BookingRef from '../BookingRef';
 import CancelBookingButton from '../CancelBookingButton';
+import CancellationSummary from '../CancellationSummary';
 import EditBookingButton from '../EditBookingButton';
 import { portalCard } from '../portal/styles';
 import type { BookingRow } from '../../services/bookings.service';
@@ -17,13 +18,15 @@ const CANCELLABLE = new Set(['requested', 'confirmed', 'deposit_paid']);
  * then the labelled Guest / When / Group / Total figures. `boatName` resolves
  * the title the way each dashboard always has. With `onCancelled`, an open
  * booking gets the shared Cancel button (cancel_booking lets the hotel or agency
- * that made it cancel it), and a request still awaiting the operator gets Edit
- * request (update_booking_request lets the same hotel or agency change it). The
- * callback reloads the list after either.
+ * that made it cancel it, under the booking's policy), and a request still
+ * awaiting the operator gets Edit request (update_booking_request lets the same
+ * hotel or agency change it). The callback reloads the list after either, and
+ * after a refund is reported as not received. A cancelled booking shows who
+ * cancelled it and where its refund stands.
  * Each card rises in as it scrolls into view.
  */
 export default function PartnerBookingList({
-  bookings, boatName, showCaptain = false, emptyText, onCancelled,
+  bookings, boatName, showCaptain = false, emptyText, onCancelled, partnerName, guestWord = 'guest',
 }: {
   bookings: BookingRow[];
   boatName: (b: BookingRow) => string;
@@ -32,6 +35,10 @@ export default function PartnerBookingList({
   emptyText: string;
   /** Runs once a booking has been cancelled, normally the list's reload. */
   onCancelled?: () => void;
+  /** The hotel's or agency's own name, for "Cancelled by {name}". */
+  partnerName?: string | null;
+  /** A hotel books for guests, an agency for clients. */
+  guestWord?: 'guest' | 'client';
 }) {
   const reduce = useReducedMotion();
 
@@ -63,12 +70,14 @@ export default function PartnerBookingList({
                 Captain: <span className="font-semibold text-lake-900">{b.captainName}</span>
               </p>
             )}
+            <CancellationSummary booking={b} viewer="partner" partnerName={partnerName}
+              guestWord={guestWord} onChanged={onCancelled} />
             {onCancelled && CANCELLABLE.has(b.status) && (
               <div className="mt-3.5 flex flex-wrap items-start gap-2 border-t border-lake-100 pt-3.5">
                 {/* A request the operator has not answered yet can be changed by the
                     hotel or agency that made it (update_booking_request). */}
                 <EditBookingButton booking={{ ...b, boatName: boatName(b) }} onBehalfOfGuest onSaved={onCancelled} />
-                <CancelBookingButton booking={{ ...b, boatName: boatName(b) }} onCancelled={onCancelled} />
+                <CancelBookingButton booking={{ ...b, boatName: boatName(b) }} onCancelled={onCancelled} guestWord={guestWord} />
               </div>
             )}
           </Reveal>

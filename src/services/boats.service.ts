@@ -1,6 +1,8 @@
 import { supabase } from '../lib/supabase';
 import type { Json } from '../types/database';
 import { humanizeError } from './errors';
+import { asPolicy, DEFAULT_POLICY } from '../data/cancellation';
+import type { CancellationPolicy } from '../data/cancellation';
 
 export type BoatKind = 'houseboat' | 'speedboat' | 'fishing' | 'cruiser' | 'pontoon';
 export type BoatStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'suspended';
@@ -11,6 +13,8 @@ export interface BoatInput {
   pricePerHour: number | null; pricePerDay: number | null; depositPercent: number;
   facilities: string[]; safetyEquipment: string[]; crewIncluded: boolean;
   fuelPolicy: 'included' | 'excluded' | 'prepaid' | 'full_to_full';
+  /** Cancellation policy for new bookings (migration 42). Not reviewed: it never changes an existing booking. */
+  cancellationPolicy: CancellationPolicy;
   registrationNumber: string; maintenanceIntervalHours: number;
   accumulatedHours: number; lastMaintenanceHours: number;
 }
@@ -24,7 +28,7 @@ export interface OwnerBoat extends BoatInput {
 }
 
 const OWNER_COLS = `id, owner_id, company_id, created_by, name, boat_type, capacity, description, location,
-  price_per_hour, price_per_day, deposit_percent, facilities, safety_equipment, crew_included, fuel_policy,
+  price_per_hour, price_per_day, deposit_percent, facilities, safety_equipment, crew_included, fuel_policy, cancellation_policy,
   registration_number, maintenance_interval_hours, accumulated_hours, last_maintenance_hours,
   next_maintenance_hours, hours_remaining, maintenance_status,
   status, is_active, rejection_reason, pending_changes`;
@@ -54,6 +58,7 @@ function toOwnerBoat(r: any): OwnerBoat {
     depositPercent: r.deposit_percent != null ? Number(r.deposit_percent) : 20,
     facilities: r.facilities ?? [], safetyEquipment: r.safety_equipment ?? [],
     crewIncluded: r.crew_included, fuelPolicy: r.fuel_policy,
+    cancellationPolicy: asPolicy(r.cancellation_policy) ?? DEFAULT_POLICY,
     registrationNumber: r.registration_number ?? '',
     maintenanceIntervalHours: Number(r.maintenance_interval_hours),
     accumulatedHours: Number(r.accumulated_hours),
@@ -105,6 +110,7 @@ export async function createBoat(ownerId: string, companyId: string, input: Boat
     deposit_percent: input.depositPercent,
     facilities: input.facilities, safety_equipment: input.safetyEquipment,
     crew_included: input.crewIncluded, fuel_policy: input.fuelPolicy,
+    cancellation_policy: input.cancellationPolicy,
     registration_number: input.registrationNumber,
     maintenance_interval_hours: input.maintenanceIntervalHours,
     accumulated_hours: input.accumulatedHours,
@@ -168,6 +174,8 @@ export interface PublicBoat {
   id: string; ownerId: string; name: string; boatType: BoatKind; capacity: number;
   description: string; location: string; pricePerHour: number | null; pricePerDay: number | null;
   depositPercent: number;
+  /** The policy a booking made now is made under (migration 42). */
+  cancellationPolicy: CancellationPolicy;
   facilities: string[]; safetyEquipment: string[]; crewIncluded: boolean;
   registrationNumber: string; operatorName: string; operatorPhone: string | null;
   operatorVerified: boolean; operatorTrustScore: number;
@@ -181,6 +189,7 @@ function toPublicBoat(r: any): PublicBoat {
     depositPercent: r.deposit_percent != null ? Number(r.deposit_percent) : 20,
     facilities: r.facilities ?? [], safetyEquipment: r.safety_equipment ?? [],
     crewIncluded: r.crew_included, registrationNumber: r.registration_number ?? '',
+    cancellationPolicy: asPolicy(r.cancellation_policy) ?? DEFAULT_POLICY,
     operatorName: r.operator_name ?? '', operatorPhone: r.operator_phone,
     operatorVerified: r.operator_verified, operatorTrustScore: r.operator_trust_score,
   };

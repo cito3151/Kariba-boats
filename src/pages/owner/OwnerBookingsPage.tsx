@@ -8,6 +8,7 @@ import Reveal from '../../components/Reveal';
 import { portalCard } from '../../components/portal/styles';
 import StatusBadge from '../../components/StatusBadge';
 import CancelBookingButton from '../../components/CancelBookingButton';
+import CancellationSummary from '../../components/CancellationSummary';
 import CaptainManager from '../../components/owner/CaptainManager';
 import BookingFigures from '../../components/BookingFigures';
 import BookingRef from '../../components/BookingRef';
@@ -150,6 +151,10 @@ export default function OwnerBookingsPage() {
                   </div>
 
                   <BookingFigures booking={b} />
+
+                  {/* Who cancelled and what is owed; "Mark refunded" for those who
+                      manage bookings, once the money has gone back to the guest. */}
+                  <CancellationSummary booking={b} viewer="operator" canMarkRefunded={canManage} onChanged={reload} />
 
                   {canManage && (
                   <div className="mt-3.5 flex flex-wrap items-start gap-2 empty:hidden">

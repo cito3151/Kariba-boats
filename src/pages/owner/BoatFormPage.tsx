@@ -23,7 +23,7 @@ function toInput(b: OwnerBoat): BoatInput {
     location: b.location, pricePerHour: b.pricePerHour, pricePerDay: b.pricePerDay,
     depositPercent: b.depositPercent,
     facilities: b.facilities, safetyEquipment: b.safetyEquipment, crewIncluded: b.crewIncluded,
-    fuelPolicy: b.fuelPolicy, registrationNumber: b.registrationNumber,
+    fuelPolicy: b.fuelPolicy, cancellationPolicy: b.cancellationPolicy, registrationNumber: b.registrationNumber,
     maintenanceIntervalHours: b.maintenanceIntervalHours, accumulatedHours: b.accumulatedHours,
     lastMaintenanceHours: b.lastMaintenanceHours,
   };
@@ -40,6 +40,7 @@ function changeMap(input: BoatInput): Record<string, unknown> {
     deposit_percent: input.depositPercent,
     facilities: input.facilities, safety_equipment: input.safetyEquipment,
     crew_included: input.crewIncluded, fuel_policy: input.fuelPolicy,
+    cancellation_policy: input.cancellationPolicy,
     registration_number: input.registrationNumber,
     maintenance_interval_hours: input.maintenanceIntervalHours,
   };
@@ -49,7 +50,7 @@ const FIELD_LABELS: Record<string, string> = {
   name: 'Name', boat_type: 'Type', capacity: 'Capacity', description: 'Description',
   location: 'Location', price_per_hour: 'Price per hour', price_per_day: 'Price per day',
   deposit_percent: 'Deposit percent', facilities: 'Facilities', safety_equipment: 'Safety equipment',
-  crew_included: 'Crew included', fuel_policy: 'Fuel policy', registration_number: 'Registration number',
+  crew_included: 'Crew included', fuel_policy: 'Fuel policy', cancellation_policy: 'Cancellation policy', registration_number: 'Registration number',
   maintenance_interval_hours: 'Service interval',
 };
 

@@ -14,6 +14,7 @@ import { useAsync } from '../hooks/useAsync';
 import AvailabilityCalendar, { type DateRange } from './AvailabilityCalendar';
 import { useCurrentDocuments } from './legal/useCurrentDocuments';
 import DocumentModal from './legal/DocumentModal';
+import CancellationPolicyNote from './CancellationPolicyNote';
 import { portalButtonPrimaryLarge } from './portal/styles';
 import { REVEAL_STAGGER, revealSpring } from './motion';
 
@@ -587,6 +588,10 @@ export default function BookingModal({
                       <AlertCircle size={18} className="mt-px shrink-0" aria-hidden /> {error}
                     </motion.div>
                   )}
+
+                  {/* The policy this booking is made under, before anything is sent. An
+                      edit keeps the policy the booking was made under (migration 42). */}
+                  <CancellationPolicyNote policy={editing?.cancellationPolicy ?? boat.cancellationPolicy} />
 
                   {/* The whole row is the target (48px tall, full width), not just the box.
                       leading-6 with the box 2px down sets the first line level with it, and a

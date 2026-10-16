@@ -13,6 +13,7 @@ import AvailabilityCalendar, { type DateRange } from '../components/Availability
 import { LoadingState, ErrorState } from '../components/StateViews';
 import { BOAT_TYPE_LABELS, priceView, priceLabels } from '../components/BoatCard';
 import EmergencyContacts from '../components/EmergencyContacts';
+import CancellationPolicyNote from '../components/CancellationPolicyNote';
 import LakeBackdrop from '../components/LakeBackdrop';
 import { portalCard, portalButtonPrimaryLarge, portalButtonSecondary } from '../components/portal/styles';
 import { reducedFade, revealSpring, riseOnMount } from '../components/motion';
@@ -720,6 +721,7 @@ function PriceBlock({
           <span>Free to request, pay nothing until confirmed</span>
         </li>
       </ul>
+      <CancellationPolicyNote policy={boat.cancellationPolicy} className="mt-4" />
     </div>
   );
 }

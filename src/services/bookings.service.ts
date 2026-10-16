@@ -1,6 +1,10 @@
 import { supabase } from '../lib/supabase';
 import { humanizeError } from './errors';
 import type { Booking } from '../data/availability';
+import { asPolicy, asRefundStatus } from '../data/cancellation';
+import type {
+  CancelReason, CancellationPolicy, CancellationRule, CancelledByParty, RefundOutcome, RefundStatus,
+} from '../data/cancellation';
 
 export type BookingStatus =
   | 'requested' | 'confirmed' | 'deposit_paid' | 'completed' | 'declined' | 'cancelled';
@@ -24,10 +28,31 @@ export interface BookingRow {
   guestPhone: string; experienceType: string; notes: string;
   /** When the booking party last changed the request (migration 39), or null. */
   updatedByGuestAt: string | null;
+  agencyId: string | null;
+  /**
+   * Cancellation and refund record (migration 42). The policy is the boat's when the
+   * booking was made, null only for bookings closed before policies existed. A
+   * cancelled booking with no cancelledAt was cancelled before these records began.
+   */
+  cancellationPolicy: CancellationPolicy | null;
+  cancelledAt: string | null; cancelledByParty: CancelledByParty | null;
+  cancelReason: CancelReason | null; cancelNote: string | null;
+  cancellationRule: CancellationRule | null;
+  cancellationFeeAmount: number | null; refundDueAmount: number | null; refundDueBy: string | null;
+  refundStatus: RefundStatus; refundMarkedAt: string | null; refundNote: string | null;
+  refundReportedAt: string | null; refundResolvedAt: string | null;
+  refundOutcome: RefundOutcome | null; refundResolutionNote: string | null;
+  depositPaidAt: string | null;
 }
 
 const BOOKING_SELECT =
-  'id, reference, boat_id, guest_name, guest_phone, start_date, days, start_time, duration_hours, status, price_total, deposit_amount, group_size, experience_type, notes, hotel_id, captain_name, captain_phone, created_at, updated_by_guest_at, boats(name, location)';
+  'id, reference, boat_id, guest_name, guest_phone, start_date, days, start_time, duration_hours, status, price_total, deposit_amount, group_size, experience_type, notes, hotel_id, captain_name, captain_phone, created_at, updated_by_guest_at, agency_id, '
+  + 'cancellation_policy, cancelled_at, cancelled_by_party, cancel_reason, cancel_note, cancellation_rule, '
+  + 'cancellation_fee_amount, refund_due_amount, refund_due_by, refund_status, refund_marked_at, refund_note, '
+  + 'refund_reported_at, refund_resolved_at, refund_outcome, refund_resolution_note, deposit_paid_at, '
+  + 'boats(name, location)';
+
+const numOrNull = (v: unknown) => (v === null || v === undefined ? null : Number(v));
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function toBookingRow(r: any): BookingRow {
@@ -41,6 +66,17 @@ function toBookingRow(r: any): BookingRow {
     captainName: r.captain_name ?? null, captainPhone: r.captain_phone ?? null,
     guestPhone: r.guest_phone ?? '', experienceType: r.experience_type ?? '', notes: r.notes ?? '',
     updatedByGuestAt: r.updated_by_guest_at ?? null,
+    agencyId: r.agency_id ?? null,
+    cancellationPolicy: asPolicy(r.cancellation_policy),
+    cancelledAt: r.cancelled_at ?? null, cancelledByParty: r.cancelled_by_party ?? null,
+    cancelReason: r.cancel_reason ?? null, cancelNote: r.cancel_note ?? null,
+    cancellationRule: r.cancellation_rule ?? null,
+    cancellationFeeAmount: numOrNull(r.cancellation_fee_amount),
+    refundDueAmount: numOrNull(r.refund_due_amount), refundDueBy: r.refund_due_by ?? null,
+    refundStatus: asRefundStatus(r.refund_status), refundMarkedAt: r.refund_marked_at ?? null,
+    refundNote: r.refund_note ?? null, refundReportedAt: r.refund_reported_at ?? null,
+    refundResolvedAt: r.refund_resolved_at ?? null, refundOutcome: r.refund_outcome ?? null,
+    refundResolutionNote: r.refund_resolution_note ?? null, depositPaidAt: r.deposit_paid_at ?? null,
   };
 }
 
@@ -261,9 +297,86 @@ export async function setOwnerBookingStatus(id: string, status: BookingStatus, s
   if (error) throw new Error(humanizeError(error.message));
 }
 
-export async function cancelBooking(id: string) {
-  const { error } = await supabase.rpc('cancel_booking', { p_booking_id: id });
+export interface CancelInput {
+  reason: CancelReason;
+  note?: string;
+  /** Death or hospitalisation of the guest or close family: no fee (ADR-003 override 3). */
+  compassionate?: boolean;
+}
+
+/**
+ * Cancel a booking (cancel_booking, migration 42). The server works out who the
+ * caller is to the booking, checks the reason against who may cancel what, and
+ * records the fee and the refund the operator owes. No money moves.
+ */
+export async function cancelBooking(id: string, input: CancelInput) {
+  const note = input.note?.trim();
+  const { error } = await supabase.rpc('cancel_booking', {
+    p_booking_id: id, p_reason: input.reason,
+    p_note: note ? note : undefined, p_compassionate: input.compassionate ?? false,
+  });
   if (error) throw new Error(humanizeError(error.message));
+}
+
+/** What cancelling now would cost (cancellation_quote, migration 42). */
+export interface CancellationQuote {
+  policy: CancellationPolicy; daysBefore: number; ruleApplied: CancellationRule;
+  depositAmount: number; depositPaid: boolean; feeAmount: number; refundAmount: number;
+  refundDueBy: string | null; callerParty: CancelledByParty; tripStarted: boolean;
+}
+
+export async function getCancellationQuote(
+  id: string, reason?: CancelReason | null, compassionate = false,
+): Promise<CancellationQuote> {
+  const { data, error } = await supabase.rpc('cancellation_quote', {
+    p_booking_id: id, p_reason: reason ?? undefined, p_compassionate: compassionate,
+  });
+  if (error) throw new Error(humanizeError(error.message));
+  const r = data?.[0];
+  if (!r) throw new Error('This booking could not be quoted. Reload and try again.');
+  return {
+    policy: asPolicy(r.policy) ?? 'moderate', daysBefore: r.days_before,
+    ruleApplied: r.rule_applied as CancellationRule,
+    depositAmount: Number(r.deposit_amount), depositPaid: r.deposit_paid,
+    feeAmount: Number(r.fee_amount), refundAmount: Number(r.refund_amount),
+    refundDueBy: r.refund_due_by ?? null, callerParty: r.caller_party, tripStarted: r.trip_started,
+  };
+}
+
+/** The operator records that it has paid a due refund back, off the platform. */
+export async function markRefunded(id: string, note?: string) {
+  const trimmed = note?.trim();
+  const { error } = await supabase.rpc('operator_mark_refunded', {
+    p_booking_id: id, p_note: trimmed ? trimmed : undefined,
+  });
+  if (error) throw new Error(humanizeError(error.message));
+}
+
+/** The guest, or the hotel or agency that booked, says a refund never arrived. */
+export async function reportRefundNotReceived(id: string) {
+  const { error } = await supabase.rpc('report_refund_not_received', { p_booking_id: id });
+  if (error) throw new Error(humanizeError(error.message));
+}
+
+/** An administrator closes a due or disputed refund. */
+export async function resolveRefund(id: string, outcome: RefundOutcome, note: string) {
+  const { error } = await supabase.rpc('admin_resolve_refund', {
+    p_booking_id: id, p_outcome: outcome, p_note: note.trim(),
+  });
+  if (error) throw new Error(humanizeError(error.message));
+}
+
+/**
+ * Every refund still open (due, or reported not received), earliest due date first,
+ * for the admin refunds queue. RLS lets an administrator read every booking; the
+ * queue decides which are overdue.
+ */
+export async function listOpenRefunds(): Promise<BookingRow[]> {
+  const { data, error } = await supabase.from('bookings').select(BOOKING_SELECT)
+    .in('refund_status', ['due', 'disputed'])
+    .order('refund_due_by', { ascending: true });
+  if (error) throw new Error(humanizeError(error.message));
+  return toRowsWithBoatNames(data ?? []);
 }
 
 /** What the public tracker shows: status and trip logistics, never the guest's name or phone. */
@@ -271,6 +384,11 @@ export interface TrackedBooking {
   reference: string; status: BookingStatus; boatName: string; boatLocation: string;
   startDate: string; startTime: string | null; days: number; durationHours: number | null;
   groupSize: number; priceTotal: number; depositAmount: number; createdAt: string;
+  /** Migration 42: the booking's policy, and what a cancellation left owing. */
+  cancellationPolicy: CancellationPolicy | null;
+  cancelledAt: string | null; cancelledByParty: CancelledByParty | null;
+  cancellationFeeAmount: number | null; refundDueAmount: number | null; refundDueBy: string | null;
+  refundStatus: RefundStatus;
 }
 
 /**
@@ -289,5 +407,10 @@ export async function trackBooking(reference: string, phone: string): Promise<Tr
     durationHours: r.duration_hours === null ? null : Number(r.duration_hours),
     groupSize: r.group_size, priceTotal: Number(r.price_total), depositAmount: Number(r.deposit_amount),
     createdAt: r.created_at,
+    cancellationPolicy: asPolicy(r.cancellation_policy),
+    cancelledAt: r.cancelled_at ?? null, cancelledByParty: r.cancelled_by_party ?? null,
+    cancellationFeeAmount: numOrNull(r.cancellation_fee_amount),
+    refundDueAmount: numOrNull(r.refund_due_amount), refundDueBy: r.refund_due_by ?? null,
+    refundStatus: asRefundStatus(r.refund_status),
   };
 }

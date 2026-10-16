@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText, FileText, LifeBuoy, Building2, Hotel, Star, RotateCcw } from 'lucide-react';
+import { Anchor, Clock, CheckCircle2, Wrench, CalendarCheck, UserCheck, UserCog, ScrollText, FileText, LifeBuoy, Building2, Hotel, Star, RotateCcw, HandCoins } from 'lucide-react';
 import AdminPortalPage from '../components/admin/AdminPortalPage';
 import PortalSection from '../components/portal/PortalSection';
 import { portalCard, portalButtonSecondary } from '../components/portal/styles';
@@ -9,6 +9,7 @@ import StatTile from '../components/StatTile';
 import { Figure } from '../components/BookingFigures';
 import ApprovalQueue from '../components/admin/ApprovalQueue';
 import AdminBookings from '../components/admin/AdminBookings';
+import AdminRefunds from '../components/admin/AdminRefunds';
 import UserVerification from '../components/admin/UserVerification';
 import CompanyVerification from '../components/admin/CompanyVerification';
 import RoleManagement from '../components/admin/RoleManagement';
@@ -25,12 +26,13 @@ import { viewSwap } from '../components/motion';
 import { useAuth } from '../data/AuthContext';
 import { loadedFigure, useAsync } from '../hooks/useAsync';
 import * as boats from '../services/boats.service';
-import { listAllBookings } from '../services/bookings.service';
+import { listAllBookings, listOpenRefunds } from '../services/bookings.service';
+import { refundNeedsAdmin } from '../data/cancellation';
 import { listOwnersAndHotels, listAllUsers } from '../services/users.service';
 import { countCompaniesAwaitingReview } from '../services/companies.service';
 import type { OwnerBoat, BoatStatus } from '../services/boats.service';
 
-type View = 'companies' | 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users' | 'roles' | 'audit' | 'legal' | 'emergency' | 'reviews' | 'partners';
+type View = 'companies' | 'queue' | 'all' | 'live' | 'attention' | 'bookings' | 'users' | 'roles' | 'audit' | 'legal' | 'emergency' | 'reviews' | 'partners' | 'refunds';
 
 // The PortalSection title for each view. The approval queue titles its own two
 // sections (the queue and maintenance attention), so it is not listed.
@@ -39,6 +41,7 @@ const VIEW_TITLES: Record<Exclude<View, 'queue'>, string> = {
   live: 'Live boats',
   attention: 'Boats needing maintenance',
   bookings: 'All bookings',
+  refunds: 'Refunds to follow up',
   users: 'Owner and hotel verification',
   companies: 'Company ownership verification',
   roles: 'Admins and roles',
@@ -158,6 +161,8 @@ export default function AdminDashboard() {
   const {
     data: companiesAwaiting, loading: companiesLoading, reload: reloadCompanyCount,
   } = useAsync(countCompaniesAwaitingReview, []);
+  // Refunds reported as not received, or overdue (ADR-003 section 1.6).
+  const { data: openRefunds, loading: refundsLoading, reload: reloadRefunds } = useAsync(listOpenRefunds, []);
   const [view, setView] = useState<View>('queue');
 
   const list = boatData ?? [];
@@ -173,6 +178,7 @@ export default function AdminDashboard() {
     { key: 'live', label: 'Live for tourists', value: loadedFigure(boatData, loading, list.filter((b) => b.status === 'approved' && b.isActive).length), icon: CheckCircle2 },
     { key: 'attention', label: 'Maintenance attention', value: loadedFigure(boatData, loading, list.filter((b) => b.maintenanceStatus === 'due' || b.maintenanceStatus === 'overdue').length), icon: Wrench },
     { key: 'bookings', label: 'Active bookings', value: loadedFigure(bookingData, bookingsLoading, activeBookings), icon: CalendarCheck },
+    { key: 'refunds', label: 'Refunds to follow up', value: loadedFigure(openRefunds, refundsLoading, (openRefunds ?? []).filter((b) => refundNeedsAdmin(b)).length), icon: HandCoins },
     { key: 'users', label: 'Unverified owners/hotels', value: loadedFigure(userData, usersLoading, unverified), icon: UserCheck },
     { key: 'companies', label: 'Company documents', value: loadedFigure(companiesAwaiting, companiesLoading, companiesAwaiting ?? 0), icon: Building2 },
     { key: 'partners', label: 'Hotels and agencies', icon: Hotel },
@@ -190,6 +196,7 @@ export default function AdminDashboard() {
   const content = (v: Exclude<View, 'queue'>): ReactNode => {
     switch (v) {
       case 'bookings': return <AdminBookings />;
+      case 'refunds': return <AdminRefunds onResolved={reloadRefunds} />;
       case 'users': return <UserVerification />;
       case 'companies': return <CompanyVerification onReviewed={reloadCompanyCount} />;
       case 'roles': return isSuper ? <RoleManagement /> : null;

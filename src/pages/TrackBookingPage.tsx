@@ -11,6 +11,9 @@ import { portalCard, portalButtonPrimaryLarge } from '../components/portal/style
 import StatusBadge from '../components/StatusBadge';
 import { Figure } from '../components/BookingFigures';
 import { riseOnMount } from '../components/motion';
+import CancellationPolicyNote from '../components/CancellationPolicyNote';
+import { RefundChip } from '../components/CancellationSummary';
+import { OFF_PLATFORM_NOTE, cancelledByText, longDate, money } from '../data/cancellation';
 import { portalPhotos } from '../data/photos';
 import { trackBooking, tripWhen, tripPrice } from '../services/bookings.service';
 import type { BookingStatus, TrackedBooking } from '../services/bookings.service';
@@ -170,6 +173,7 @@ function StatusCard({ booking: b }: { booking: TrackedBooking }) {
 
       <div className="p-4 sm:p-5">
         <p className="text-base leading-relaxed text-lake-800">{SUMMARY[b.status]}</p>
+        {b.status === 'cancelled' && <TrackedCancellation booking={b} />}
 
         <ol aria-label="Booking progress" className="mt-5 grid gap-3 sm:grid-cols-4 sm:gap-2">
           {(ended ? [STEPS[0]] : STEPS).map((step, i) => {
@@ -234,7 +238,46 @@ function StatusCard({ booking: b }: { booking: TrackedBooking }) {
             ${b.depositAmount}
           </Figure>
         </dl>
+
+        {/* The policy the booking was made under, while it can still be cancelled. */}
+        {b.cancellationPolicy && OPEN.has(b.status) && (
+          <CancellationPolicyNote policy={b.cancellationPolicy} className="mt-5" />
+        )}
       </div>
     </article>
+  );
+}
+
+const OPEN = new Set<BookingStatus>(['requested', 'confirmed', 'deposit_paid']);
+
+/**
+ * How a cancellation left the deposit: who cancelled and when, the fee the operator
+ * keeps, the refund it owes and where that stands. Only party words, never names.
+ * A booking cancelled before these records began has nothing more to show.
+ */
+function TrackedCancellation({ booking: b }: { booking: TrackedBooking }) {
+  if (!b.cancelledAt) return null;
+  const refund = b.refundDueAmount ?? 0;
+  return (
+    <div className="mt-4 rounded-lg border border-lake-200 bg-lake-50 p-3.5">
+      <p className="text-[15px] leading-normal text-lake-900">
+        <span className="font-semibold">Cancelled by {cancelledByText(b.cancelledByParty, 'public')}</span>
+        {' '}on <time dateTime={b.cancelledAt} className="tabular-nums">{longDate(b.cancelledAt)}</time>.
+      </p>
+      <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3">
+        <Figure label="Fee kept" valueClassName="text-base tabular-nums text-lake-950">{money(b.cancellationFeeAmount)}</Figure>
+        <Figure label="Refund" valueClassName="text-base font-semibold tabular-nums text-lake-950">
+          {refund > 0 ? `${money(refund)}${b.refundDueBy ? ` by ${longDate(b.refundDueBy)}` : ''}` : 'None'}
+        </Figure>
+        <Figure label="Refund status" className="col-span-2 sm:col-span-1" valueClassName="">
+          <RefundChip status={b.refundStatus} />
+        </Figure>
+      </dl>
+      {refund > 0 && (
+        <p className="mt-2.5 text-sm leading-snug text-lake-800">
+          {OFF_PLATFORM_NOTE} If it has not arrived by the due date, report it in My trips, ask the hotel or agency that booked to report it, or contact us.
+        </p>
+      )}
+    </div>
   );
 }

@@ -13,6 +13,7 @@ import BookingRef from '../components/BookingRef';
 import ReviewForm from '../components/ReviewForm';
 import ReviewCard from '../components/reviews/ReviewCard';
 import CancelBookingButton from '../components/CancelBookingButton';
+import CancellationSummary from '../components/CancellationSummary';
 import EditBookingButton from '../components/EditBookingButton';
 import { LoadingState, ErrorState, EmptyState } from '../components/StateViews';
 import EmergencyContacts from '../components/EmergencyContacts';
@@ -108,6 +109,8 @@ export default function TouristTripsPage() {
                         <UserCheck size={16} className="text-emerald-700" aria-hidden /> Captain: <span className="font-semibold text-lake-900">{b.captainName}</span> · <span className="tabular-nums">{b.captainPhone}</span>
                       </p>
                     )}
+
+                    <CancellationSummary booking={b} viewer="guest" onChanged={reload} />
 
                     {canCancel && (
                       <div className="mt-3.5 flex flex-wrap items-start gap-2 border-t border-lake-100 pt-3.5">
